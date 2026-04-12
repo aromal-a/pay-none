@@ -14,6 +14,8 @@ type Step = "enter-upi" | "processing" | "success";
 const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogProps) => {
   const [step, setStep] = useState<Step>("enter-upi");
   const [upiId, setUpiId] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [payMode, setPayMode] = useState<"app" | "upi" | "phone">("app");
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
 
   const upiApps = [
@@ -23,8 +25,10 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
     { id: "bhim", name: "BHIM", color: "bg-green-600" },
   ];
 
+  const isPayReady = selectedApp || upiId || (phoneNumber.length >= 10);
+
   const handlePay = () => {
-    if (!upiId && !selectedApp) return;
+    if (!isPayReady) return;
     setStep("processing");
     setTimeout(() => setStep("success"), 2500);
   };
@@ -32,6 +36,8 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
   const handleClose = () => {
     setStep("enter-upi");
     setUpiId("");
+    setPhoneNumber("");
+    setPayMode("app");
     setSelectedApp(null);
     onClose();
   };
@@ -76,50 +82,90 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
           <div className="p-6">
             {step === "enter-upi" && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <p className="mb-4 text-sm font-medium text-muted-foreground">
-                  Choose a UPI app or enter UPI ID
-                </p>
-
-                <div className="grid grid-cols-4 gap-3 mb-5">
-                  {upiApps.map((app) => (
+                {/* Pay mode tabs */}
+                <div className="flex gap-2 mb-5">
+                  {[
+                    { key: "app" as const, label: "UPI App" },
+                    { key: "phone" as const, label: "Phone Number" },
+                    { key: "upi" as const, label: "UPI ID" },
+                  ].map((tab) => (
                     <button
-                      key={app.id}
-                      onClick={() => { setSelectedApp(app.id); setUpiId(""); }}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all ${
-                        selectedApp === app.id
-                          ? "border-primary bg-primary/5 scale-105"
-                          : "border-border hover:border-primary/30"
+                      key={tab.key}
+                      onClick={() => {
+                        setPayMode(tab.key);
+                        setSelectedApp(null);
+                        setUpiId("");
+                        setPhoneNumber("");
+                      }}
+                      className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
+                        payMode === tab.key
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-muted-foreground hover:bg-secondary/80"
                       }`}
                     >
-                      <div className={`h-10 w-10 rounded-full ${app.color} flex items-center justify-center`}>
-                        <Smartphone className="h-5 w-5 text-primary-foreground" />
-                      </div>
-                      <span className="text-[11px] font-medium text-foreground">{app.name}</span>
+                      {tab.label}
                     </button>
                   ))}
                 </div>
 
-                <div className="relative mb-5">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border" />
+                {payMode === "app" && (
+                  <div className="grid grid-cols-4 gap-3 mb-5">
+                    {upiApps.map((app) => (
+                      <button
+                        key={app.id}
+                        onClick={() => setSelectedApp(app.id)}
+                        className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all ${
+                          selectedApp === app.id
+                            ? "border-primary bg-primary/5 scale-105"
+                            : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        <div className={`h-10 w-10 rounded-full ${app.color} flex items-center justify-center`}>
+                          <Smartphone className="h-5 w-5 text-primary-foreground" />
+                        </div>
+                        <span className="text-[11px] font-medium text-foreground">{app.name}</span>
+                      </button>
+                    ))}
                   </div>
-                  <div className="relative flex justify-center">
-                    <span className="bg-card px-3 text-xs text-muted-foreground">or enter UPI ID</span>
-                  </div>
-                </div>
+                )}
 
-                <input
-                  type="text"
-                  placeholder="yourname@upi"
-                  value={upiId}
-                  onChange={(e) => { setUpiId(e.target.value); setSelectedApp(null); }}
-                  className="w-full rounded-xl border-2 border-border bg-secondary/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
-                />
+                {payMode === "phone" && (
+                  <div className="mb-5">
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                      Enter mobile number linked to UPI
+                    </label>
+                    <div className="flex items-center gap-2 rounded-xl border-2 border-border bg-secondary/50 px-4 py-3 focus-within:border-primary transition-colors">
+                      <span className="text-sm font-medium text-muted-foreground">+91</span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        placeholder="9876543210"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                      />
+                    </div>
+                    {phoneNumber.length > 0 && phoneNumber.length < 10 && (
+                      <p className="mt-1.5 text-xs text-destructive">Enter a valid 10-digit number</p>
+                    )}
+                  </div>
+                )}
+
+                {payMode === "upi" && (
+                  <input
+                    type="text"
+                    placeholder="yourname@upi"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    className="mb-5 w-full rounded-xl border-2 border-border bg-secondary/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                  />
+                )}
 
                 <button
                   onClick={handlePay}
-                  disabled={!upiId && !selectedApp}
-                  className="mt-5 w-full rounded-xl bg-upi-green py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={!isPayReady}
+                  className="w-full rounded-xl bg-upi-green py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Pay ₹{amount}
                 </button>
@@ -144,6 +190,8 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
                 <p className="mt-1 text-sm text-muted-foreground">
                   {selectedApp
                     ? `Waiting for confirmation from ${upiApps.find(a => a.id === selectedApp)?.name}...`
+                    : phoneNumber
+                    ? `Sending request to +91 ${phoneNumber}...`
                     : `Sending request to ${upiId}...`}
                 </p>
                 <div className="mt-6 w-full max-w-[200px] rounded-full bg-secondary">
