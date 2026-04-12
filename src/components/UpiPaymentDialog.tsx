@@ -25,8 +25,10 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
     { id: "bhim", name: "BHIM", color: "bg-green-600" },
   ];
 
+  const isPayReady = selectedApp || upiId || (phoneNumber.length >= 10);
+
   const handlePay = () => {
-    if (!upiId && !selectedApp) return;
+    if (!isPayReady) return;
     setStep("processing");
     setTimeout(() => setStep("success"), 2500);
   };
