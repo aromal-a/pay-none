@@ -190,6 +190,8 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
                 <p className="mt-1 text-sm text-muted-foreground">
                   {selectedApp
                     ? `Waiting for confirmation from ${upiApps.find(a => a.id === selectedApp)?.name}...`
+                    : phoneNumber
+                    ? `Sending request to +91 ${phoneNumber}...`
                     : `Sending request to ${upiId}...`}
                 </p>
                 <div className="mt-6 w-full max-w-[200px] rounded-full bg-secondary">
