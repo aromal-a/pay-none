@@ -14,6 +14,8 @@ type Step = "enter-upi" | "processing" | "success";
 const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogProps) => {
   const [step, setStep] = useState<Step>("enter-upi");
   const [upiId, setUpiId] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [payMode, setPayMode] = useState<"app" | "upi" | "phone">("app");
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
 
   const upiApps = [
