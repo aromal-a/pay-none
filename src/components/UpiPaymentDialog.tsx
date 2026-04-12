@@ -68,7 +68,9 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
 
       // Simulate: receiver confirms after delay
       setTimeout(() => {
-        setTxn((prev) => prev ? { ...prev, status: "confirmed" } : prev);
+        const confirmedTxn: PaymentTransaction = { ...transaction, status: "confirmed" };
+        setTxn(confirmedTxn);
+        transactionStore.add(confirmedTxn);
         tokenBalance.add(tokens);
         setStep("success");
       }, RECEIVER_CONFIRM_DELAY);
@@ -241,7 +243,11 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
 
                 <div className="rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Paying to</span>
+                    <span className="text-muted-foreground">Merchant</span>
+                    <span className="font-medium text-foreground">{MERCHANT_INFO.merchantName}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Paying via</span>
                     <span className="font-medium text-foreground">{payLabel}</span>
                   </div>
                   <div className="flex justify-between text-sm">
