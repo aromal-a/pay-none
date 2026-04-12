@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Smartphone, CheckCircle2, Loader2, IndianRupee, Shield, AlertTriangle, Info, Clock } from "lucide-react";
-import { generateTxnId, tokenBalance, RECEIVER_CONFIRM_DELAY, type PaymentTransaction } from "@/lib/paymentState";
+import { generateTxnId, tokenBalance, transactionStore, RECEIVER_CONFIRM_DELAY, MERCHANT_INFO, type PaymentTransaction } from "@/lib/paymentState";
 
 interface UpiPaymentDialogProps {
   open: boolean;
@@ -68,7 +68,9 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
 
       // Simulate: receiver confirms after delay
       setTimeout(() => {
-        setTxn((prev) => prev ? { ...prev, status: "confirmed" } : prev);
+        const confirmedTxn: PaymentTransaction = { ...transaction, status: "confirmed" };
+        setTxn(confirmedTxn);
+        transactionStore.add(confirmedTxn);
         tokenBalance.add(tokens);
         setStep("success");
       }, RECEIVER_CONFIRM_DELAY);
@@ -241,7 +243,11 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
 
                 <div className="rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Paying to</span>
+                    <span className="text-muted-foreground">Merchant</span>
+                    <span className="font-medium text-foreground">{MERCHANT_INFO.merchantName}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Paying via</span>
                     <span className="font-medium text-foreground">{payLabel}</span>
                   </div>
                   <div className="flex justify-between text-sm">
