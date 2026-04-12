@@ -3,7 +3,9 @@ import { motion } from "framer-motion";
 import { Coins, Wallet } from "lucide-react";
 import TokenCard from "@/components/TokenCard";
 import UpiPaymentDialog from "@/components/UpiPaymentDialog";
+import LanguageSelector from "@/components/LanguageSelector";
 import { tokenBalance } from "@/lib/paymentState";
+import { useI18n } from "@/lib/i18n";
 
 const tokenPackages = [
   { tier: "bronze" as const, tokens: 100, price: 99 },
@@ -14,6 +16,7 @@ const tokenPackages = [
 const Index = () => {
   const [selectedPackage, setSelectedPackage] = useState<typeof tokenPackages[0] | null>(null);
   const [balance, setBalance] = useState(tokenBalance.get());
+  const { t } = useI18n();
 
   useEffect(() => {
     return tokenBalance.subscribe(setBalance);
@@ -21,7 +24,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
@@ -30,14 +32,16 @@ const Index = () => {
             </div>
             <span className="font-display text-xl font-bold text-foreground">TokenStore</span>
           </div>
-          <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">{balance} tokens</span>
+          <div className="flex items-center gap-3">
+            <LanguageSelector />
+            <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">{balance} {t.balance}</span>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
       <section className="mx-auto max-w-5xl px-6 pt-16 pb-12 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -45,15 +49,14 @@ const Index = () => {
           transition={{ duration: 0.5 }}
         >
           <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Buy Tokens
+            {t.buyTokens}
           </h1>
           <p className="mt-3 text-lg text-muted-foreground max-w-md mx-auto">
-            Power up your account with tokens. Pay instantly via UPI.
+            {t.heroDescription}
           </p>
         </motion.div>
       </section>
 
-      {/* Token Cards */}
       <section className="mx-auto max-w-4xl px-6 pb-20">
         <div className="grid gap-6 sm:grid-cols-3">
           {tokenPackages.map((pkg, i) => (
@@ -75,7 +78,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* UPI Dialog */}
       <UpiPaymentDialog
         open={!!selectedPackage}
         onClose={() => setSelectedPackage(null)}
