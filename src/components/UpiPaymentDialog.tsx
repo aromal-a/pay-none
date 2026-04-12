@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Smartphone, CheckCircle2, Loader2, IndianRupee, Shield } from "lucide-react";
+import { X, Smartphone, CheckCircle2, Loader2, IndianRupee, Shield, AlertTriangle, Info } from "lucide-react";
 
 interface UpiPaymentDialogProps {
   open: boolean;
@@ -9,7 +9,10 @@ interface UpiPaymentDialogProps {
   tokens: number;
 }
 
-type Step = "enter-upi" | "processing" | "success";
+type Step = "enter-upi" | "confirm" | "processing" | "success";
+
+const MIN_AMOUNT = 200;
+const GST_RATE = 0.18;
 
 const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogProps) => {
   const [step, setStep] = useState<Step>("enter-upi");
@@ -25,10 +28,23 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
     { id: "bhim", name: "BHIM", color: "bg-green-600" },
   ];
 
-  const isPayReady = selectedApp || upiId || (phoneNumber.length >= 10);
+  const isBelowMinimum = amount < MIN_AMOUNT;
+  const baseAmount = Math.round(amount / (1 + GST_RATE));
+  const taxAmount = amount - baseAmount;
+  const isPayReady = !isBelowMinimum && (selectedApp || upiId || phoneNumber.length >= 10);
 
-  const handlePay = () => {
+  const payLabel = selectedApp
+    ? upiApps.find((a) => a.id === selectedApp)?.name
+    : phoneNumber
+    ? `+91 ${phoneNumber}`
+    : upiId;
+
+  const handleProceedToConfirm = () => {
     if (!isPayReady) return;
+    setStep("confirm");
+  };
+
+  const handleConfirmPay = () => {
     setStep("processing");
     setTimeout(() => setStep("success"), 2500);
   };
@@ -80,15 +96,28 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
 
           {/* Body */}
           <div className="p-6">
+            {/* Minimum amount warning */}
+            {step === "enter-upi" && isBelowMinimum && (
+              <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3.5">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                <div>
+                  <p className="text-sm font-semibold text-destructive">Minimum ₹{MIN_AMOUNT} required</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    This amount is below the minimum payable threshold. Please select a higher package.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {step === "enter-upi" && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {/* Pay mode tabs */}
                 <div className="flex gap-2 mb-5">
-                  {[
+                  {([
                     { key: "app" as const, label: "UPI App" },
                     { key: "phone" as const, label: "Phone Number" },
                     { key: "upi" as const, label: "UPI ID" },
-                  ].map((tab) => (
+                  ]).map((tab) => (
                     <button
                       key={tab.key}
                       onClick={() => {
@@ -163,16 +192,70 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
                 )}
 
                 <button
-                  onClick={handlePay}
+                  onClick={handleProceedToConfirm}
                   disabled={!isPayReady}
                   className="w-full rounded-xl bg-upi-green py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Pay ₹{amount}
+                  Continue
                 </button>
 
                 <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                   <Shield className="h-3.5 w-3.5" />
                   Secured by UPI • 256-bit encryption
+                </div>
+              </motion.div>
+            )}
+
+            {/* Single Confirmation Step */}
+            {step === "confirm" && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                <p className="mb-4 text-sm font-semibold text-foreground">Review & Confirm</p>
+
+                <div className="rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Paying to</span>
+                    <span className="font-medium text-foreground">{payLabel}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Tokens</span>
+                    <span className="font-medium text-foreground">{tokens}</span>
+                  </div>
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="text-foreground">₹{baseAmount}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">GST (18%)</span>
+                      <span className="text-foreground">₹{taxAmount}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-bold border-t border-border pt-2">
+                      <span className="text-foreground">Total</span>
+                      <span className="text-foreground">₹{amount}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-start gap-2 rounded-lg bg-primary/5 p-3">
+                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Amount includes applicable GST. Tokens are non-refundable once credited. By proceeding, you agree to the terms of service.
+                  </p>
+                </div>
+
+                <div className="mt-5 flex gap-3">
+                  <button
+                    onClick={() => setStep("enter-upi")}
+                    className="flex-1 rounded-xl border border-border py-3 text-sm font-semibold text-foreground transition hover:bg-secondary"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleConfirmPay}
+                    className="flex-1 rounded-xl bg-upi-green py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+                  >
+                    Pay ₹{amount}
+                  </button>
                 </div>
               </motion.div>
             )}
