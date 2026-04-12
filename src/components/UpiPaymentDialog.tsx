@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Smartphone, CheckCircle2, Loader2, IndianRupee, Shield, AlertTriangle, Info, Clock } from "lucide-react";
-import { generateTxnId, tokenBalance, RECEIVER_CONFIRM_DELAY, type PaymentTransaction } from "@/lib/paymentState";
+import { generateTxnId, tokenBalance, transactionStore, RECEIVER_CONFIRM_DELAY, MERCHANT_INFO, type PaymentTransaction } from "@/lib/paymentState";
 
 interface UpiPaymentDialogProps {
   open: boolean;
