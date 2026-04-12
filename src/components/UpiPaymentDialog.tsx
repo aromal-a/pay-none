@@ -36,6 +36,8 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
   const handleClose = () => {
     setStep("enter-upi");
     setUpiId("");
+    setPhoneNumber("");
+    setPayMode("app");
     setSelectedApp(null);
     onClose();
   };
