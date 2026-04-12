@@ -32,6 +32,6 @@ export const tokenBalance = {
   },
   subscribe: (fn: (bal: number) => void) => {
     _listeners.add(fn);
-    return () => _listeners.delete(fn);
+    return () => { _listeners.delete(fn); };
   },
 };
