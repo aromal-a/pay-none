@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Smartphone, CheckCircle2, Loader2, IndianRupee, Shield, AlertTriangle, Info } from "lucide-react";
+import { X, Smartphone, CheckCircle2, Loader2, IndianRupee, Shield, AlertTriangle, Info, Clock } from "lucide-react";
+import { generateTxnId, tokenBalance, RECEIVER_CONFIRM_DELAY, type PaymentTransaction } from "@/lib/paymentState";
 
 interface UpiPaymentDialogProps {
   open: boolean;
@@ -9,7 +10,7 @@ interface UpiPaymentDialogProps {
   tokens: number;
 }
 
-type Step = "enter-upi" | "confirm" | "processing" | "success";
+type Step = "enter-upi" | "confirm" | "processing" | "awaiting" | "success";
 
 const MIN_AMOUNT = 200;
 const GST_RATE = 0.18;
@@ -20,6 +21,7 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
   const [phoneNumber, setPhoneNumber] = useState("");
   const [payMode, setPayMode] = useState<"app" | "upi" | "phone">("app");
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
+  const [txn, setTxn] = useState<PaymentTransaction | null>(null);
 
   const upiApps = [
     { id: "gpay", name: "Google Pay", color: "bg-blue-500" },
@@ -34,7 +36,7 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
   const isPayReady = !isBelowMinimum && (selectedApp || upiId || phoneNumber.length >= 10);
 
   const payLabel = selectedApp
-    ? upiApps.find((a) => a.id === selectedApp)?.name
+    ? upiApps.find((a) => a.id === selectedApp)?.name ?? selectedApp
     : phoneNumber
     ? `+91 ${phoneNumber}`
     : upiId;
@@ -45,8 +47,32 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
   };
 
   const handleConfirmPay = () => {
+    const transaction: PaymentTransaction = {
+      id: generateTxnId(),
+      amount,
+      tokens,
+      status: "pending",
+      payMethod: payMode,
+      payTo: payLabel || "",
+      timestamp: Date.now(),
+      gst: taxAmount,
+      subtotal: baseAmount,
+    };
+    setTxn(transaction);
     setStep("processing");
-    setTimeout(() => setStep("success"), 2500);
+
+    // Simulate: payment sent → awaiting receiver confirmation
+    setTimeout(() => {
+      setTxn((prev) => prev ? { ...prev, status: "awaiting_confirmation" } : prev);
+      setStep("awaiting");
+
+      // Simulate: receiver confirms after delay
+      setTimeout(() => {
+        setTxn((prev) => prev ? { ...prev, status: "confirmed" } : prev);
+        tokenBalance.add(tokens);
+        setStep("success");
+      }, RECEIVER_CONFIRM_DELAY);
+    }, 2000);
   };
 
   const handleClose = () => {
@@ -55,6 +81,7 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
     setPhoneNumber("");
     setPayMode("app");
     setSelectedApp(null);
+    setTxn(null);
     onClose();
   };
 
@@ -67,7 +94,7 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4"
-        onClick={handleClose}
+        onClick={step === "processing" || step === "awaiting" ? undefined : handleClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -79,9 +106,11 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
         >
           {/* Header */}
           <div className="relative bg-gradient-to-r from-upi-blue to-primary p-5">
-            <button onClick={handleClose} className="absolute right-4 top-4 rounded-full bg-primary-foreground/20 p-1.5 text-primary-foreground transition hover:bg-primary-foreground/30">
-              <X className="h-4 w-4" />
-            </button>
+            {step !== "processing" && step !== "awaiting" && (
+              <button onClick={handleClose} className="absolute right-4 top-4 rounded-full bg-primary-foreground/20 p-1.5 text-primary-foreground transition hover:bg-primary-foreground/30">
+                <X className="h-4 w-4" />
+              </button>
+            )}
             <div className="flex items-center gap-3">
               <div className="rounded-xl bg-primary-foreground/20 p-2.5">
                 <IndianRupee className="h-6 w-6 text-primary-foreground" />
@@ -111,7 +140,6 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
 
             {step === "enter-upi" && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                {/* Pay mode tabs */}
                 <div className="flex gap-2 mb-5">
                   {([
                     { key: "app" as const, label: "UPI App" },
@@ -206,7 +234,7 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
               </motion.div>
             )}
 
-            {/* Single Confirmation Step */}
+            {/* Confirmation Step */}
             {step === "confirm" && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
                 <p className="mb-4 text-sm font-semibold text-foreground">Review & Confirm</p>
@@ -260,6 +288,7 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
               </motion.div>
             )}
 
+            {/* Processing - sending payment */}
             {step === "processing" && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -268,27 +297,60 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
               >
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="mt-4 font-display text-lg font-semibold text-foreground">
-                  Processing Payment
+                  Sending Payment...
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {selectedApp
-                    ? `Waiting for confirmation from ${upiApps.find(a => a.id === selectedApp)?.name}...`
-                    : phoneNumber
-                    ? `Sending request to +91 ${phoneNumber}...`
-                    : `Sending request to ${upiId}...`}
+                  Connecting to {payLabel}
                 </p>
                 <div className="mt-6 w-full max-w-[200px] rounded-full bg-secondary">
                   <motion.div
                     initial={{ width: "0%" }}
                     animate={{ width: "100%" }}
-                    transition={{ duration: 2.5, ease: "easeInOut" }}
+                    transition={{ duration: 2, ease: "easeInOut" }}
                     className="h-1.5 rounded-full bg-primary"
                   />
                 </div>
+                <p className="mt-4 text-[11px] text-muted-foreground">Do not close this window</p>
               </motion.div>
             )}
 
-            {step === "success" && (
+            {/* Awaiting receiver confirmation */}
+            {step === "awaiting" && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center py-8"
+              >
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Clock className="h-12 w-12 text-yellow-500" />
+                </motion.div>
+                <p className="mt-4 font-display text-lg font-semibold text-foreground">
+                  Awaiting Confirmation
+                </p>
+                <p className="mt-1 text-center text-sm text-muted-foreground">
+                  Payment sent. Waiting for receiver to confirm the transaction.
+                </p>
+                {txn && (
+                  <p className="mt-3 rounded-lg bg-secondary px-3 py-1.5 text-xs font-mono text-muted-foreground">
+                    TXN: {txn.id}
+                  </p>
+                )}
+                <div className="mt-5 flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-400 opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-yellow-500" />
+                  </span>
+                  <span className="text-xs text-muted-foreground">Waiting for receiver...</span>
+                </div>
+                <p className="mt-4 text-[11px] text-muted-foreground">Do not close this window</p>
+              </motion.div>
+            )}
+
+            {/* Success - only after receiver confirmed */}
+            {step === "success" && txn && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -302,14 +364,33 @@ const UpiPaymentDialog = ({ open, onClose, amount, tokens }: UpiPaymentDialogPro
                   <CheckCircle2 className="h-16 w-16 text-accent" />
                 </motion.div>
                 <p className="mt-4 font-display text-xl font-bold text-foreground">
-                  Payment Successful!
+                  Payment Confirmed!
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {tokens} tokens have been added to your account
+                  Receiver has confirmed your payment
                 </p>
-                <p className="mt-3 rounded-lg bg-accent/10 px-4 py-2 text-sm font-medium text-accent">
-                  Transaction ID: TXN{Date.now().toString().slice(-8)}
-                </p>
+
+                <div className="mt-4 w-full rounded-xl border border-border bg-secondary/30 p-4 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Transaction ID</span>
+                    <span className="font-mono text-xs text-foreground">{txn.id}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Amount</span>
+                    <span className="font-medium text-foreground">₹{txn.amount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tokens Added</span>
+                    <span className="font-medium text-accent">+{txn.tokens}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status</span>
+                    <span className="inline-flex items-center gap-1 text-accent font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Confirmed
+                    </span>
+                  </div>
+                </div>
+
                 <button
                   onClick={handleClose}
                   className="mt-6 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"

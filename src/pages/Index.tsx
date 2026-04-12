@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Coins, Wallet } from "lucide-react";
 import TokenCard from "@/components/TokenCard";
 import UpiPaymentDialog from "@/components/UpiPaymentDialog";
+import { tokenBalance } from "@/lib/paymentState";
 
 const tokenPackages = [
   { tier: "bronze" as const, tokens: 100, price: 99 },
@@ -12,6 +13,11 @@ const tokenPackages = [
 
 const Index = () => {
   const [selectedPackage, setSelectedPackage] = useState<typeof tokenPackages[0] | null>(null);
+  const [balance, setBalance] = useState(tokenBalance.get());
+
+  useEffect(() => {
+    return tokenBalance.subscribe(setBalance);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -26,7 +32,7 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
             <Wallet className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">0 tokens</span>
+            <span className="text-sm font-medium text-foreground">{balance} tokens</span>
           </div>
         </div>
       </header>
