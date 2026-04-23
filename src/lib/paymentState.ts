@@ -24,7 +24,7 @@ export const generateTxnId = () =>
 export const MERCHANT_INFO = {
   merchantName: "TokenStore",
   merchantId: "TKSTORE001",
-  upiHandle: "tokenstore@upi",
+  upiHandle: "aromal5785lekha@okaxis",
 };
 
 // Transaction history (in-memory, persisted via localStorage)
@@ -32,10 +32,18 @@ const TXN_KEY = "tokenstore_transactions";
 const BAL_KEY = "tokenstore_balance";
 
 const loadBalance = (): number => {
-  try { return Number(localStorage.getItem(BAL_KEY)) || 0; } catch { return 0; }
+  try {
+    return Number(localStorage.getItem(BAL_KEY)) || 0;
+  } catch {
+    return 0;
+  }
 };
 const loadTransactions = (): PaymentTransaction[] => {
-  try { return JSON.parse(localStorage.getItem(TXN_KEY) || "[]"); } catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(TXN_KEY) || "[]");
+  } catch {
+    return [];
+  }
 };
 
 let _balance = loadBalance();
@@ -51,7 +59,9 @@ export const tokenBalance = {
   },
   subscribe: (fn: (bal: number) => void) => {
     _listeners.add(fn);
-    return () => { _listeners.delete(fn); };
+    return () => {
+      _listeners.delete(fn);
+    };
   },
 };
 
