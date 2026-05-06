@@ -4,7 +4,11 @@ import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
 import RazorpayButton from "./RazorpayButton";
 
-const RAZORPAY_BUTTON_ID = "pl_Sm669Tqq3Ri1wP";
+const RAZORPAY_BUTTON_IDS: Record<"bronze" | "silver" | "gold", string> = {
+  bronze: "pl_Sm669Tqq3Ri1wP",
+  silver: "pl_Sm7H9xtw116mYh",
+  gold: "pl_Sm7LN5blOY3mJ5",
+};
 
 interface TokenCardProps {
   tier: "bronze" | "silver" | "gold";
@@ -91,7 +95,7 @@ const TokenCard = ({ tier, tokens, price, bonus, onBuy }: TokenCardProps) => {
       </button>
 
       <div className="mt-2 flex justify-center" onClick={(e) => e.stopPropagation()}>
-        <RazorpayButton buttonId={RAZORPAY_BUTTON_ID} />
+        <RazorpayButton buttonId={RAZORPAY_BUTTON_IDS[tier]} />
       </div>
     </motion.div>
   );
