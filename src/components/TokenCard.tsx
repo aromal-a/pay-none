@@ -95,7 +95,7 @@ const TokenCard = ({ tier, tokens, price, bonus, onBuy }: TokenCardProps) => {
       </button>
 
       <div className="mt-2 flex justify-center" onClick={(e) => e.stopPropagation()}>
-        <RazorpayButton buttonId={RAZORPAY_BUTTON_ID} />
+        <RazorpayButton buttonId={RAZORPAY_BUTTON_IDS[tier]} />
       </div>
     </motion.div>
   );
