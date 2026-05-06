@@ -22,7 +22,7 @@ const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const refreshBalance = () => {
     if (!user) {
       setBalance(0);
       return;
@@ -33,6 +33,10 @@ const Index = () => {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => data && setBalance(data.token_balance));
+  };
+
+  useEffect(() => {
+    refreshBalance();
   }, [user]);
 
   const handleBuy = (priceId: string) => {
@@ -101,6 +105,7 @@ const Index = () => {
                 price={pkg.price}
                 bonus={pkg.bonus}
                 onBuy={() => handleBuy(pkg.priceId)}
+                onCredited={refreshBalance}
               />
             </motion.div>
           ))}
