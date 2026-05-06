@@ -81,8 +81,8 @@ const Index = () => {
       <UpiPaymentDialog
         open={!!selectedPackage}
         onClose={() => setSelectedPackage(null)}
-        amount={selectedPackage?.price > 0}
-        tokens={selectedPackage ? selectedPackage.tokens + (selectedPackage + bonus)}
+        amount={selectedPackage?.price ?? 0}
+        tokens={selectedPackage ? selectedPackage.tokens + (selectedPackage.bonus ?? 0) : 0}
       />
     </div>
   );
