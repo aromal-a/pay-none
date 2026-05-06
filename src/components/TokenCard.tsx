@@ -4,18 +4,13 @@ import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
 import RazorpayButton from "./RazorpayButton";
 
-const RAZORPAY_BUTTON_IDS: Record<"bronze" | "silver" | "gold", string> = {
-  bronze: "pl_Sm669Tqq3Ri1wP",
-  silver: "pl_Sm7H9xtw116mYh",
-  gold: "pl_Sm7LN5blOY3mJ5",
-};
-
 interface TokenCardProps {
   tier: "bronze" | "silver" | "gold";
   tokens: number;
   price: number;
   bonus?: number;
   onBuy: () => void;
+  onCredited?: (tokens: number) => void;
 }
 
 const tierConfig = {
@@ -46,7 +41,7 @@ const tierConfig = {
   },
 };
 
-const TokenCard = ({ tier, tokens, price, bonus, onBuy }: TokenCardProps) => {
+const TokenCard = ({ tier, tokens, price, bonus, onBuy, onCredited }: TokenCardProps) => {
   const config = tierConfig[tier];
   const Icon = config.icon;
   const { t } = useI18n();
@@ -56,10 +51,9 @@ const TokenCard = ({ tier, tokens, price, bonus, onBuy }: TokenCardProps) => {
       whileHover={{ y: -6, scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className={cn(
-        "relative rounded-2xl border-2 p-6 cursor-pointer transition-all",
+        "relative rounded-2xl border-2 p-6 transition-all",
         config.border, config.shadow, config.bg
       )}
-      onClick={onBuy}
     >
       {"badge" in config && config.badge && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground">
@@ -90,12 +84,8 @@ const TokenCard = ({ tier, tokens, price, bonus, onBuy }: TokenCardProps) => {
         <span className="font-display text-2xl font-bold text-foreground">₹{price}</span>
       </div>
 
-      <button className="mt-4 w-full rounded-xl bg-gradient-to-r from-primary to-primary/80 py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]">
-        {t.buyNow}
-      </button>
-
-      <div className="mt-2 flex justify-center" onClick={(e) => e.stopPropagation()}>
-        <RazorpayButton buttonId={RAZORPAY_BUTTON_IDS[tier]} />
+      <div className="mt-4">
+        <RazorpayButton tier={tier} label={t.buyNow} onCredited={onCredited} />
       </div>
     </motion.div>
   );
