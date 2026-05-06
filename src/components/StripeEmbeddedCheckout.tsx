@@ -13,8 +13,14 @@ export function StripeEmbeddedCheckout({ priceId, returnUrl }: Props) {
   const options = useMemo(
     () => ({
       fetchClientSecret: async (): Promise<string> => {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (!accessToken) {
+          throw new Error("Please sign in to continue");
+        }
         const { data, error } = await supabase.functions.invoke("create-checkout", {
           body: { priceId, returnUrl, environment: getStripeEnvironment() },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (error || !data?.clientSecret) {
           throw new Error(error?.message || "Failed to create checkout session");
