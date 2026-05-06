@@ -9,7 +9,7 @@ import { useI18n } from "@/lib/i18n";
 
 const tokenPackages = [
   { tier: "bronze" as const, tokens: 1000, price: 599  },
-  { tier: "silver" as const, tokens: 2000, price:1300, bonus:  },
+  { tier: "silver" as const, tokens: 2000, price: 1300, bonus: 100 },
   { tier: "gold" as const, tokens: 3000, price: 1999, bonus: 199 },
 ];
 
