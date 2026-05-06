@@ -2,6 +2,9 @@ import { motion } from "framer-motion";
 import { Coins, Zap, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
+import RazorpayButton from "./RazorpayButton";
+
+const RAZORPAY_BUTTON_ID = "pl_Sm669Tqq3Ri1wP";
 
 interface TokenCardProps {
   tier: "bronze" | "silver" | "gold";
