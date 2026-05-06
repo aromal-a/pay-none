@@ -1,32 +1,108 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface Props {
-  buttonId: string;
+  tier: "bronze" | "silver" | "gold";
+  label?: string;
+  onCredited?: (tokens: number) => void;
 }
 
-/**
- * Renders a Razorpay Payment Button embed.
- * The script must be appended to a <form> element on mount.
- */
-const RazorpayButton = ({ buttonId }: Props) => {
-  const formRef = useRef<HTMLFormElement>(null);
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
+const SCRIPT_SRC = "https://checkout.razorpay.com/v1/checkout.js";
+
+const loadScript = () =>
+  new Promise<boolean>((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const s = document.createElement("script");
+    s.src = SCRIPT_SRC;
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+
+const RazorpayButton = ({ tier, label = "Pay with Razorpay", onCredited }: Props) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const form = formRef.current;
-    if (!form || form.querySelector("script")) return;
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/payment-button.js";
-    script.async = true;
-    script.dataset.payment_button_id = buttonId;
-    form.appendChild(script);
-  }, [buttonId]);
+    loadScript();
+  }, []);
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    setLoading(true);
+    try {
+      const ok = await loadScript();
+      if (!ok) throw new Error("Failed to load Razorpay");
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Please sign in");
+
+      const { data, error } = await supabase.functions.invoke("razorpay-create-order", {
+        body: { tier },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error || !data?.orderId) throw new Error(error?.message || "Order failed");
+
+      const rzp = new window.Razorpay({
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        order_id: data.orderId,
+        name: "TokenStore",
+        description: `${data.tokens} tokens`,
+        prefill: { email: user.email },
+        theme: { color: "#6366f1" },
+        handler: async (resp: any) => {
+          try {
+            const { data: verify, error: vErr } = await supabase.functions.invoke(
+              "razorpay-verify-payment",
+              {
+                body: resp,
+                headers: { Authorization: `Bearer ${accessToken}` },
+              },
+            );
+            if (vErr || !verify?.ok) throw new Error(vErr?.message || "Verification failed");
+            toast.success(`${verify.tokens} tokens added to your wallet!`);
+            onCredited?.(verify.tokens);
+          } catch (err: any) {
+            toast.error(err.message || "Payment verification failed");
+          }
+        },
+        modal: {
+          ondismiss: () => setLoading(false),
+        },
+      });
+      rzp.open();
+    } catch (err: any) {
+      toast.error(err.message || "Payment failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <form
-      ref={formRef}
-      onClick={(e) => e.stopPropagation()}
-      className="mt-2 flex justify-center"
-    />
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="w-full rounded-xl bg-[#3395FF] py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+    >
+      {loading ? "Loading…" : label}
+    </button>
   );
 };
 
