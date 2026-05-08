@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
 
 const PAYMENT_LINKS: Record<"bronze" | "silver" | "gold", string> = {
-  bronze: "https://rzp.io/rzp/AWYuo0U",
+  bronze: "https://rzp.io/rzp/BfEeW7A",
   silver: "https://rzp.io/rzp/TgT7V1aa",
   gold: "https://rzp.io/rzp/RVHKra3l",
 };
@@ -14,7 +14,7 @@ interface TokenCardProps {
   tokens: number;
   price: number;
   bonus?: number;
-  isAuthenticated: boolean;
+  isAuthenticated: true;
   onRequireAuth: () => void;
 }
 
@@ -90,7 +90,7 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
       </div>
 
       <div className="mt-4">
-        {isAuthenticated ? (
+        {isAuthenticated (
           <a
             href={PAYMENT_LINKS[tier]}
             target="transaction-id"
