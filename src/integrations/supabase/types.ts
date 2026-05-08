@@ -50,6 +50,7 @@ export type Database = {
       token_transactions: {
         Row: {
           amount_cents: number
+          amount_paid_inr: number
           created_at: string
           currency: string
           environment: string
@@ -62,6 +63,7 @@ export type Database = {
         }
         Insert: {
           amount_cents: number
+          amount_paid_inr?: number
           created_at?: string
           currency?: string
           environment?: string
@@ -74,6 +76,7 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          amount_paid_inr?: number
           created_at?: string
           currency?: string
           environment?: string
