@@ -9,6 +9,7 @@ import { Coins } from "lucide-react";
 export default function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
@@ -21,9 +22,16 @@ export default function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
+        const cleanPhone = phone.replace(/[^\d+]/g, "");
+        if (cleanPhone.replace(/\D/g, "").length < 10) {
+          throw new Error("Please enter a valid phone number");
+        }
         const { error } = await supabase.auth.signUp({
           email, password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { phone: cleanPhone },
+          },
         });
         if (error) throw error;
         toast.success("Check your email to confirm your account.");
@@ -87,6 +95,13 @@ export default function AuthPage() {
             value={email} onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl border-2 border-border bg-secondary/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
           />
+          {mode === "signup" && (
+            <input
+              type="tel" required placeholder="Phone number (e.g. +91 9876543210)"
+              value={phone} onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-xl border-2 border-border bg-secondary/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            />
+          )}
           <input
             type="password" required minLength={6} placeholder="Password (min 6 chars)"
             value={password} onChange={(e) => setPassword(e.target.value)}
