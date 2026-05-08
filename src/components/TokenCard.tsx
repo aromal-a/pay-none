@@ -13,6 +13,7 @@ interface TokenCardProps {
   tier: "bronze" | "silver" | "gold";
   tokens: number;
   price: number;
+  bonus?: number;
   isAuthenticated: boolean;
   onRequireAuth: () => void;
 }
