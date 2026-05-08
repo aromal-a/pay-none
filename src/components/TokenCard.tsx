@@ -2,7 +2,12 @@ import { motion } from "framer-motion";
 import { Coins, Zap, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
-import RazorpayButton from "./RazorpayButton";
+
+const PAYMENT_LINKS: Record<"bronze" | "silver" | "gold", string> = {
+  bronze: "https://rzp.io/rzp/AWYuo0U",
+  silver: "https://rzp.io/rzp/TgT7V1aa",
+  gold: "https://rzp.io/rzp/RVHKra3l",
+};
 
 interface TokenCardProps {
   tier: "bronze" | "silver" | "gold";
@@ -85,7 +90,14 @@ const TokenCard = ({ tier, tokens, price, bonus, onBuy, onCredited }: TokenCardP
       </div>
 
       <div className="mt-4">
-        <RazorpayButton tier={tier} label={t.buyNow} onCredited={onCredited} />
+        <a
+          href={PAYMENT_LINKS[tier]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          {t.buyNow}
+        </a>
       </div>
     </motion.div>
   );
