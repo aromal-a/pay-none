@@ -14,8 +14,8 @@ interface TokenCardProps {
   tokens: number;
   price: number;
   bonus?: number;
-  onBuy: () => void;
-  onCredited?: (tokens: number) => void;
+  isAuthenticated: boolean;
+  onRequireAuth: () => void;
 }
 
 const tierConfig = {
@@ -46,7 +46,7 @@ const tierConfig = {
   },
 };
 
-const TokenCard = ({ tier, tokens, price, bonus, onBuy, onCredited }: TokenCardProps) => {
+const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth }: TokenCardProps) => {
   const config = tierConfig[tier];
   const Icon = config.icon;
   const { t } = useI18n();
@@ -90,14 +90,24 @@ const TokenCard = ({ tier, tokens, price, bonus, onBuy, onCredited }: TokenCardP
       </div>
 
       <div className="mt-4">
-        <a
-          href={PAYMENT_LINKS[tier]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-        >
-          {t.buyNow}
-        </a>
+        {isAuthenticated ? (
+          <a
+            href={PAYMENT_LINKS[tier]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            {t.buyNow}
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onRequireAuth}
+            className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Sign in to buy
+          </button>
+        )}
       </div>
     </motion.div>
   );

@@ -10,9 +10,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 const tokenPackages = [
-  { tier: "bronze" as const, tokens: 1000, price: 1, priceId: "tokens_bronze_onetime" },
-  { tier: "silver" as const, tokens: 2000, price: 15, bonus: 100, priceId: "tokens_silver_onetime" },
-  { tier: "gold" as const, tokens: 3000, price: 24, bonus: 199, priceId: "tokens_gold_onetime" },
+  { tier: "bronze" as const, tokens: 112, price: 1 },
+  { tier: "silver" as const, tokens: 578, price: 15 },
+  { tier: "gold" as const, tokens: 957, price: 24 },
 ];
 
 const Index = () => {
@@ -103,9 +103,8 @@ const Index = () => {
                 tier={pkg.tier}
                 tokens={pkg.tokens}
                 price={pkg.price}
-                bonus={pkg.bonus}
-                onBuy={() => handleBuy(pkg.priceId)}
-                onCredited={refreshBalance}
+                isAuthenticated={!!user}
+                onRequireAuth={() => navigate("/auth")}
               />
             </motion.div>
           ))}
