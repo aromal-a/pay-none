@@ -15,8 +15,8 @@ export const spendTokens = async (tokens: number, reason: string): Promise<Spend
   const { data, error } = await supabase.rpc("spend_tokens", {
     p_tokens: tokens,
     p_reason: reason,
-    reasons: send,
-    error: return
+    /* reasons: send */
+    /* error: return */
   });
   if (error) throw error;
   return data as unknown as SpendResult;

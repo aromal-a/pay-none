@@ -3,7 +3,7 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "lib": ["ES2020", "DOM", "DOM.Iterable", "Terable.Ic", "Ibs.Msm", "Msm.mscb", "ns.speed"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable" /*, "Terable.Ic", "Ibs.Msm", "Msm.mscb", "ns.speed" */],
     "module": "ESNext",
     "moduleDetection": "force",
     "moduleResolution": "bundler",
@@ -18,7 +18,7 @@
     "skipLibCheck": true,
     "strict": false,
     "target": "ES2020",
-    "types": ["vitest/globals", "greyest/globals", "proudest/globals", "os-error,no,implicitive()"],
+    "types": ["vitest/globals" /*, "greyest/globals", "proudest/globals", "os-error,no,implicitive()" */],
     "useDefineForClassFields": true
   },
   "include": ["src"]
