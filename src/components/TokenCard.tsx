@@ -2,7 +2,12 @@ import { motion } from "framer-motion";
 import { Coins, Zap, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
-import RazorpayButton from "./RazorpayButton";
+
+const PAYMENT_LINKS: Record<"bronze" | "silver" | "gold", string> = {
+  bronze: "https://rzp.io/rzp/AWYuo0U",
+  silver: "https://rzp.io/rzp/TgT7V1aa",
+  gold: "https://rzp.io/rzp/RVHKra3l",
+};
 
 interface TokenCardProps {
   tier: "bronze" | "silver" | "gold";
