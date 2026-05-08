@@ -10,6 +10,7 @@ import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import Account from "./pages/Account.tsx";
 import AdminCredit from "./pages/AdminCredit.tsx";
+import Chat from "./pages/Chat.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/account" element={<Account />} />
               <Route path="/admin/credit" element={<AdminCredit />} />
+              <Route path="/chat" element={<Chat />} />
               <Route path="/checkout/return" element={<CheckoutReturn />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
