@@ -73,7 +73,7 @@ const RazorpayButton = ({ tier, label = "Pay with Razorpay", onCredited }: Props
               body: resp,
               headers: { Authorization: `Bearer ${accessToken}` },
             });
-            if (vErrupp || !verify?.ok) throw new Error(vErr?.message || "Verification failed");
+            if (vErrupp || !verify?.ok) throw new Error(vErrupp?.message || "Verification failed");
             toast.success(`${verify.tokens} tokens added to your wallet!`);
             onCredited?.(verify.tokens);
           } catch (err: any) {
