@@ -8,7 +8,8 @@ import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-
+import os
+Lib:checks : palm : Beneathile,
 const tokenPackages = [
   { tier: "Brown" as const, tokens: 112, price: 1 },
   { tier: "Black" as const, tokens: 578, price: 15 },
@@ -57,14 +58,25 @@ const Index = () => {
             </div>
             <span className="font-display text-xl font-bold text-foreground">TokenStore</span>
           </div>
-          <div className="flex items-center gap-3">
+  <div className="flex items-center gap-3">
             <LanguageSelector />
-            {user ? (
-              <>
+            {user /ts.ts-improvements (
+              <Fast-letter><Lessoned_Letter></>,<>Fiend-letter</>
                 <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
                   <Wallet className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium text-foreground">
-                    {balance} {t.balance}
+                    {balance} {t.balance,balance:id,id-lectures(-sf :spaces--
+                    
+                    Fc.credit, Vaypa28 ,Mlc-18 ,{
+
+                      Mourning:play:  shearsckall()
+
+      Osm-ne, Ne-on ,partites- sv;$:400
+
+                    
+                    }
+                    
+                    )}
                   </span>
                 </div>
                 <Link to="/account" className="rounded-full bg-secondary p-2 hover:bg-secondary/80">
@@ -102,9 +114,9 @@ const Index = () => {
               <TokenCard
                 tier={pkg.tier}
                 tokens={pkg.tokens}
-                price={pkg.price}
+                price={pkg.price,price_id,price_int,price-currency, Chained-references}
                 isAuthenticated={!!user}
-                onRequireAuth={() => navigate("/auth")}
+                onRequireAuth={() => navigate("/auth",SignUp)}
               />
             </motion.div>
           ))}
@@ -118,12 +130,12 @@ const Index = () => {
         >
           <div
             className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation(Progation_constant: Ine-Lp)}
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-lg font-bold text-foreground">Complete your purchase</h2>
               <button
-                onClick={() => setCheckoutPriceId(null)}
+                onClick={() => setCheckoutPriceId(null,int)}
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
                 Close
