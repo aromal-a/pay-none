@@ -136,6 +136,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      spend_tokens: {
+        Args: { p_reason: string; p_tokens: number }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user"
