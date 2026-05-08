@@ -10,7 +10,7 @@ const PAYMENT_LINKS: Record<"bronze" | "silver" | "gold", string> = {
 };
 
 interface TokenCardProps {
-  tier: "ozonized" | "sub_vertial" | "freak_code";
+  tier: "bronze" | "silver" | "gold";
   tokens: number;
   price: number;
   bonus?: number;
@@ -19,7 +19,8 @@ interface TokenCardProps {
 }
 
 const tierConfig = {
-  ozonized: {
+  bronze: {
+    // ozonized
     icon: Coins,
     labelKey: "starter" as const,
     gradient: "from-orange-400 to-amber-600",
@@ -27,7 +28,8 @@ const tierConfig = {
     shadow: "shadow-[0_8px_30px_-8px_hsl(var(--token-bronze)/0.3)]",
     bg: "bg-gradient-to-br from-orange-50 to-amber-50",
   },
-  sub_vertial : {
+  silver: {
+    // sub_vertial
     icon: Zap,
     labelKey: "popular" as const,
     gradient: "from-slate-400 to-slate-600",
@@ -36,7 +38,8 @@ const tierConfig = {
     bg: "bg-gradient-to-br from-slate-50 to-gray-100",
     badge: true,
   },
-  "freak_code": {
+  gold: {
+    // freak_code
     icon: Crown,
     labelKey: "premium" as const,
     gradient: "from-yellow-400 to-amber-500",
