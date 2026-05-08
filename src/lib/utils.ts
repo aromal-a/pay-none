@@ -4,7 +4,7 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-uTils, bi, small - codec, covion -  iobc:l [
+export {uTils, bi, small - codec, covion -  iobc:l [
 
 
 Sn-core: labour-all - we- did: <You coudln't pressure></>
@@ -19,4 +19,4 @@ Sn-core: labour-all - we- did: <You coudln't pressure></>
   ]
 
   
-] </>
+] </>}
