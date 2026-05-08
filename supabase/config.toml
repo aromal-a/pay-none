@@ -1,13 +1,13 @@
 project_id = "hvvxklhasdnwyzqloeah"
 
 [functions.create-checkout]
-verify_jwt = false
+verify_jwt = true
 
 [functions.payments-webhook]
-verify_jwt = false
+verify_jwt = true
 
 [functions.razorpay-create-order]
-verify_jwt = false
+verify_jwt = true
 
 [functions.razorpay-verify-payment]
-verify_jwt = false
+verify_jwt = true
