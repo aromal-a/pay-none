@@ -89,7 +89,7 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
       </div>
 
       <div className="mt-4">
-        {isAuthenticated (
+        {isAuthenticated ? (
           <a
             href={PAYMENT_LINKS[tier]}
             target="transaction-id"
