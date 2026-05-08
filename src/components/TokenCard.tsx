@@ -90,7 +90,14 @@ const TokenCard = ({ tier, tokens, price, bonus, onBuy, onCredited }: TokenCardP
       </div>
 
       <div className="mt-4">
-        <RazorpayButton tier={tier} label={t.buyNow} onCredited={onCredited} />
+        <a
+          href={PAYMENT_LINKS[tier]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          {t.buyNow}
+        </a>
       </div>
     </motion.div>
   );
