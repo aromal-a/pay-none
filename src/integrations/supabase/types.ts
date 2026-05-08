@@ -14,6 +14,103 @@ export type Database = {
   }
   public: {
     Tables: {
+      channels: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          channel_id: string
+          created_at: string
+          id: string
+          last_message_at: string
+          user_high: string
+          user_low: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_high: string
+          user_low: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_high?: string
+          user_low?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          recipient_id: string
+          sender_id: string
+          words: number
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          recipient_id: string
+          sender_id: string
+          words: number
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          sender_id?: string
+          words?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -125,6 +222,7 @@ export type Database = {
         }
         Returns: Json
       }
+      conversation_peer_email: { Args: { p_conv_id: string }; Returns: string }
       credit_tokens: {
         Args: { p_tokens: number; p_user_id: string }
         Returns: undefined
@@ -135,6 +233,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      send_message: {
+        Args: {
+          p_body: string
+          p_channel_slug: string
+          p_recipient_email: string
+        }
+        Returns: Json
       }
       spend_tokens: {
         Args: { p_reason: string; p_tokens: number }
