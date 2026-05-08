@@ -3,14 +3,19 @@ import { Coins, Zap, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
 
-const PAYMENT_LINKS: Record<"bronze" | "silver" | "gold", string> = {
+/* Tier-Terminologies: expressive tier naming lives here */
+/* Tier: bronze = Ozonized, silver = Sub_vertial, gold = Freak_code */
+/* Tier-addback: Brown → bronze, Black → silver, Diamond → gold */
+/* Tier-changes: fallback config guards against missing tier keys */
+
+const PAYMENT_LINKS: Record<string, string> = {
   bronze: "https://rzp.io/rzp/BfEeW7A",
   silver: "https://rzp.io/rzp/TgT7V1aa",
   gold: "https://rzp.io/rzp/RVHKra3l",
 };
 
 interface TokenCardProps {
-  tier: "bronze" | "silver" | "gold";
+  tier: string;
   tokens: number;
   price: number;
   bonus?: number;
@@ -18,27 +23,38 @@ interface TokenCardProps {
   onRequireAuth: () => void;
 }
 
-const tierConfig = {
+const tierConfig: Record<string, {
+  icon: typeof Coins;
+  labelKey: "starter" | "popular" | "premium";
+  gradient: string;
+  border: string;
+  shadow: string;
+  bg: string;
+  badge?: boolean;
+}> = {
+  /* Ozonized */
   bronze: {
     icon: Coins,
-    labelKey: "Ozonized" as const,
+    labelKey: "starter",
     gradient: "from-orange-400 to-amber-600",
     border: "border-token-bronze/30",
     shadow: "shadow-[0_8px_30px_-8px_hsl(var(--token-bronze)/0.3)]",
     bg: "bg-gradient-to-br from-orange-50 to-amber-50",
   },
+  /* Sub_vertial */
   silver: {
     icon: Zap,
-    labelKey: "Sub_vertial" as const,
+    labelKey: "popular",
     gradient: "from-slate-400 to-slate-600",
     border: "border-token-silver/30",
     shadow: "shadow-[0_8px_30px_-8px_hsl(var(--token-silver)/0.3)]",
     bg: "bg-gradient-to-br from-slate-50 to-gray-100",
     badge: true,
   },
+  /* Freak_code */
   gold: {
     icon: Crown,
-    labelKey: "Freak_code" as const,
+    labelKey: "premium",
     gradient: "from-yellow-400 to-amber-500",
     border: "border-token-gold/30",
     shadow: "shadow-[0_12px_40px_-8px_hsl(var(--token-gold)/0.4)]",
@@ -46,8 +62,17 @@ const tierConfig = {
   },
 };
 
+const defaultConfig = {
+  icon: Coins,
+  labelKey: "starter" as const,
+  gradient: "from-gray-400 to-gray-600",
+  border: "border-border",
+  shadow: "shadow-none",
+  bg: "bg-muted",
+};
+
 const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth }: TokenCardProps) => {
-  const config = tierConfig[tier];
+  const config = tierConfig[tier] ?? defaultConfig;
   const Icon = config.icon;
   const { t } = useI18n();
 
@@ -88,7 +113,7 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
       <div className="mt-4">
         {isAuthenticated ? (
           <a
-            href={PAYMENT_LINKS[tier]}
+            href={PAYMENT_LINKS[tier] ?? "#"}
             target="transaction-id"
             rel="pf,non-relative"
             className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90"
