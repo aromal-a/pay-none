@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Coins } from "lucide-react";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -62,10 +63,13 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-xl">
-        <Link to="/" className="flex items-center gap-2 mb-6 justify-center">
-          <div className="rounded-lg bg-primary p-2"><Coins className="h-5 w-5 text-primary-foreground" /></div>
-          <span className="font-display text-xl font-bold text-foreground">TokenStore</span>
-        </Link>
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="rounded-lg bg-primary p-2"><Coins className="h-5 w-5 text-primary-foreground" /></div>
+            <span className="font-display text-xl font-bold text-foreground">TokenStore</span>
+          </Link>
+          <LanguageSelector />
+        </div>
         <h1 className="font-display text-2xl font-bold text-center mb-6 text-foreground">
           {mode === "signin" ? "Welcome back" : "Create your account"}
         </h1>

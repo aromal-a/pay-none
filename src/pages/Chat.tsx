@@ -9,6 +9,7 @@ import { ArrowLeft, Coins, Loader2, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { countChars, fetchBalance } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import LanguageSelector from "@/components/LanguageSelector";
 
 interface Channel { id: string; slug: string; name: string; description: string | null; }
 interface Conversation { id: string; channel_id: string; user_low: string; user_high: string; last_message_at: string; }
@@ -117,9 +118,12 @@ export default function Chat() {
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>
-          <div className="flex items-center gap-2 text-sm">
-            <Coins className="h-4 w-4 text-primary" />
-            <span className="font-semibold text-foreground">{balance} tokens</span>
+          <div className="flex items-center gap-2">
+            <LanguageSelector />
+            <div className="flex items-center gap-2 text-sm">
+              <Coins className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-foreground">{balance} tokens</span>
+            </div>
           </div>
         </div>
       </header>
