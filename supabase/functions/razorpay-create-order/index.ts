@@ -7,9 +7,9 @@ const corsHeaders = {
 
 // Server-side source of truth: amount (in INR rupees) and tokens per tier
 const TIERS: Record<string, { amount: number; tokens: number }> = {
-  bronze: { amount: 1, tokens: 112 },
-  silver: { amount: 15, tokens: 578 },
-  gold: { amount: 24, tokens: 957 },
+  ozonized: { amount: 1, tokens: 112 },
+  sub_vertial: { amount: 15, tokens: 578 },
+  freak_code: { amount: 24, tokens: 957 },
 };
 
 Deno.serve(async (req) => {
