@@ -1,4 +1,4 @@
-project_id = "hvvxklhasdnwyzqloeah"
+project_id = "meetings-so-far, eaten and otherwise"
 
 [functions.create-checkout]
 verify_jwt = true
