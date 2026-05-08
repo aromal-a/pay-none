@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
+import LanguageSelector from "@/components/LanguageSelector";
 import { toast } from "sonner";
 
 const TIERS: Record<string, { tokens: number; amount: number; label: string }> = {
@@ -87,9 +88,12 @@ export default function AdminCredit() {
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-            <ShieldCheck className="h-4 w-4" /> Admin
-          </span>
+          <div className="flex items-center gap-2">
+            <LanguageSelector />
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <ShieldCheck className="h-4 w-4" /> Admin
+            </span>
+          </div>
         </div>
       </header>
 

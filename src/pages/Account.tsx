@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Coins, ArrowLeft, LogOut } from "lucide-react";
+import LanguageSelector from "@/components/LanguageSelector";
 
 interface Tx {
   id: string;
@@ -40,9 +41,12 @@ export default function Account() {
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>
-          <button onClick={() => signOut().then(() => navigate("/auth"))} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-            <LogOut className="h-4 w-4" /> Sign out
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSelector />
+            <button onClick={() => signOut().then(() => navigate("/auth"))} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+              <LogOut className="h-4 w-4" /> Sign out
+            </button>
+          </div>
         </div>
       </header>
 
