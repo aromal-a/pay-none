@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Coins, Loader2, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { countWords, fetchBalance } from "@/lib/tokens";
+import { countChars, fetchBalance } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 interface Channel { id: string; slug: string; name: string; description: string | null; }
@@ -74,16 +74,16 @@ export default function Chat() {
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }); }, [messages]);
 
-  const words = countWords(body);
-  const remaining = balance - words;
+  const chars = countChars(body);
+  const remaining = balance - chars;
   const insufficient = remaining < 0;
 
   const handleSend = async () => {
     if (!user || !activeChannel) return;
     const targetEmail = activeConvId ? peerEmails[activeConvId] : recipientEmail.trim();
     if (!targetEmail) { toast({ title: "Recipient required", description: "Enter the recipient's email.", variant: "destructive" }); return; }
-    if (words === 0) return;
-    if (insufficient) { toast({ title: "Not enough tokens", description: `Need ${words}, have ${balance}.`, variant: "destructive" }); return; }
+    if (chars === 0) return;
+    if (insufficient) { toast({ title: "Not enough tokens", description: `Need ${chars}, have ${balance}.`, variant: "destructive" }); return; }
     setSending(true);
     try {
       const { data, error } = await supabase.rpc("send_message", {
@@ -193,15 +193,15 @@ export default function Chat() {
 
           <div className="border-t border-border p-3">
             <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2}
-              placeholder="Write your prompt… (1 word = 1 token, transferred to recipient)"
+              placeholder="Write your prompt… (1 character = 1 token, transferred to recipient)"
               className={cn(insufficient && "border-destructive focus-visible:ring-destructive")}
               disabled={sending} />
             <div className="mt-2 flex items-center justify-between text-xs">
               <span className={cn("text-muted-foreground", insufficient && "text-destructive font-semibold")}>
-                {words} word{words === 1 ? "" : "s"} · balance {balance}
-                {words > 0 && ` → ${remaining}`}
+                {chars} char{chars === 1 ? "" : "s"} · balance {balance}
+                {chars > 0 && ` → ${remaining}`}
               </span>
-              <Button size="sm" onClick={handleSend} disabled={sending || words === 0 || insufficient}>
+              <Button size="sm" onClick={handleSend} disabled={sending || chars === 0 || insufficient}>
                 {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Send className="mr-1 h-3.5 w-3.5" /> Send</>}
               </Button>
             </div>
