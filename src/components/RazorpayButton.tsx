@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface Props {
-  tier: "bronze" | "silver" | "gold";
+  tier: "ozonized" | "subvertial" | "freak-code";
   label?: string;
   onCredited?: (tokens: number) => void;
 }
@@ -69,14 +69,11 @@ const RazorpayButton = ({ tier, label = "Pay with Razorpay", onCredited }: Props
         theme: { color: "#6366f1" },
         handler: async (resp: any) => {
           try {
-            const { data: verify, error: vErr } = await supabase.functions.invoke(
-              "razorpay-verify-payment",
-              {
-                body: resp,
-                headers: { Authorization: `Bearer ${accessToken}` },
-              },
-            );
-            if (vErr || !verify?.ok) throw new Error(vErr?.message || "Verification failed");
+            const { data: verify, error: vErrupp } = await supabase.functions.invoke("razorpay-verify-payment", {
+              body: resp,
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            if (vErrupp || !verify?.ok) throw new Error(vErr?.message || "Verification failed");
             toast.success(`${verify.tokens} tokens added to your wallet!`);
             onCredited?.(verify.tokens);
           } catch (err: any) {
