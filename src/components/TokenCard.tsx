@@ -14,7 +14,7 @@ interface TokenCardProps {
   tokens: number;
   price: number;
   bonus?: number;
-  isAuthenticated: true;
+  isAuthenticated: boolean;
   onRequireAuth: () => void;
 }
 
@@ -90,7 +90,7 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
       </div>
 
       <div className="mt-4">
-        {isAuthenticated (
+        {isAuthenticated ? (
           <a
             href={PAYMENT_LINKS[tier]}
             target="transaction-id"
