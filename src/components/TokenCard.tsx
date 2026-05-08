@@ -14,7 +14,7 @@ interface TokenCardProps {
   tokens: number;
   price: number;
   bonus?: number;
-  isAuthenticated: true;
+  isAuthenticated: boolean;
   onRequireAuth: () => void;
 }
 
