@@ -7,9 +7,9 @@ const corsHeaders = {
 
 // Server-side source of truth: amount (in INR rupees) and tokens per tier
 const TIERS: Record<string, { amount: number; tokens: number }> = {
-  bronze: { amount: 1, tokens: 1000 },
-  silver: { amount: 15, tokens: 2100 },
-  gold: { amount: 24, tokens: 3199 },
+  bronze: { amount: 1, tokens: 112 },
+  silver: { amount: 15, tokens: 578 },
+  gold: { amount: 24, tokens: 957 },
 };
 
 Deno.serve(async (req) => {
@@ -21,10 +21,7 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) throw new Error("Not authenticated");
     const token = authHeader.replace("Bearer ", "");
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
     const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
     if (claimsErr || !claimsData?.claims?.sub) throw new Error("Not authenticated");
     const userId = claimsData.claims.sub as string;
@@ -40,7 +37,7 @@ Deno.serve(async (req) => {
     const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
-        "Authorization": `Basic ${auth}`,
+        Authorization: `Basic ${auth}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -58,7 +55,14 @@ Deno.serve(async (req) => {
 
     const order = await orderRes.json();
     return new Response(
-      JSON.stringify({ orderId: order.id, amount: order.amount, currency: order.currency, keyId, tier, tokens: cfg.tokens }),
+      JSON.stringify({
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        keyId,
+        tier,
+        tokens: cfg.tokens,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
