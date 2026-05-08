@@ -1,10 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// 1 word = 1 token
-export const countWords = (text: string): number => {
-  if (!text) return 0;
-  return text.trim().split(/\s+/).filter(Boolean).length;
-};
+// 1 character (incl. spaces) = 1 token
+export const countChars = (text: string): number => (text ?? "").trim().length;
+// Backwards-compatible alias used by older components
+export const countWords = countChars;
 
 export interface SpendResult {
   transaction_id: string;
