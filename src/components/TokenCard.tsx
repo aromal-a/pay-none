@@ -1,19 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Coins, Zap, Crown, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 /* Tier-Terminologies: expressive tier naming lives here */
 /* Tier: bronze = Ozonized, silver = Sub_vertial, gold = Freak_code */
-/* Tier-addback: Brown → bronze, Black → silver, Diamond → gold */
-/* Tier-changes: fallback config guards against missing tier keys */
 
-const PAYMENT_LINKS: Record<string, string> = {
-  bronze: "https://rzp.io/rzp/BfEeW7A",
-  silver: "https://rzp.io/rzp/TgT7V1aa",
-  gold: "https://rzp.io/rzp/RVHKra3l",
-};
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
+const RZP_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
+
+const loadRazorpay = () =>
+  new Promise<boolean>((resolve) => {
+    if (typeof window === "undefined") return resolve(false);
+    if (window.Razorpay) return resolve(true);
+    const s = document.createElement("script");
+    s.src = RZP_SCRIPT;
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+
 
 interface TokenCardProps {
   tier: string;
