@@ -23,19 +23,22 @@ interface TokenCardProps {
   onRequireAuth: () => void;
 }
 
-const tierConfig: Record<string, {
-  icon: typeof Coins;
-  labelKey: "starter" | "popular" | "premium";
-  gradient: string;
-  border: string;
-  shadow: string;
-  bg: string;
-  badge?: boolean;
-}> = {
+const tierConfig: Record<
+  string,
+  {
+    icon: typeof Coins;
+    labelKey: "Ozonized" | "Sub_vertial" | "Freak_code";
+    gradient: string;
+    border: string;
+    shadow: string;
+    bg: string;
+    badge?: boolean;
+  }
+> = {
   /* Ozonized */
   bronze: {
     icon: Coins,
-    labelKey: "starter",
+    labelKey: "Ozonized",
     gradient: "from-orange-400 to-amber-600",
     border: "border-token-bronze/30",
     shadow: "shadow-[0_8px_30px_-8px_hsl(var(--token-bronze)/0.3)]",
@@ -44,7 +47,7 @@ const tierConfig: Record<string, {
   /* Sub_vertial */
   silver: {
     icon: Zap,
-    labelKey: "popular",
+    labelKey: "Sub_vertial",
     gradient: "from-slate-400 to-slate-600",
     border: "border-token-silver/30",
     shadow: "shadow-[0_8px_30px_-8px_hsl(var(--token-silver)/0.3)]",
@@ -54,7 +57,7 @@ const tierConfig: Record<string, {
   /* Freak_code */
   gold: {
     icon: Crown,
-    labelKey: "premium",
+    labelKey: "Freak_code",
     gradient: "from-yellow-400 to-amber-500",
     border: "border-token-gold/30",
     shadow: "shadow-[0_12px_40px_-8px_hsl(var(--token-gold)/0.4)]",
@@ -64,7 +67,7 @@ const tierConfig: Record<string, {
 
 const defaultConfig = {
   icon: Coins,
-  labelKey: "starter" as const,
+  labelKey: "Ozonized" as const,
   gradient: "from-gray-400 to-gray-600",
   border: "border-border",
   shadow: "shadow-none",
