@@ -7,9 +7,9 @@ const corsHeaders = {
 
 // Server-side source of truth: amount (in INR rupees) and tokens per tier
 const TIERS: Record<string, { amount: number; tokens: number }> = {
-  ozonized: { amount: 1, tokens: 112 },
-  sub_vertial: { amount: 15, tokens: 578 },
-  freak_code: { amount: 24, tokens: 957 },
+  bronze: { amount: 1, tokens: 112 },
+  silver: { amount: 15, tokens: 578 },
+  gold: { amount: 24, tokens: 957 },
 };
 
 Deno.serve(async (req) => {
@@ -26,9 +26,13 @@ Deno.serve(async (req) => {
     if (claimsErr || !claimsData?.claims?.sub) throw new Error("Not authenticated");
     const userId = claimsData.claims.sub as string;
 
-    const { tier } = await req.json();
+    const { tier, quantity: rawQty } = await req.json();
     const cfg = TIERS[tier];
     if (!cfg) throw new Error("Invalid tier");
+
+    const quantity = Math.max(1, Math.min(99, Number.isFinite(Number(rawQty)) ? Math.floor(Number(rawQty)) : 1));
+    const totalAmount = cfg.amount * quantity;
+    const totalTokens = cfg.tokens * quantity;
 
     const keyId = Deno.env.get("RAZORPAY_KEY_ID")!;
     const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET")!;
@@ -41,9 +45,14 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        amount: cfg.amount * 100, // paise
+        amount: totalAmount * 100, // paise
         currency: "INR",
-        notes: { user_id: userId, tier, tokens: String(cfg.tokens) },
+        notes: {
+          user_id: userId,
+          tier,
+          quantity: String(quantity),
+          tokens: String(totalTokens),
+        },
       }),
     });
 
@@ -61,7 +70,8 @@ Deno.serve(async (req) => {
         currency: order.currency,
         keyId,
         tier,
-        tokens: cfg.tokens,
+        quantity,
+        tokens: totalTokens,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
