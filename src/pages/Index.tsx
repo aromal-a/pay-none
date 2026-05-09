@@ -103,6 +103,7 @@ const Index = () => {
         </div>
       </section>
 
+      <PromptDialog open={aiOpen} onOpenChange={setAiOpen} />
     </div>
   );
 };
