@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Coins, Zap, Crown } from "lucide-react";
+import { Coins, Zap, Crown, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
 
