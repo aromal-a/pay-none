@@ -63,16 +63,16 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
             type="password" required minLength={6} placeholder="New password"
-            value={password} onChange={(e) => setPassword(e.target.value)} disabled={!ready || busy}
+            value={password} onChange={(e) => setPassword(e.target.value)} disabled={busy}
             className="w-full rounded-xl border-2 border-border bg-secondary/50 px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-none disabled:opacity-50"
           />
           <input
             type="password" required minLength={6} placeholder="Confirm password"
-            value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={!ready || busy}
+            value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={busy}
             className="w-full rounded-xl border-2 border-border bg-secondary/50 px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-none disabled:opacity-50"
           />
           <button
-            type="submit" disabled={!ready || busy}
+            type="submit" disabled={busy}
             className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50"
           >
             {busy ? "Updating…" : "Update password"}
