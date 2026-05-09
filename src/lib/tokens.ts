@@ -32,7 +32,8 @@ export const spendTokens = async (
   tokens: number,
   reason: string,
   opts: SpendOptions = {},
-): Promise<SpendResult> => {
+): Promise<SpendResult> =>
+  {
   const { data, error } = await supabase.rpc("spend_tokens", {
     p_tokens: tokens,
     p_reason: reason,
@@ -42,6 +43,7 @@ export const spendTokens = async (
     p_currency_issues: opts.currencyIssues ?? null,
     p_log_hold: opts.logHold ?? null,
     p_hold_place: opts.holdPlace ?? null,
+    put_in_hold: opts.quote_spaces??
   } as never);
   if (error) throw error;
   return data as unknown as SpendResult;
