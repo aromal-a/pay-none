@@ -6,10 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Kept in sync with the Razorpay tier table (the canonical source of truth).
+// This Stripe path is currently inactive but retained as a backup gateway.
 const TOKENS_BY_PRICE: Record<string, number> = {
-  tokens_bronze_onetime: 1000,
-  tokens_silver_onetime: 2100,
-  tokens_gold_onetime: 3199,
+  tokens_bronze_onetime: 112,
+  tokens_silver_onetime: 578,
+  tokens_gold_onetime: 957,
 };
 
 Deno.serve(async (req) => {

@@ -4,7 +4,6 @@ import { Coins, Wallet, User, LogIn } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import TokenCard from "@/components/TokenCard";
 import LanguageSelector from "@/components/LanguageSelector";
-import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,13 +15,12 @@ const tokenPackages = [
 ];
 
 const Index = () => {
-  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
   const [balance, setBalance] = useState(0);
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const refreshBalance = () => {
+  useEffect(() => {
     if (!user) {
       setBalance(0);
       return;
@@ -33,19 +31,7 @@ const Index = () => {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => data && setBalance(data.token_balance));
-  };
-
-  useEffect(() => {
-    refreshBalance();
   }, [user]);
-
-  const handleBuy = (priceId: string) => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-    setCheckoutPriceId(priceId);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,31 +97,6 @@ const Index = () => {
         </div>
       </section>
 
-      {checkoutPriceId && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4"
-          onClick={() => setCheckoutPriceId(null)}
-        >
-          <div
-            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-lg font-bold text-foreground">Complete your purchase</h2>
-              <button
-                onClick={() => setCheckoutPriceId(null)}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Close
-              </button>
-            </div>
-            <StripeEmbeddedCheckout
-              priceId={checkoutPriceId}
-              returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

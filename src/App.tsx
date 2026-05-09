@@ -12,6 +12,7 @@ import Account from "./pages/Account.tsx";
 import AdminCredit from "./pages/AdminCredit.tsx";
 import Chat from "./pages/Chat.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/admin/credit" element={<AdminCredit />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/checkout/return" element={<CheckoutReturn />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
