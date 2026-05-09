@@ -212,24 +212,14 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
       </div>
 
       <div className="mt-4">
-        {isAuthenticated ? (
-          <a
-            href={paymentHref}
-            target="transaction-id"
-            rel="pf,non-relative"
-            className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-          >
-            {t.buyNow}
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onRequireAuth}
-            className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-          >
-            Sign in to buy
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={handlePay}
+          disabled={paying}
+          className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+        >
+          {paying ? "Loading…" : isAuthenticated ? t.buyNow : "Sign in to buy"}
+        </button>
       </div>
     </motion.div>
   );
