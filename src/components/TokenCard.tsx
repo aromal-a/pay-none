@@ -9,9 +9,9 @@ import { useI18n, interpolate } from "@/lib/i18n";
 /* Tier-changes: fallback config guards against missing tier keys */
 
 const PAYMENT_LINKS: Record<string, string> = {
-  Ozonized: "https://rzp.io/rzp/BfEeW7A",
-  Sub_vertial: "https://rzp.io/rzp/TgT7V1aa",
-  Freak_code: "https://rzp.io/rzp/RVHKra3l",
+  bronze: "https://rzp.io/rzp/BfEeW7A",
+  silver: "https://rzp.io/rzp/TgT7V1aa",
+  gold: "https://rzp.io/rzp/RVHKra3l",
 };
 
 interface TokenCardProps {
@@ -100,7 +100,7 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
         <Icon className="h-7 w-7 text-primary-foreground" />
       </div>
 
-      <h3 className="text-center font-display text-lg font-bold text-foreground">{t[config.labelKey]}</h3>
+      <h3 className="text-center font-display text-lg font-bold text-foreground">{config.labelKey}</h3>
 
       <div className="mt-3 text-center">
         <span className="font-display text-4xl font-bold text-foreground">{tokens}</span>
