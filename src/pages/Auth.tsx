@@ -76,7 +76,6 @@ export default function AuthPage() {
         </h1>
 
         <form onSubmit={handleEmail} className="space-y-3">
-
         <form onSubmit={handleEmail} className="space-y-3">
           <input
             type="email" required placeholder="Email"
