@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Coins, ArrowLeft, LogOut } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface Tx {
   id: string;
@@ -13,6 +14,17 @@ interface Tx {
   tokens_credited: number;
   created_at: string;
 }
+
+const formatMoney = (amount_cents: number, currency: string) => {
+  const code = (currency ?? "usd").toUpperCase();
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: code }).format(
+      amount_cents / 100,
+    );
+  } catch {
+    return `${code} ${(amount_cents / 100).toFixed(2)}`;
+  }
+};
 
 export default function Account() {
   const { user, loading, signOut } = useAuth();
@@ -31,6 +43,9 @@ export default function Account() {
     supabase.from("token_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
       .then(({ data }) => data && setTxns(data as Tx[]));
   }, [user]);
+
+  const purchases = useMemo(() => txns.filter((t) => t.tokens_credited > 0 && t.amount_cents > 0), [txns]);
+  const spends = useMemo(() => txns.filter((t) => t.tokens_credited <= 0 || t.amount_cents === 0), [txns]);
 
   if (!user) return null;
 
@@ -64,19 +79,46 @@ export default function Account() {
           </div>
         </div>
 
-        <h2 className="mt-8 font-display text-xl font-bold text-foreground">Purchase history</h2>
-        <div className="mt-3 rounded-2xl border border-border bg-card divide-y divide-border">
-          {txns.length === 0 && <p className="p-6 text-sm text-muted-foreground text-center">No purchases yet.</p>}
-          {txns.map((t) => (
-            <div key={t.id} className="flex items-center justify-between p-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">+{t.tokens_credited} tokens</p>
-                <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {t.price_id}</p>
-              </div>
-              <p className="font-semibold text-foreground">${(t.amount_cents / 100).toFixed(2)}</p>
+        <Tabs defaultValue="purchases" className="mt-8">
+          <TabsList>
+            <TabsTrigger value="purchases">Purchases ({purchases.length})</TabsTrigger>
+            <TabsTrigger value="spends">Spends ({spends.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="purchases">
+            <div className="rounded-2xl border border-border bg-card divide-y divide-border">
+              {purchases.length === 0 && <p className="p-6 text-sm text-muted-foreground text-center">No purchases yet.</p>}
+              {purchases.map((t) => (
+                <div key={t.id} className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">+{t.tokens_credited} tokens</p>
+                    <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {t.price_id}</p>
+                  </div>
+                  <p className="font-semibold text-foreground">{formatMoney(t.amount_cents, t.currency)}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="spends">
+            <div className="rounded-2xl border border-border bg-card divide-y divide-border">
+              {spends.length === 0 && <p className="p-6 text-sm text-muted-foreground text-center">No spends yet.</p>}
+              {spends.map((t) => {
+                const isCredit = t.tokens_credited > 0; // incoming DM
+                return (
+                  <div key={t.id} className="flex items-center justify-between p-4">
+                    <div>
+                      <p className={`text-sm font-semibold ${isCredit ? "text-foreground" : "text-destructive"}`}>
+                        {isCredit ? "+" : ""}{t.tokens_credited} tokens
+                      </p>
+                      <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {t.price_id}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

@@ -7,9 +7,9 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { toast } from "sonner";
 
 const TIERS: Record<string, { tokens: number; amount: number; label: string }> = {
-  starter: { tokens: 112, amount: 1, label: "Starter — ₹1 → 112 tokens" },
-  popular: { tokens: 578, amount: 15, label: "Popular — ₹15 → 578 tokens" },
-  premium: { tokens: 957, amount: 24, label: "Premium — ₹24 → 957 tokens" },
+  bronze: { tokens: 112, amount: 1, label: "Ozonized — ₹1 → 112 tokens" },
+  silver: { tokens: 578, amount: 15, label: "Sub_vertial — ₹15 → 578 tokens" },
+  gold: { tokens: 957, amount: 24, label: "Freak_code — ₹24 → 957 tokens" },
 };
 
 export default function AdminCredit() {
@@ -19,7 +19,7 @@ export default function AdminCredit() {
 
   const [email, setEmail] = useState("");
   const [paymentId, setPaymentId] = useState("");
-  const [tier, setTier] = useState<keyof typeof TIERS>("starter");
+  const [tier, setTier] = useState<keyof typeof TIERS>("bronze");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
