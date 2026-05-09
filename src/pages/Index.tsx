@@ -103,8 +103,16 @@ const Index = () => {
         </div>
       </section>
 
-      <footer className="mx-auto max-w-4xl px-6 pb-10 text-center text-xs text-muted-foreground">
-        Text_Addendum is based on, recent coverages, coverages based on tax, tax information.codified
+      <footer className="mx-auto max-w-4xl px-6 pb-10 text-center text-xs text-muted-foreground space-y-2">
+        <p>Text_Addendum is based on, recent coverages, coverages based on tax, tax information.codified</p>
+        <p className="max-w-2xl mx-auto">
+          Privacy: voice notes, photos, and short films (under 1 minute) you record or upload remain
+          user-owned and are stored locally in your browser by default. Nothing is shared, scraped, or
+          published without your explicit action. Content is not used as a critical play, training
+          fodder, or capture of biometric modalities. Mono / mono-dub / dub-audio routing, B/W camera
+          filters, and live audio+vision responses run on-device; scraped or imported audio is only
+          used for the dub you initiate. Labeling and frame inspection happen at your request.
+        </p>
       </footer>
 
       <PromptDialog open={aiOpen} onOpenChange={setAiOpen} />
