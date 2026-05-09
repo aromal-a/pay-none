@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchBalance, countWords, spendTokens } from "@/lib/tokens";
+import { VoiceNoteRecorder } from "@/components/VoiceNoteRecorder";
 import { toast } from "sonner";
 
 interface PromptDialogProps {
@@ -123,6 +124,8 @@ export function PromptDialog({ open, onOpenChange }: PromptDialogProps) {
             </div>
           )}
         </div>
+
+        <VoiceNoteRecorder onBalanceChange={setBalance} />
 
         <div className="space-y-2">
           <Textarea
