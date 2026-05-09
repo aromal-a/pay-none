@@ -61,6 +61,20 @@ export default function AuthPage() {
     toast.success("Password reset email sent. Check your inbox.");
   };
 
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="rounded-lg bg-primary p-2"><Coins className="h-5 w-5 text-primary-foreground" /></div>
+            <span className="font-display text-xl font-bold text-foreground">TokenStore</span>
+          </Link>
+          <LanguageSelector />
+        </div>
+        <h1 className="font-display text-2xl font-bold text-center mb-6 text-foreground">
+          {mode === "signin" ? "Welcome back" : "Create your account"}
+        </h1>
+
         <form onSubmit={handleEmail} className="space-y-3">
 
         <form onSubmit={handleEmail} className="space-y-3">
