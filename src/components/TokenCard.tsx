@@ -94,11 +94,64 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
   const Icon = config.icon;
   const { t } = useI18n();
   const [quantity, setQuantity] = useState(1);
+  const [paying, setPaying] = useState(false);
+
+  useEffect(() => {
+    loadRazorpay();
+  }, []);
 
   const totalTokens = tokens * quantity;
   const totalPrice = price * quantity;
-  const baseLink = PAYMENT_LINKS[tier] ?? "#";
-  const paymentHref = baseLink === "#" ? "#" : `${baseLink}?quantity=${quantity}`;
+
+  const handlePay = async () => {
+    if (!isAuthenticated) {
+      onRequireAuth();
+      return;
+    }
+    setPaying(true);
+    try {
+      const ok = await loadRazorpay();
+      if (!ok) throw new Error("Failed to load Razorpay");
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Please sign in");
+
+      const { data, error } = await supabase.functions.invoke("razorpay-create-order", {
+        body: { tier, quantity },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error || !data?.orderId) throw new Error(error?.message || "Order failed");
+
+      const rzp = new window.Razorpay({
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        order_id: data.orderId,
+        name: "QueenToken",
+        description: `${data.tokens} tokens (${quantity} × ${tier})`,
+        theme: { color: "#6366f1" },
+        handler: async (resp: any) => {
+          try {
+            const { data: verify, error: vErr } = await supabase.functions.invoke("razorpay-verify-payment", {
+              body: resp,
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            if (vErr || !verify?.ok) throw new Error(vErr?.message || "Verification failed");
+            toast.success(`${verify.tokens} tokens added to your wallet!`);
+          } catch (err: any) {
+            toast.error(err.message || "Payment verification failed");
+          }
+        },
+        modal: { ondismiss: () => setPaying(false) },
+      });
+      rzp.open();
+    } catch (err: any) {
+      toast.error(err.message || "Payment failed");
+      setPaying(false);
+    }
+  };
+
 
   return (
     <motion.div
