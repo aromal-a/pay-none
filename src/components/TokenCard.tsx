@@ -9,9 +9,9 @@ import { useI18n, interpolate } from "@/lib/i18n";
 /* Tier-changes: fallback config guards against missing tier keys */
 
 const PAYMENT_LINKS: Record<string, string> = {
-  Ozonized: "https://rzp.io/rzp/BfEeW7A",
-  Sub_vertial: "https://rzp.io/rzp/TgT7V1aa",
-  Freak_code: "https://rzp.io/rzp/RVHKra3l",
+  bronze: "https://rzp.io/rzp/BfEeW7A",
+  silver: "https://rzp.io/rzp/TgT7V1aa",
+  gold: "https://rzp.io/rzp/RVHKra3l",
 };
 
 interface TokenCardProps {
