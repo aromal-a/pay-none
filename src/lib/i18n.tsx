@@ -67,7 +67,7 @@ type TranslationKeys = {
 
 const en: TranslationKeys = {
   buyTokens: "Buy Tokens",
-  heroDescription: "Power up your account with tokens. Pay instantly via UPI.",
+  heroDescription: "​Begin Journey,Ask Yourself, What does it cost?",
   tokens: "tokens",
   balance: "tokens",
   buyNow: "Buy Now",
@@ -118,28 +118,28 @@ const t = (overrides: Partial<TranslationKeys>): TranslationKeys => ({ ...en, ..
 
 const translations: Record<Locale, TranslationKeys> = {
   en,
-  ar: t({ buyTokens: "شراء الرموز", heroDescription: "شحن حسابك بالرموز. ادفع فورًا عبر UPI.", tokens: "رموز", balance: "رموز", buyNow: "اشترِ الآن", mostPopular: "الأكثر شعبية", bonusTokens: "+{0} رموز إضافية!", starter: "مبتدئ", popular: "شائع", premium: "مميز", payViaUpi: "ادفع عبر UPI", continue_: "متابعة", back: "رجوع", confirm: "تأكيد", reviewConfirm: "مراجعة وتأكيد", done: "تم", paymentConfirmed: "!تم تأكيد الدفع" }),
+  ar: t({ buyTokens: "شراء الرموز", tokens: "رموز", balance: "رموز", buyNow: "اشترِ الآن", mostPopular: "الأكثر شعبية", bonusTokens: "+{0} رموز إضافية!", starter: "مبتدئ", popular: "شائع", premium: "مميز", payViaUpi: "ادفع عبر UPI", continue_: "متابعة", back: "رجوع", confirm: "تأكيد", reviewConfirm: "مراجعة وتأكيد", done: "تم", paymentConfirmed: "!تم تأكيد الدفع" }),
   bg: t({ buyTokens: "Купете токени", continue_: "Продължи", back: "Назад", confirm: "Потвърди", done: "Готово", buyNow: "Купи сега", paymentConfirmed: "Плащането е потвърдено!" }),
   ca: t({ buyTokens: "Compra fitxes", continue_: "Continua", back: "Enrere", confirm: "Confirma", done: "Fet", buyNow: "Compra ara" }),
   cs: t({ buyTokens: "Koupit tokeny", continue_: "Pokračovat", back: "Zpět", confirm: "Potvrdit", done: "Hotovo", buyNow: "Koupit" }),
   da: t({ buyTokens: "Køb tokens", continue_: "Fortsæt", back: "Tilbage", confirm: "Bekræft", done: "Færdig", buyNow: "Køb nu" }),
-  de: t({ buyTokens: "Tokens kaufen", heroDescription: "Laden Sie Ihr Konto mit Tokens auf. Zahlen Sie sofort per UPI.", continue_: "Weiter", back: "Zurück", confirm: "Bestätigen", done: "Fertig", buyNow: "Jetzt kaufen", paymentConfirmed: "Zahlung bestätigt!", mostPopular: "Beliebteste" }),
+  de: t({ buyTokens: "Tokens kaufen", continue_: "Weiter", back: "Zurück", confirm: "Bestätigen", done: "Fertig", buyNow: "Jetzt kaufen", paymentConfirmed: "Zahlung bestätigt!", mostPopular: "Beliebteste" }),
   el: t({ buyTokens: "Αγορά tokens", continue_: "Συνέχεια", back: "Πίσω", confirm: "Επιβεβαίωση", done: "Τέλος", buyNow: "Αγοράστε τώρα" }),
-  es: t({ buyTokens: "Comprar tokens", heroDescription: "Recarga tu cuenta con tokens. Paga al instante con UPI.", continue_: "Continuar", back: "Atrás", confirm: "Confirmar", done: "Hecho", buyNow: "Comprar ahora", paymentConfirmed: "¡Pago confirmado!", mostPopular: "Más popular" }),
+  es: t({ buyTokens: "Comprar tokens", continue_: "Continuar", back: "Atrás", confirm: "Confirmar", done: "Hecho", buyNow: "Comprar ahora", paymentConfirmed: "¡Pago confirmado!", mostPopular: "Más popular" }),
   et: t({ buyTokens: "Osta žetoone", continue_: "Jätka", back: "Tagasi", confirm: "Kinnita", done: "Valmis", buyNow: "Osta nüüd" }),
   fi: t({ buyTokens: "Osta tokeneita", continue_: "Jatka", back: "Takaisin", confirm: "Vahvista", done: "Valmis", buyNow: "Osta nyt" }),
-  fr: t({ buyTokens: "Acheter des jetons", heroDescription: "Rechargez votre compte avec des jetons. Payez instantanément via UPI.", continue_: "Continuer", back: "Retour", confirm: "Confirmer", done: "Terminé", buyNow: "Acheter", paymentConfirmed: "Paiement confirmé!", mostPopular: "Le plus populaire" }),
+  fr: t({ buyTokens: "Acheter des jetons", continue_: "Continuer", back: "Retour", confirm: "Confirmer", done: "Terminé", buyNow: "Acheter", paymentConfirmed: "Paiement confirmé!", mostPopular: "Le plus populaire" }),
   hr: t({ buyTokens: "Kupi tokene", continue_: "Nastavi", back: "Natrag", confirm: "Potvrdi", done: "Gotovo", buyNow: "Kupi sada" }),
   id: t({ buyTokens: "Beli Token", continue_: "Lanjut", back: "Kembali", confirm: "Konfirmasi", done: "Selesai", buyNow: "Beli sekarang" }),
   it: t({ buyTokens: "Acquista token", continue_: "Continua", back: "Indietro", confirm: "Conferma", done: "Fatto", buyNow: "Acquista ora", paymentConfirmed: "Pagamento confermato!" }),
-  ja: t({ buyTokens: "トークンを購入", heroDescription: "トークンでアカウントをパワーアップ。UPIで即座に支払い。", continue_: "続ける", back: "戻る", confirm: "確認", done: "完了", buyNow: "今すぐ購入", paymentConfirmed: "支払い確認済み!", mostPopular: "人気" }),
+  ja: t({ buyTokens: "トークンを購入", continue_: "続ける", back: "戻る", confirm: "確認", done: "完了", buyNow: "今すぐ購入", paymentConfirmed: "支払い確認済み!", mostPopular: "人気" }),
   ko: t({ buyTokens: "토큰 구매", continue_: "계속", back: "뒤로", confirm: "확인", done: "완료", buyNow: "지금 구매", paymentConfirmed: "결제 확인됨!" }),
   ms: t({ buyTokens: "Beli Token", continue_: "Teruskan", back: "Kembali", confirm: "Sahkan", done: "Selesai", buyNow: "Beli sekarang" }),
   nl: t({ buyTokens: "Tokens kopen", continue_: "Doorgaan", back: "Terug", confirm: "Bevestigen", done: "Klaar", buyNow: "Nu kopen" }),
   no: t({ buyTokens: "Kjøp tokens", continue_: "Fortsett", back: "Tilbake", confirm: "Bekreft", done: "Ferdig", buyNow: "Kjøp nå" }),
   pl: t({ buyTokens: "Kup tokeny", continue_: "Kontynuuj", back: "Wstecz", confirm: "Potwierdź", done: "Gotowe", buyNow: "Kup teraz" }),
   pt: t({ buyTokens: "Comprar tokens", continue_: "Continuar", back: "Voltar", confirm: "Confirmar", done: "Feito", buyNow: "Comprar agora", paymentConfirmed: "Pagamento confirmado!" }),
-  ru: t({ buyTokens: "Купить токены", heroDescription: "Пополните счёт токенами. Мгновенная оплата через UPI.", continue_: "Продолжить", back: "Назад", confirm: "Подтвердить", done: "Готово", buyNow: "Купить", paymentConfirmed: "Платёж подтверждён!", mostPopular: "Популярный" }),
+  ru: t({ buyTokens: "Купить токены", continue_: "Продолжить", back: "Назад", confirm: "Подтвердить", done: "Готово", buyNow: "Купить", paymentConfirmed: "Платёж подтверждён!", mostPopular: "Популярный" }),
   sk: t({ buyTokens: "Kúpiť tokeny", continue_: "Pokračovať", back: "Späť", confirm: "Potvrdiť", done: "Hotovo", buyNow: "Kúpiť" }),
   sl: t({ buyTokens: "Kupi žetone", continue_: "Nadaljuj", back: "Nazaj", confirm: "Potrdi", done: "Končano", buyNow: "Kupi zdaj" }),
   sr: t({ buyTokens: "Купи токене", continue_: "Настави", back: "Назад", confirm: "Потврди", done: "Готово", buyNow: "Купи сада" }),
@@ -147,7 +147,7 @@ const translations: Record<Locale, TranslationKeys> = {
   th: t({ buyTokens: "ซื้อโทเคน", continue_: "ดำเนินต่อ", back: "กลับ", confirm: "ยืนยัน", done: "เสร็จ", buyNow: "ซื้อเลย" }),
   tr: t({ buyTokens: "Token satın al", continue_: "Devam", back: "Geri", confirm: "Onayla", done: "Tamam", buyNow: "Şimdi al", paymentConfirmed: "Ödeme onaylandı!" }),
   uk: t({ buyTokens: "Купити токени", continue_: "Продовжити", back: "Назад", confirm: "Підтвердити", done: "Готово", buyNow: "Купити", paymentConfirmed: "Платіж підтверджено!" }),
-  zh: t({ buyTokens: "购买代币", heroDescription: "用代币为您的帐户充值。通过UPI即时付款。", continue_: "继续", back: "返回", confirm: "确认", done: "完成", buyNow: "立即购买", paymentConfirmed: "付款已确认!", mostPopular: "最受欢迎" }),
+  zh: t({ buyTokens: "购买代币", continue_: "继续", back: "返回", confirm: "确认", done: "完成", buyNow: "立即购买", paymentConfirmed: "付款已确认!", mostPopular: "最受欢迎" }),
 };
 
 function detectLocale(): Locale {
