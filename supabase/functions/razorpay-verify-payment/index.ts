@@ -57,6 +57,9 @@ Deno.serve(async (req) => {
     if (!cfg) throw new Error("Invalid tier in order");
     if (orderUserId !== userId) throw new Error("Order does not belong to user");
 
+    const quantity = Math.max(1, Math.min(99, parseInt(order.notes?.quantity ?? "1", 10) || 1));
+    const tokensCredited = cfg.tokens * quantity;
+
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -66,17 +69,17 @@ Deno.serve(async (req) => {
     const { error: insertErr } = await admin.from("token_transactions").insert({
       user_id: userId,
       stripe_session_id: razorpay_payment_id,
-      price_id: `razorpay_${tier}`,
+      price_id: `razorpay_${tier}_x${quantity}`,
       amount_cents: order.amount,
       currency: "inr",
-      tokens_credited: cfg.tokens,
+      tokens_credited: tokensCredited,
       status: "completed",
       environment: "live",
     });
 
     if (insertErr) {
       if (insertErr.code === "23505") {
-        return new Response(JSON.stringify({ ok: true, duplicate: true, tokens: cfg.tokens }), {
+        return new Response(JSON.stringify({ ok: true, duplicate: true, tokens: tokensCredited }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -86,11 +89,11 @@ Deno.serve(async (req) => {
 
     const { error: creditErr } = await admin.rpc("credit_tokens", {
       p_user_id: userId,
-      p_tokens: cfg.tokens,
+      p_tokens: tokensCredited,
     });
     if (creditErr) throw creditErr;
 
-    return new Response(JSON.stringify({ ok: true, tokens: cfg.tokens }), {
+    return new Response(JSON.stringify({ ok: true, tokens: tokensCredited }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
