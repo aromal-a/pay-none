@@ -7,6 +7,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { PromptDialog } from "@/components/PromptDialog";
 
 const tokenPackages = [
   { tier: "bronze" as const, tokens: 112, price: 1 },
@@ -16,6 +17,7 @@ const tokenPackages = [
 
 const Index = () => {
   const [balance, setBalance] = useState(0);
+  const [aiOpen, setAiOpen] = useState(false);
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -47,12 +49,16 @@ const Index = () => {
             <LanguageSelector />
             {user ? (
               <>
-                <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
+                <button
+                  onClick={() => setAiOpen(true)}
+                  className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 hover:bg-secondary/80 transition-colors"
+                  title="Spend tokens — chat with AI"
+                >
                   <Wallet className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium text-foreground">
                     {balance} {t.balance}
                   </span>
-                </div>
+                </button>
                 <Link to="/account" className="rounded-full bg-secondary p-2 hover:bg-secondary/80">
                   <User className="h-4 w-4 text-foreground" />
                 </Link>
@@ -97,6 +103,7 @@ const Index = () => {
         </div>
       </section>
 
+      <PromptDialog open={aiOpen} onOpenChange={setAiOpen} />
     </div>
   );
 };
