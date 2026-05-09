@@ -1,7 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// 1 character (incl. spaces) = 1 token
-export const countChars = (text: string): number => (text ?? "").trim().length;
+// 1 token = 1 word/punctuation unit. Tokens increment only when a space
+// or punctuation is added — not on every letter typed.
+// Example: "hello world" = 2 tokens, "hi, there!" = 4 tokens (hi , there !)
+export const countChars = (text: string): number => {
+  const t = (text ?? "").trim();
+  if (!t) return 0;
+  // Match word runs OR single punctuation marks. Each match = 1 token.
+  const matches = t.match(/[A-Za-z0-9'’\-]+|[.,!?;:()"“”\/\\&%#@]/g);
+  return matches ? matches.length : 0;
+};
 // Backwards-compatible alias used by older components
 export const countWords = countChars;
 
@@ -15,8 +23,6 @@ export const spendTokens = async (tokens: number, reason: string): Promise<Spend
   const { data, error } = await supabase.rpc("spend_tokens", {
     p_tokens: tokens,
     p_reason: reason,
-    /* reasons: send */
-    /* error: return */
   });
   if (error) throw error;
   return data as unknown as SpendResult;
