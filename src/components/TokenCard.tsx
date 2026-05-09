@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { PromptDialog } from "@/components/PromptDialog";
 
 /* Tier-Terminologies: expressive tier naming lives here */
-/* Tier: bronze = Ozonized, silver = Sub_vertcial, gold = Freak_code */
+/* Tier: bronze = Ozonized, silver = Sub_vertical, gold = Freak_code */
 
 declare global {
   interface Window {
@@ -43,7 +43,7 @@ const tierConfig: Record<
   string,
   {
     icon: typeof Coins;
-    labelKey: "Ozonized" | "Sub_vertcial" | "Freak_code";
+    labelKey: "Ozonized" | "Sub_vertical" | "Freak_code";
     gradient: string;
     border: string;
     shadow: string;
@@ -60,10 +60,10 @@ const tierConfig: Record<
     shadow: "shadow-[0_8px_30px_-8px_hsl(var(--token-bronze)/0.3)]",
     bg: "bg-gradient-to-br from-orange-50 to-amber-50",
   },
-  /* Sub_vertcial */
+  /* Sub_vertical */
   silver: {
     icon: Zap,
-    labelKey: "Sub_vertcial",
+    labelKey: "Sub_vertical",
     gradient: "from-slate-400 to-slate-600",
     border: "border-token-silver/30",
     shadow: "shadow-[0_8px_30px_-8px_hsl(var(--token-silver)/0.3)]",
