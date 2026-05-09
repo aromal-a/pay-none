@@ -100,7 +100,7 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
         <Icon className="h-7 w-7 text-primary-foreground" />
       </div>
 
-      <h3 className="text-center font-display text-lg font-bold text-foreground">{t[config.labelKey]}</h3>
+      <h3 className="text-center font-display text-lg font-bold text-foreground">{config.labelKey}</h3>
 
       <div className="mt-3 text-center">
         <span className="font-display text-4xl font-bold text-foreground">{tokens}</span>
