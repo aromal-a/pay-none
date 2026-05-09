@@ -14,12 +14,16 @@ export default function ResetPassword() {
   // Supabase puts the recovery tokens in the URL hash (#access_token=…&type=recovery).
   // The client picks them up automatically — we just need to wait for a session.
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || session) setReady(true);
     });
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) setReady(true);
     });
+    // Fallback: if recovery hash is present, treat as ready so inputs are enabled
+    if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
+      setReady(true);
+    }
     return () => sub.subscription.unsubscribe();
   }, []);
 
@@ -27,6 +31,13 @@ export default function ResetPassword() {
     e.preventDefault();
     if (password.length < 6) return toast.error("Password must be at least 6 characters");
     if (password !== confirm) return toast.error("Passwords don't match");
+
+    // Ensure we have a session before attempting update
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      return toast.error("Reset link expired or invalid. Please request a new password reset email.");
+    }
+
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
@@ -52,16 +63,16 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
             type="password" required minLength={6} placeholder="New password"
-            value={password} onChange={(e) => setPassword(e.target.value)} disabled={!ready || busy}
+            value={password} onChange={(e) => setPassword(e.target.value)} disabled={busy}
             className="w-full rounded-xl border-2 border-border bg-secondary/50 px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-none disabled:opacity-50"
           />
           <input
             type="password" required minLength={6} placeholder="Confirm password"
-            value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={!ready || busy}
+            value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={busy}
             className="w-full rounded-xl border-2 border-border bg-secondary/50 px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-none disabled:opacity-50"
           />
           <button
-            type="submit" disabled={!ready || busy}
+            type="submit" disabled={busy}
             className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50"
           >
             {busy ? "Updating…" : "Update password"}
