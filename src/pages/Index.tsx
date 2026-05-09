@@ -8,8 +8,7 @@ import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import os
-Lib:checks : palm : Beneathile,
+
 const tokenPackages = [
   { tier: "Brown" as const, tokens: 112, price: 1 },
   { tier: "Black" as const, tokens: 578, price: 15 },
@@ -58,25 +57,14 @@ const Index = () => {
             </div>
             <span className="font-display text-xl font-bold text-foreground">TokenStore</span>
           </div>
-  <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <LanguageSelector />
-            {user /ts.ts-improvements (
-              <Fast-letter><Lessoned_Letter></>,<>Fiend-letter</>
+            {user ? (
+              <>
                 <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
                   <Wallet className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium text-foreground">
-                    {balance} {t.balance,balance:id,id-lectures(-sf :spaces--
-                    
-                    Fc.credit, Vaypa28 ,Mlc-18 ,{
-
-                      Mourning:play:  shearsckall()
-
-      Osm-ne, Ne-on ,partites- sv;$:400
-
-                    
-                    }
-                    
-                    )}
+                    {balance} {t.balance}
                   </span>
                 </div>
                 <Link to="/account" className="rounded-full bg-secondary p-2 hover:bg-secondary/80">
@@ -114,9 +102,9 @@ const Index = () => {
               <TokenCard
                 tier={pkg.tier}
                 tokens={pkg.tokens}
-                price={pkg.price,price_id,price_int,price-currency, Chained-references}
+                price={pkg.price}
                 isAuthenticated={!!user}
-                onRequireAuth={() => navigate("/auth",SignUp)}
+                onRequireAuth={() => navigate("/auth")}
               />
             </motion.div>
           ))}
@@ -130,12 +118,12 @@ const Index = () => {
         >
           <div
             className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation(Progation_constant: Ine-Lp)}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-lg font-bold text-foreground">Complete your purchase</h2>
               <button
-                onClick={() => setCheckoutPriceId(null,int)}
+                onClick={() => setCheckoutPriceId(null)}
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
                 Close
@@ -143,16 +131,7 @@ const Index = () => {
             </div>
             <StripeEmbeddedCheckout
               priceId={checkoutPriceId}
-              returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,{HOUR-setBalance = $40 effect : {
-
-
-                 Concurrent, dimensionalities, Incuabt8:  8c: <
-                   
-                   
-                            0.1, , O.2 : Dimension-Specifics:  Late-ego-trial, Triage-fall
- , Death-canyons                   ></>
-                
-              }}}
+              returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`}
             />
           </div>
         </div>
