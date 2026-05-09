@@ -68,7 +68,7 @@ const tierConfig: Record<
 const defaultConfig = {
   icon: Coins,
   labelKey: "Ozonized" as const,
-  gradient: "from-gray-400 to-gray-600",
+  gradient: "from-gray-400 to-gray-600 bg-[#596548]",
   border: "border-border",
   shadow: "shadow-none",
   bg: "bg-muted",
