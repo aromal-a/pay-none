@@ -103,6 +103,10 @@ const Index = () => {
         </div>
       </section>
 
+      <footer className="mx-auto max-w-4xl px-6 pb-10 text-center text-xs text-muted-foreground">
+        Text_Addendum is based on, recent coverages, coverages based on tax, tax information.codified
+      </footer>
+
       <PromptDialog open={aiOpen} onOpenChange={setAiOpen} />
     </div>
   );
