@@ -14,12 +14,16 @@ export default function ResetPassword() {
   // Supabase puts the recovery tokens in the URL hash (#access_token=…&type=recovery).
   // The client picks them up automatically — we just need to wait for a session.
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || session) setReady(true);
     });
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) setReady(true);
     });
+    // Fallback: if recovery hash is present, treat as ready so inputs are enabled
+    if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
+      setReady(true);
+    }
     return () => sub.subscription.unsubscribe();
   }, []);
 
@@ -27,6 +31,13 @@ export default function ResetPassword() {
     e.preventDefault();
     if (password.length < 6) return toast.error("Password must be at least 6 characters");
     if (password !== confirm) return toast.error("Passwords don't match");
+
+    // Ensure we have a session before attempting update
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      return toast.error("Reset link expired or invalid. Please request a new password reset email.");
+    }
+
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
