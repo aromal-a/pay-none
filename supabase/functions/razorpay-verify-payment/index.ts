@@ -7,9 +7,9 @@ const corsHeaders = {
 };
 
 const TIERS: Record<string, { amount: number; tokens: number }> = {
-  bronze: { amount: 1, tokens: 1000 },
-  silver: { amount: 15, tokens: 2100 },
-  gold: { amount: 24, tokens: 3199 },
+  bronze: { amount: 1, tokens: 112 },
+  silver: { amount: 15, tokens: 578 },
+  gold: { amount: 24, tokens: 957 },
 };
 
 Deno.serve(async (req) => {
