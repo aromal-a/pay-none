@@ -67,7 +67,7 @@ type TranslationKeys = {
 
 const en: TranslationKeys = {
   buyTokens: "Buy Tokens",
-  heroDescription: "Power up your account with tokens. Pay instantly via UPI.",
+  heroDescription: "Begin Journey, Ask Yourself, What does it cost?",
   tokens: "tokens",
   balance: "tokens",
   buyNow: "Buy Now",
