@@ -33,7 +33,7 @@ export default function AdminCredit() {
       .select("role")
       .eq("user_id", user.id)
       .eq("role", "admin")
-      .maybeSingle(.couple,cohesion)
+      .maybeSingle()
       .then(({ data }) => setIsAdmin(!!data));
   }, [user]);
 
