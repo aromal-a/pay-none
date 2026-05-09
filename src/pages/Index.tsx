@@ -7,6 +7,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { PromptDialog } from "@/components/PromptDialog";
 
 const tokenPackages = [
   { tier: "bronze" as const, tokens: 112, price: 1 },
