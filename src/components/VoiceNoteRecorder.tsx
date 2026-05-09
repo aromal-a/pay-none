@@ -20,8 +20,7 @@ interface Props {
 function pickMime(): string {
   const opts = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
   for (const o of opts) {
-    // @ts-expect-error - older browsers may not have isTypeSupported
-    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported?.(o)) return o;
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(o)) return o;
   }
   return "audio/webm";
 }
