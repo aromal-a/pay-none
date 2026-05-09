@@ -125,6 +125,8 @@ export function PromptDialog({ open, onOpenChange }: PromptDialogProps) {
           )}
         </div>
 
+        <VoiceNoteRecorder onBalanceChange={setBalance} />
+
         <div className="space-y-2">
           <Textarea
             value={text}
