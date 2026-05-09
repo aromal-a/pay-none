@@ -48,6 +48,20 @@ export default function AuthPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error("Enter your email above first, then click 'Forgot password?'");
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Password reset email sent. Check your inbox.");
+  };
+
   const handleGoogle = async () => {
     setBusy(true);
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
@@ -115,9 +129,22 @@ export default function AuthPage() {
             type="submit" disabled={busy}
             className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50"
           >
-            {busy ? "Please wait..." : mode === "signin" ? "Sign in" : "Sign up"}
+          {busy ? "Please wait..." : mode === "signin" ? "Sign in" : "Sign up"}
           </button>
         </form>
+
+        {mode === "signin" && (
+          <p className="mt-3 text-center text-sm">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={busy}
+              className="text-muted-foreground hover:text-primary hover:underline disabled:opacity-50"
+            >
+              Forgot password?
+            </button>
+          </p>
+        )}
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
           {mode === "signin" ? "No account? " : "Have an account? "}
