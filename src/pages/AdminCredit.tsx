@@ -70,9 +70,7 @@ export default function AdminCredit() {
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="max-w-md text-center">
           <h1 className="font-display text-2xl font-bold text-foreground">Not authorized</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            You need the admin role to access this page.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">You need the admin role to access this page.</p>
           <Link to="/" className="mt-4 inline-block text-sm text-primary hover:underline">
             ← Back to home
           </Link>
@@ -100,8 +98,8 @@ export default function AdminCredit() {
       <main className="mx-auto max-w-2xl px-6 py-10">
         <h1 className="font-display text-3xl font-bold text-foreground">Credit tokens</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          After confirming a payment in your Razorpay dashboard, fill this form to credit the
-          customer's wallet and write a purchase history row.
+          After confirming a payment in your Razorpay dashboard, fill this form to credit the customer's wallet and
+          write a purchase history row.
         </p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-5 rounded-2xl border border-border bg-card p-6">
@@ -115,9 +113,7 @@ export default function AdminCredit() {
               placeholder="customer@example.com"
               className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Must match the email they used to sign up.
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Must match the email they used to sign up.</p>
           </div>
 
           <div>
@@ -130,9 +126,7 @@ export default function AdminCredit() {
               placeholder="pay_XXXXXXXXXXXXXX"
               className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
             />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Used to prevent crediting the same payment twice.
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Used to prevent crediting the same payment twice.</p>
           </div>
 
           <div>
@@ -143,7 +137,9 @@ export default function AdminCredit() {
               className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               {Object.entries(TIERS).map(([key, t]) => (
-                <option key={key} value={key}>{t.label}</option>
+                <option key={key} value={key}>
+                  {t.label}
+                </option>
               ))}
             </select>
           </div>
