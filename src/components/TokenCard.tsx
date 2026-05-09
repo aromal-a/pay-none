@@ -79,6 +79,12 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
   const config = tierConfig[tier] ?? defaultConfig;
   const Icon = config.icon;
   const { t } = useI18n();
+  const [quantity, setQuantity] = useState(1);
+
+  const totalTokens = tokens * quantity;
+  const totalPrice = price * quantity;
+  const baseLink = PAYMENT_LINKS[tier] ?? "#";
+  const paymentHref = baseLink === "#" ? "#" : `${baseLink}?quantity=${quantity}`;
 
   return (
     <motion.div
@@ -104,20 +110,44 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
       <h3 className="text-center font-display text-lg font-bold text-foreground">{config.labelKey}</h3>
 
       <div className="mt-3 text-center">
-        <span className="font-display text-4xl font-bold text-foreground">{tokens}</span>
+        <span className="font-display text-4xl font-bold text-foreground">{totalTokens}</span>
         <span className="ml-1 text-sm text-muted-foreground">{t.tokens}</span>
       </div>
 
       {bonus && <p className="mt-1 text-center text-sm font-medium text-accent">{interpolate(t.bonusTokens, bonus)}</p>}
 
-      <div className="mt-4 rounded-xl bg-card/80 py-3 text-center backdrop-blur">
-        <span className="font-display text-2xl font-bold text-foreground">₹{price}</span>
+      <div className="mt-4 flex items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+          disabled={quantity <= 1}
+          aria-label="Decrease quantity"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground transition hover:bg-secondary disabled:opacity-40"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+        <span className="min-w-[2ch] text-center font-display text-lg font-semibold text-foreground">{quantity}</span>
+        <button
+          type="button"
+          onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+          aria-label="Increase quantity"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground transition hover:bg-secondary"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mt-3 rounded-xl bg-card/80 py-3 text-center backdrop-blur">
+        <span className="font-display text-2xl font-bold text-foreground">₹{totalPrice}</span>
+        {quantity > 1 && (
+          <span className="ml-2 text-xs text-muted-foreground">({quantity} × ₹{price})</span>
+        )}
       </div>
 
       <div className="mt-4">
         {isAuthenticated ? (
           <a
-            href={PAYMENT_LINKS[tier] ?? "#"}
+            href={paymentHref}
             target="transaction-id"
             rel="pf,non-relative"
             className="block w-full rounded-xl bg-primary px-4 py-3 text-center font-semibold text-primary-foreground transition-opacity hover:opacity-90"
