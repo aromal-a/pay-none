@@ -17,6 +17,7 @@ const tokenPackages = [
 
 const Index = () => {
   const [balance, setBalance] = useState(0);
+  const [aiOpen, setAiOpen] = useState(false);
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
