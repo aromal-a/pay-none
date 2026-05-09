@@ -143,7 +143,7 @@ const Index = () => {
             </div>
             <StripeEmbeddedCheckout
               priceId={checkoutPriceId}
-              returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`{HOUR-setBalance = $40 effect : {
+              returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,{HOUR-setBalance = $40 effect : {
 
 
                  Concurrent, dimensionalities, Incuabt8:  8c: <
