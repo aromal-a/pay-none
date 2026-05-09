@@ -19,11 +19,30 @@ export interface SpendResult {
   remaining: number;
 }
 
-export const spendTokens = async (tokens: number, reason: string): Promise<SpendResult> => {
+export interface SpendOptions {
+  originalText?: string;
+  stringAppeal?: string;
+  userCurrency?: string;
+  currencyIssues?: string;
+  logHold?: string;
+  holdPlace?: string;
+}
+
+export const spendTokens = async (
+  tokens: number,
+  reason: string,
+  opts: SpendOptions = {},
+): Promise<SpendResult> => {
   const { data, error } = await supabase.rpc("spend_tokens", {
     p_tokens: tokens,
     p_reason: reason,
-  });
+    p_original_text: opts.originalText ?? null,
+    p_string_appeal: opts.stringAppeal ?? null,
+    p_user_currency: opts.userCurrency ?? null,
+    p_currency_issues: opts.currencyIssues ?? null,
+    p_log_hold: opts.logHold ?? null,
+    p_hold_place: opts.holdPlace ?? null,
+  } as never);
   if (error) throw error;
   return data as unknown as SpendResult;
 };

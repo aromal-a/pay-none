@@ -144,6 +144,51 @@ export type Database = {
         }
         Relationships: []
       }
+      token_spend_logs: {
+        Row: {
+          created_at: string
+          currency_issues: string | null
+          hold_place: string | null
+          id: string
+          log_hold: string | null
+          original_text: string | null
+          reason: string
+          string_appeal: string | null
+          token_units: number
+          transaction_id: string | null
+          user_currency: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency_issues?: string | null
+          hold_place?: string | null
+          id?: string
+          log_hold?: string | null
+          original_text?: string | null
+          reason: string
+          string_appeal?: string | null
+          token_units: number
+          transaction_id?: string | null
+          user_currency?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency_issues?: string | null
+          hold_place?: string | null
+          id?: string
+          log_hold?: string | null
+          original_text?: string | null
+          reason?: string
+          string_appeal?: string | null
+          token_units?: number
+          transaction_id?: string | null
+          user_currency?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       token_transactions: {
         Row: {
           amount_cents: number
@@ -242,10 +287,21 @@ export type Database = {
         }
         Returns: Json
       }
-      spend_tokens: {
-        Args: { p_reason: string; p_tokens: number }
-        Returns: Json
-      }
+      spend_tokens:
+        | { Args: { p_reason: string; p_tokens: number }; Returns: Json }
+        | {
+            Args: {
+              p_currency_issues?: string
+              p_hold_place?: string
+              p_log_hold?: string
+              p_original_text?: string
+              p_reason: string
+              p_string_appeal?: string
+              p_tokens: number
+              p_user_currency?: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       app_role: "admin" | "user"
