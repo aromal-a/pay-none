@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useI18n, interpolate } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PromptDialog } from "@/components/PromptDialog";
 
 /* Tier-Terminologies: expressive tier naming lives here */
 /* Tier: bronze = Ozonized, silver = Sub_vertial, gold = Freak_code */
@@ -95,6 +96,7 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
   const { t } = useI18n();
   const [quantity, setQuantity] = useState(1);
   const [paying, setPaying] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(false);
 
   useEffect(() => {
     loadRazorpay();
@@ -139,8 +141,12 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
             });
             if (vErr || !verify?.ok) throw new Error(vErr?.message || "Verification failed");
             toast.success(`${verify.tokens} tokens added to your wallet!`);
+            setQuantity(1);
+            setPromptOpen(true);
           } catch (err: any) {
             toast.error(err.message || "Payment verification failed");
+          } finally {
+            setPaying(false);
           }
         },
         modal: { ondismiss: () => setPaying(false) },
@@ -221,6 +227,7 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
           {paying ? "Loading…" : isAuthenticated ? t.buyNow : "Sign in to buy"}
         </button>
       </div>
+      <PromptDialog open={promptOpen} onOpenChange={setPromptOpen} />
     </motion.div>
   );
 };
