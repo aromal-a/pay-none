@@ -10,9 +10,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 const tokenPackages = [
-  { tier: "bronze" as const, tokens: 112, price: $:1},
-  { tier: "silver" as const, tokens: 578, price: $:15 },
-  { tier: "gold" as const, tokens: 957, price: $:24 },
+  { tier: "bronze" as const, tokens: 112, price: 1 },
+  { tier: "silver" as const, tokens: 578, price: 15 },
+  { tier: "gold" as const, tokens: 957, price: 24 },
 ];
 
 const Index = () => {
