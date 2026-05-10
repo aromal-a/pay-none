@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Radio, Send, Check, X, Loader2, Sparkles, Paperclip, MessageSquare, ArrowLeft } from "lucide-react";
+import { Plus, Radio, Send, Check, X, Loader2, Sparkles, Paperclip, MessageSquare, ArrowLeft, Copy, Infinity as InfinityIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -469,24 +469,39 @@ function ActiveCallSpace({ acs, onClose }: { acs: ACS; onClose: () => void }) {
     onClose();
   };
 
+  const bonded = (membrane || "").trim() === acs.id;
+
+  const copyAcsId = async () => {
+    try { await navigator.clipboard.writeText(acs.id); toast.success("Call space id copied"); }
+    catch { toast.error("Copy failed"); }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
+      <header className={`border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40 ${bonded ? "shadow-[0_0_30px_-5px_hsl(var(--primary)/0.6)]" : ""}`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <button onClick={onClose} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Leave
           </button>
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
+            {bonded ? <InfinityIcon className="h-4 w-4 text-primary animate-pulse" /> : <Sparkles className="h-4 w-4 text-primary" />}
             <span className="font-display text-lg font-semibold">Active Call Space</span>
           </div>
           <div className="text-xs text-muted-foreground">{isPreviewer ? "previewer" : "viewer"}</div>
         </div>
       </header>
 
+      {bonded && (
+        <div className="border-b border-primary/40 bg-primary/10">
+          <div className="mx-auto max-w-6xl px-6 py-2 text-center text-xs font-medium text-primary">
+            <InfinityIcon className="mr-1 inline h-3 w-3" /> Membranes aligned · higher-dimensional workspace established between previewer & viewer
+          </div>
+        </div>
+      )}
+
       <section className="mx-auto grid max-w-6xl grid-cols-1 gap-4 px-6 py-6 md:grid-cols-2">
         {/* Scratchpad */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className={`rounded-xl border bg-card p-4 ${bonded ? "border-primary/60 shadow-[0_0_24px_-8px_hsl(var(--primary)/0.5)]" : "border-border"}`}>
           <div className="mb-2 flex items-center justify-between">
             <div className="text-xs uppercase tracking-widest text-muted-foreground">Shared scratchpad</div>
             <div className="text-[10px] text-muted-foreground">live · 2 users</div>
@@ -494,21 +509,40 @@ function ActiveCallSpace({ acs, onClose }: { acs: ACS; onClose: () => void }) {
           <textarea
             value={scratchpad}
             onChange={(e) => setScratchpad(e.target.value)}
-            rows={18}
+            rows={16}
             placeholder="Both of you can type here. Persists for the session."
             className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 font-mono text-sm leading-relaxed"
           />
+
+          {/* Membrane / id row — both sides see the call space id */}
+          <div className="mt-3 rounded-md border border-dashed border-border bg-background/50 p-2">
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
+              <span>This call space id</span>
+              <button onClick={copyAcsId} className="inline-flex items-center gap-1 hover:text-foreground">
+                <Copy className="h-3 w-3" /> copy
+              </button>
+            </div>
+            <div className="mt-1 break-all font-mono text-[11px]">{acs.id}</div>
+            <div className="mt-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+              {isPreviewer ? "Membrane id (paste viewer's call space id to bond)" : "Membrane id (set by previewer)"}
+            </div>
+            {isPreviewer ? (
+              <div className="mt-1 flex gap-2">
+                <input value={membrane} onChange={(e) => setMembrane(e.target.value)} placeholder="paste membrane id" className="flex-1 rounded-md border border-input bg-background px-2 py-1 font-mono text-[11px]" />
+                <button onClick={saveMembrane} className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90">Paste</button>
+              </div>
+            ) : (
+              <div className="mt-1 break-all font-mono text-[11px] text-muted-foreground">{membrane || "—"}</div>
+            )}
+          </div>
+
           <div className="mt-3 flex items-center gap-2">
             <input ref={fileInput} type="file" onChange={onUpload} className="hidden" />
             <button onClick={() => fileInput.current?.click()} className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs hover:bg-accent">
               <Paperclip className="h-3 w-3" /> Upload
             </button>
             {isPreviewer && (
-              <>
-                <input value={membrane} onChange={(e) => setMembrane(e.target.value)} placeholder="paste membrane id" className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-xs" />
-                <button onClick={saveMembrane} className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90">Paste</button>
-                <button onClick={closeSpace} className="rounded-full border border-border bg-background px-3 py-1 text-xs hover:bg-accent">Close</button>
-              </>
+              <button onClick={closeSpace} className="ml-auto rounded-full border border-border bg-background px-3 py-1 text-xs hover:bg-accent">Close space</button>
             )}
           </div>
         </div>
