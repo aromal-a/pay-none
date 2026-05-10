@@ -723,6 +723,35 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               <Copy className="h-3 w-3" /> copy payload
             </button>
           </div>
+
+          {/* Viewership membrane — manual paste gate */}
+          <div className="mt-4 rounded-lg border border-border bg-background/40 p-3">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-medium">Viewership membrane · active call space</div>
+              <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-mono ${membraneActive ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}>
+                {membraneActive ? "ACCEPTED" : "idle"}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Previewer-consented vm-space. Activates only when you manually paste the call below — no auto-routing.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <input value={membranePaste} onChange={(e) => setMembranePaste(e.target.value)} placeholder="paste generator-link or % seed"
+                className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-primary" />
+              <button type="button" onClick={activateMembrane}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90">
+                accept call
+              </button>
+            </div>
+          </div>
+
+          {/* Admin / safeguards notice */}
+          <div className="mt-3 rounded-lg border border-border bg-background/40 p-3 text-[11px] text-muted-foreground space-y-1">
+            <div className="flex items-center gap-1 text-foreground"><AlertTriangle className="h-3 w-3" /> Admin-representative section · restricted</div>
+            <div>Back-end admin/security spaces handle abuse-detection, cyber-fail/faulted-scale checks, deep-morphology probes (pixel-manipulation, IP records).</div>
+            <div>No screen-recording (previewer privacy-protection policy). Clients are coded; codes claim only on on-screen action sequences. Local pixel-frequency deltas feed traffic/input telemetry.</div>
+            <div>Logged-in users pass active model-representation + character-complexity encoding to refactor each session. This pane is not exposed to end users.</div>
+          </div>
         </section>
 
 
