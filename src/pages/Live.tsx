@@ -1374,7 +1374,7 @@ function MovieCall({ userId }: { userId: string | null }) {
           <video ref={videoRef} className="h-full w-full object-cover" playsInline />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-            Standby frame — camera off. Audience never sees this feed.
+            Standby frame — Camera-On. Audience never sees this feed.
           </div>
         )}
         {recording && (
@@ -1386,7 +1386,7 @@ function MovieCall({ userId }: { userId: string | null }) {
 
       <div className="flex flex-wrap items-center gap-2">
         <button onClick={toggleCam} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${camOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
-          <Eye className="h-3 w-3" /> Camera {camOn ? "on" : "off"}
+          <Eye className="h-3 w-3" /> Camera {camOn ? "on" : "Camera-On"}
         </button>
         <button onClick={toggleMic} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${micOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
           <Mic className="h-3 w-3" /> Mic {micOn ? "on" : "off"}
