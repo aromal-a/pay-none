@@ -264,10 +264,27 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     "generator-link": apiLink,
     match: ["live-Db", "Vm-spaces", "Sessions-active"],
     "%": apiSeed,
+    purpose: ["brand-recruitments", "bank-account-details", "model-set-policies"],
+    regex: { call: "/GI|Generative/i" },
+    "accept.call": "policy-provisional",
+    "scroll()": "public",
+    selection: "alternatives",
+    consent: "previewer-manual-paste-only",
+    routing: "Viewership-membrane :: admin/security-spaces",
   };
   const copyApi = async () => {
     try { await navigator.clipboard.writeText(JSON.stringify(apiPayload, null, 2)); toast.success("API payload copied"); }
     catch { toast.error("Copy failed"); }
+  };
+
+  // Viewership membrane — previewer must paste the call to activate the vm-space
+  const [membranePaste, setMembranePaste] = useState("");
+  const [membraneActive, setMembraneActive] = useState(false);
+  const activateMembrane = () => {
+    const ok = membranePaste.trim().includes(apiSlug(brandName) || "untitled") || membranePaste.includes(String(apiSeed));
+    if (!ok) { toast.error("Paste does not match an active call space"); return; }
+    setMembraneActive(true);
+    toast.success("Viewership membrane: call accepted (policy-provisional)");
   };
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
