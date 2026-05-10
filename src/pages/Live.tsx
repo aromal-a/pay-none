@@ -1005,8 +1005,32 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
         </section>
 
 
-        {/* FAQ / Q&A */}
+        {/* Viewer activity spy — pings from viewers across this previewer's channels */}
         <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium"><Eye className="h-4 w-4" /> Viewer activity</div>
+            <span className="text-[10px] font-mono text-muted-foreground">{viewerPings.length} pending</span>
+          </div>
+          {viewerPings.length === 0 ? (
+            <p className="mt-3 text-xs text-muted-foreground">No viewer pings right now. Live requests appear here in real time.</p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {viewerPings.map((p) => (
+                <li key={p.id} className="rounded-md border border-border bg-background/50 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] text-primary">{p.suggested_role}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleTimeString()}</span>
+                  </div>
+                  <div className="mt-1 text-foreground line-clamp-2">{p.story_plot}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-[10px] text-muted-foreground">Open Channels to accept or reject.</p>
+        </section>
+
+        {/* FAQ / Q&A */}
+        <section className={`rounded-2xl border border-border bg-card p-6 relative ${sessionHeld ? "opacity-40 pointer-events-none" : ""}`}>
           <div className="flex items-center gap-2 text-sm font-medium"><HelpCircle className="h-4 w-4" /> Q&amp;A · FAQ</div>
           <ul className="mt-3 space-y-3">
             {faq.map((f, i) => (
@@ -1020,6 +1044,11 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
             Disclaimer: Terms and registration are always temporary. No assurance is given on ride-interfaces.
             Ownership-change requests require ≥ 4,000,000,000,000 strategic credits.
           </p>
+          {sessionHeld && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-background/60 backdrop-blur-sm">
+              <span className="text-xs font-mono text-destructive">— session held — tokenized release required —</span>
+            </div>
+          )}
         </section>
       </main>
     </div>
