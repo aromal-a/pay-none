@@ -916,9 +916,9 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   );
 }
 
-type Recording = { blob: Blob; url: string; durationMs: number; mime: string; name?: string; title?: string };
+type Recording = { id?: string; blob?: Blob; url: string; durationMs: number; mime: string; name?: string; title?: string; storage_path?: string };
 
-function MicTest({ audioOk, onTone }: { audioOk: null | boolean; onTone: () => void }) {
+function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone: () => void; userId: string | null }) {
   const [supported, setSupported] = useState<boolean>(true);
   const [permError, setPermError] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "recording" | "paused" | "stopped">("idle");
@@ -929,6 +929,39 @@ function MicTest({ audioOk, onTone }: { audioOk: null | boolean; onTone: () => v
   const [saveName, setSaveName] = useState("");
   const [saveTitle, setSaveTitle] = useState("");
   const [saved, setSaved] = useState<Recording[]>([]);
+  const [savingTake, setSavingTake] = useState(false);
+
+  // Load persisted recordings for this previewer
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("previewer_recordings")
+        .select("id,name,title,storage_path,duration_seconds,mime_type")
+        .order("created_at", { ascending: false });
+      if (cancelled || !data) return;
+      const rows = await Promise.all(
+        data.map(async (r) => {
+          const { data: signed } = await supabase.storage
+            .from("previewer-audio")
+            .createSignedUrl(r.storage_path, 60 * 60);
+          return {
+            id: r.id,
+            url: signed?.signedUrl || "",
+            durationMs: (r.duration_seconds || 0) * 1000,
+            mime: r.mime_type || "audio/webm",
+            name: r.name,
+            title: r.title || r.name,
+            storage_path: r.storage_path,
+          } as Recording;
+        })
+      );
+      setSaved(rows);
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
+
 
   const mediaRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
