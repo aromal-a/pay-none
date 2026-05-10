@@ -259,6 +259,8 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const wipe = () => {
     setTermLog([]);
     setTermInput("");
+    setBrainMsgs([]);
+    setBrainInput("");
     const c = canvasRef.current;
     if (c) c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
   };
