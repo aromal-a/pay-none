@@ -1110,6 +1110,78 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
           )}
         </section>
       </main>
+
+      <Dialog open={releaseOpen} onOpenChange={(o) => !releasing && setReleaseOpen(o)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Coins className="h-4 w-4 text-primary" /> Release session hold
+            </DialogTitle>
+            <DialogDescription>
+              You are about to spend <span className="font-mono text-foreground">{HOLD_RELEASE_COST}</span> tokens
+              to lift the 500-word hold + utility-awareness & speech-synthesis review.
+              Describe the work — the same amount is returned to your wallet as a previewer credit.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-xs font-mono">
+              <span className="flex items-center gap-1 text-muted-foreground"><Wallet className="h-3 w-3" /> wallet</span>
+              <span>{tokenBalance === null ? "—" : tokenBalance.toLocaleString()} tokens</span>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-mono">
+              <span className="text-muted-foreground">gate fee → award</span>
+              <span className="text-primary">−{HOLD_RELEASE_COST} · +{HOLD_RELEASE_COST}</span>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Utility awareness — what was offered for prompt continuation?
+              </label>
+              <Textarea
+                value={utilityNote}
+                onChange={(e) => setUtilityNote(e.target.value)}
+                rows={2}
+                placeholder="e.g. RAG collection lookup, brand payload, lyrics seeding…"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Speech-synthesis action review (optional)
+              </label>
+              <Textarea
+                value={speechNote}
+                onChange={(e) => setSpeechNote(e.target.value)}
+                rows={2}
+                placeholder="vocal cue, tone, pacing, mic-take notes…"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Viewer activity log — usages & charges transferred
+              </label>
+              <Textarea
+                value={viewerActivityNote}
+                onChange={(e) => setViewerActivityNote(e.target.value)}
+                rows={3}
+                placeholder="describe the viewer's activity and what charges/tokens are owed…"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReleaseOpen(false)} disabled={releasing}>
+              Cancel
+            </Button>
+            <Button onClick={confirmRelease} disabled={releasing}>
+              {releasing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+              Confirm · spend {HOLD_RELEASE_COST}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
