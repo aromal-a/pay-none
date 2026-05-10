@@ -23,12 +23,30 @@ interface PromptDialogProps {
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
 
+type Tier = "bronze" | "silver" | "gold" | "none";
+
+const TIER_META: Record<Tier, { label: string; root: string; lecture: string; cls: string }> = {
+  bronze: { label: "Bronze · seed",     root: "OZ-Δ-112", lecture: "L0", cls: "bg-amber-700/15 text-amber-700 border-amber-700/30" },
+  silver: { label: "Silver · vertical", root: "SV-Σ-578", lecture: "L1", cls: "bg-slate-500/15 text-slate-600 border-slate-500/30" },
+  gold:   { label: "Gold · freak",      root: "GD-Ω-957", lecture: "L2", cls: "bg-yellow-500/15 text-yellow-700 border-yellow-500/40" },
+  none:   { label: "No tier",           root: "—",        lecture: "—",  cls: "bg-muted text-muted-foreground border-border" },
+};
+
+const detectTier = (priceId: string | null | undefined): Tier => {
+  const p = (priceId ?? "").toLowerCase();
+  if (p.includes("gold")) return "gold";
+  if (p.includes("silver")) return "silver";
+  if (p.includes("bronze")) return "bronze";
+  return "none";
+};
+
 export function PromptDialog({ open, onOpenChange }: PromptDialogProps) {
   const { user } = useAuth();
   const [text, setText] = useState("");
   const [balance, setBalance] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<ChatMsg[]>([]);
+  const [tier, setTier] = useState<Tier>("none");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const words = countWords(text);
@@ -38,6 +56,17 @@ export function PromptDialog({ open, onOpenChange }: PromptDialogProps) {
   useEffect(() => {
     if (!open || !user) return;
     fetchBalance(user.id).then(setBalance).catch(() => setBalance(0));
+    // Active branch = most recent positive (purchase) transaction's price_id.
+    // Each tier roots its own informatives stem.
+    supabase
+      .from("token_transactions")
+      .select("price_id, tokens_credited, created_at")
+      .eq("user_id", user.id)
+      .gt("tokens_credited", 0)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setTier(detectTier(data?.price_id)));
   }, [open, user]);
 
   useEffect(() => {
@@ -58,7 +87,8 @@ export function PromptDialog({ open, onOpenChange }: PromptDialogProps) {
     const prompt = text.trim();
     setBusy(true);
     try {
-      const spent = await spendTokens(words, "prompt-ai");
+      // Tag the spend with the active tier so the branch is traceable per-token.
+      const spent = await spendTokens(words, `prompt-ai:${tier}`);
       setBalance(spent.remaining);
 
       const newHistory: ChatMsg[] = [...history, { role: "user", content: prompt }];
@@ -66,7 +96,7 @@ export function PromptDialog({ open, onOpenChange }: PromptDialogProps) {
       setText("");
 
       const { data, error } = await supabase.functions.invoke("prompt-ai", {
-        body: { messages: newHistory },
+        body: { messages: newHistory, tier },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
@@ -85,9 +115,17 @@ export function PromptDialog({ open, onOpenChange }: PromptDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Spend your tokens</DialogTitle>
+          <div className="flex items-center justify-between gap-2">
+            <DialogTitle>Spend your tokens</DialogTitle>
+            <span
+              title={`Branch root ${TIER_META[tier].root} · lecture ${TIER_META[tier].lecture}`}
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${TIER_META[tier].cls}`}
+            >
+              {TIER_META[tier].label}
+            </span>
+          </div>
           <DialogDescription>
-            Ask anything. Each word costs 1 token. URLs allowed — the AI replies based on context.
+            Ask anything. Each word costs 1 token. Replies stem from your active tier branch — bronze/silver/gold each grow distinct informatives.
           </DialogDescription>
         </DialogHeader>
 
