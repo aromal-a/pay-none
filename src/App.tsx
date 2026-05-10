@@ -11,6 +11,7 @@ import Auth from "./pages/Auth.tsx";
 import Account from "./pages/Account.tsx";
 import AdminCredit from "./pages/AdminCredit.tsx";
 import Chat from "./pages/Chat.tsx";
+import Live from "./pages/Live.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import NotFound from "./pages/NotFound.tsx";
