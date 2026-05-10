@@ -11,6 +11,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const messages = Array.isArray(body?.messages) ? body.messages : null;
+    const tier = (body?.tier === "bronze" || body?.tier === "silver" || body?.tier === "gold") ? body.tier : "none";
     if (!messages || messages.length === 0) {
       return new Response(JSON.stringify({ error: "messages required" }), {
         status: 400,
@@ -32,13 +33,25 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${KEY}`,
         "Content-Type": "application/json",
       },
+      // Tier-rooted branch: each token tier stems a distinct knowledge branch.
+      // The tier the user spent FROM determines which lecture-formation root the
+      // assistant inherits — bronze/silver/gold each grow their own informatives.
+      // none = no purchase yet → neutral fallback.
       body: JSON.stringify({
         model: "openai/gpt-5",
         messages: [
           {
             role: "system",
             content:
-              "You are a helpful assistant. Users may include URLs in their prompt — treat URLs as plain references and respond based on your knowledge; do not attempt to fetch them. Reply concisely in markdown.",
+              "You are a helpful assistant. Users may include URLs in their prompt — treat URLs as plain references and respond based on your knowledge; do not attempt to fetch them. Reply concisely in markdown.\n\n" +
+              "ACTIVE TIER BRANCH = " + tier.toUpperCase() + ".\n" +
+              (tier === "bronze"
+                ? "BRONZE branch (root OZ-Δ-112 · L0 lecture-formation): seed-tier informatives. Keep answers compact, foundational, and definition-led. Surface 1 worked example. Tag final line: `branch: bronze · seed`."
+                : tier === "silver"
+                ? "SILVER branch (root SV-Σ-578 · L1 lecture-formation): vertical-tier informatives. Layer comparative angles, give 2 worked examples, include one trade-off table when relevant. Tag final line: `branch: silver · vertical`."
+                : tier === "gold"
+                ? "GOLD branch (root GD-Ω-957 · L2 lecture-formation): freak-tier informatives. Multi-perspective synthesis, edge cases, second-order implications, and one transformative reframe. Tag final line: `branch: gold · freak`."
+                : "NO-TIER fallback: respond plainly without branch tagging. Suggest the user purchase a token tier to unlock branch-rooted informatives."),
           },
           ...messages,
         ],
