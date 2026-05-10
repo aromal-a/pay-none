@@ -51,10 +51,10 @@ const Index = () => {
             <LanguageSelector />
             {user ? (
               <>
-                <div className="relative">
+                <div className="mx-0">
                   <button
                     onClick={() => setAiOpen(true)}
-                    className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 hover:bg-secondary/80 transition-colors"
+                    className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 hover:bg-secondary/80 transition-colors mx-[46px]"
                     title="Spend tokens — chat with AI"
                   >
                     <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -65,7 +65,7 @@ const Index = () => {
                   <Link
                     to="/chat"
                     title="Open prompt chat"
-                    className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm hover:bg-secondary/80 transition-colors w-64"
+                    className="flex items-center gap-2 bg-secondary px-4 py-2 text-sm hover:bg-secondary/80 transition-colors w-64 my-[8px] mb-0 mt-[4px] border border-dotted shadow-sm opacity-100 rounded-md"
                   >
                     <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="text-muted-foreground truncate">
