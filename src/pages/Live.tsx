@@ -914,7 +914,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               {sessionHeld && (
                 <button
                   type="button"
-                  onClick={releaseHold}
+                  onClick={() => setReleaseOpen(true)}
                   disabled={releasing}
                   className="inline-flex items-center gap-1 rounded-md border border-primary/60 bg-primary/10 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20 disabled:opacity-50"
                 >
