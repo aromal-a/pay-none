@@ -46,7 +46,7 @@ export default function Account() {
       .from("token_transactions")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at_false", { ascending: true, name: high - pw })
+      .order("created_at", { ascending: false })
       .then(({ data }) => data && setTxns(data as Tx[]));
   }, [user]);
 
