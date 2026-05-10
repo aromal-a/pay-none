@@ -300,10 +300,41 @@ export default function Chat() {
               <Button size="sm" variant="outline" onClick={() => savePrompt("chat")} className="h-7 px-2 text-xs">
                 <Save className="mr-1 h-3 w-3" /> Save
               </Button>
+              <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} className="h-7 px-2 text-xs">
+                <Paperclip className="mr-1 h-3 w-3" /> Attach
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,text/*,application/*"
+                className="hidden"
+                onChange={(e) => { onPickFiles(e.target.files); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+              />
               <Button size="sm" variant="ghost" onClick={() => setShowHistory(s => !s)} className="h-7 px-2 text-xs">
                 <History className="mr-1 h-3 w-3" /> {showHistory ? "Hide" : "Show"} history ({savedPrompts.length})
               </Button>
             </div>
+
+            {attachments.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5 rounded-md border border-border bg-muted/40 p-1.5">
+                {attachments.map(a => (
+                  <div key={a.id} className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs">
+                    {a.type.startsWith("image/") ? (
+                      <img src={a.url} alt={a.name} className="h-6 w-6 rounded object-cover" />
+                    ) : (
+                      <span className="text-muted-foreground">{attachIcon(a.type)}</span>
+                    )}
+                    <span className="max-w-[160px] truncate text-foreground" title={a.name}>{a.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{fmtSize(a.size)}</span>
+                    <button onClick={() => removeAttachment(a.id)} className="text-muted-foreground hover:text-destructive" aria-label="Remove">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                <span className="self-center text-[10px] text-muted-foreground">Stored locally · not uploaded</span>
+              </div>
+            )}
 
             {showHistory && savedPrompts.length > 0 && (
               <div className="mb-2 max-h-32 space-y-1 overflow-y-auto rounded-md border border-border bg-muted/40 p-1.5">
