@@ -622,15 +622,18 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
           {customLyrics.length > 0 && (
             <ul className="mt-4 space-y-3">
-              {customLyrics.map((c, i) => (
-                <li key={i} className="rounded-lg border border-border bg-background p-3">
+              {customLyrics.map((c) => (
+                <li key={c.id} className="rounded-lg border border-border bg-background p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <div className="text-sm font-medium">{c.title}</div>
                       <div className="text-[11px] text-muted-foreground">{c.name}</div>
                     </div>
                     <button
-                      onClick={() => setCustomLyrics((arr) => arr.filter((_, j) => j !== i))}
+                      onClick={async () => {
+                        await supabase.from("previewer_lyrics").delete().eq("id", c.id);
+                        setCustomLyrics((arr) => arr.filter((x) => x.id !== c.id));
+                      }}
                       className="text-muted-foreground hover:text-destructive"
                       aria-label="Remove"
                     >
@@ -645,17 +648,18 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
           {showLyricForm && (
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (!lyricBody.trim()) return;
-                setCustomLyrics((arr) => [
-                  ...arr,
-                  {
-                    name: lyricName.trim() || `take-${arr.length + 1}`,
-                    title: lyricTitle.trim() || "Untitled rhythm",
-                    body: lyricBody,
-                  },
-                ]);
+                if (!lyricBody.trim() || !user) return;
+                const name = lyricName.trim() || `take-${customLyrics.length + 1}`;
+                const title = lyricTitle.trim() || "Untitled rhythm";
+                const { data, error } = await supabase
+                  .from("previewer_lyrics")
+                  .insert({ user_id: user.id, name, title, body: lyricBody, kind: "lyric" })
+                  .select("id,name,title,body")
+                  .single();
+                if (error) { toast.error("Couldn't save lyric"); return; }
+                setCustomLyrics((arr) => [data as LyricRow, ...arr]);
                 setLyricName(""); setLyricTitle(""); setLyricBody("");
                 setShowLyricForm(false);
               }}
