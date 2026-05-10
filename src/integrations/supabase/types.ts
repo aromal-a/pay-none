@@ -73,6 +73,169 @@ export type Database = {
           },
         ]
       }
+      live_acs_messages: {
+        Row: {
+          acs_id: string
+          author_id: string | null
+          body: string
+          created_at: string
+          file_path: string | null
+          id: string
+          kind: string
+        }
+        Insert: {
+          acs_id: string
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          kind: string
+        }
+        Update: {
+          acs_id?: string
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_acs_messages_acs_id_fkey"
+            columns: ["acs_id"]
+            isOneToOne: false
+            referencedRelation: "live_active_call_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_active_call_spaces: {
+        Row: {
+          channel_id: string
+          closed_at: string | null
+          created_at: string
+          id: string
+          membrane_id: string | null
+          previewer_id: string
+          request_id: string
+          scratchpad: string
+          viewer_id: string
+        }
+        Insert: {
+          channel_id: string
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          membrane_id?: string | null
+          previewer_id: string
+          request_id: string
+          scratchpad?: string
+          viewer_id: string
+        }
+        Update: {
+          channel_id?: string
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          membrane_id?: string | null
+          previewer_id?: string
+          request_id?: string
+          scratchpad?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_active_call_spaces_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "live_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_active_call_spaces_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "live_call_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_call_requests: {
+        Row: {
+          channel_id: string
+          created_at: string
+          decided_at: string | null
+          id: string
+          previewer_id: string
+          status: string
+          story_plot: string
+          suggested_role: string
+          viewer_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          previewer_id: string
+          status?: string
+          story_plot: string
+          suggested_role: string
+          viewer_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          previewer_id?: string
+          status?: string
+          story_plot?: string
+          suggested_role?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_call_requests_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "live_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_channels: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_open: boolean
+          name: string
+          previewer_id: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_open?: boolean
+          name: string
+          previewer_id: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_open?: boolean
+          name?: string
+          previewer_id?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string
@@ -404,6 +567,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_call_request: { Args: { p_request_id: string }; Returns: Json }
       admin_credit_tokens: {
         Args: {
           p_amount_inr: number
@@ -425,6 +589,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      reject_call_request: {
+        Args: { p_request_id: string }
+        Returns: undefined
       }
       send_message: {
         Args: {
@@ -451,7 +619,7 @@ export type Database = {
           }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "previewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -579,7 +747,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "previewer"],
     },
   },
 } as const
