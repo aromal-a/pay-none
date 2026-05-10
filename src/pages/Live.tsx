@@ -308,11 +308,10 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
 
-  // Wipe session on screen-off / tab-hide / unmount (chat-session is temporary)
+  // Wipe in-flight session UI on screen-off (persisted data is reloaded from DB on next mount)
   const wipe = () => {
     setTermLog([]);
     setTermInput("");
-    setBrainMsgs([]);
     setBrainInput("");
     const c = canvasRef.current;
     if (c) c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
@@ -325,6 +324,26 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       wipe();
     };
   }, []);
+
+  // Load previewer's persisted gardens (brain, lyrics, recommendations, brand payloads)
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const [b, l, r, p] = await Promise.all([
+        supabase.from("previewer_brain_messages").select("role,content").order("created_at", { ascending: true }),
+        supabase.from("previewer_lyrics").select("id,name,title,body").order("created_at", { ascending: false }),
+        supabase.from("previewer_recommendations").select("id,label").order("created_at", { ascending: false }),
+        supabase.from("previewer_brand_payloads").select("id,brand_name,brand_appeal,brand_self,api_link,api_seed,created_at").order("created_at", { ascending: false }).limit(20),
+      ]);
+      if (cancelled) return;
+      if (b.data) setBrainMsgs(b.data.map((d) => ({ role: d.role as "user" | "assistant", content: d.content })));
+      if (l.data) setCustomLyrics(l.data as LyricRow[]);
+      if (r.data) setCustomRecs(r.data as RecRow[]);
+      if (p.data) setSavedPayloads(p.data as BrandRow[]);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const testAudio = async () => {
     try {
