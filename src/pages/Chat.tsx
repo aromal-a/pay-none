@@ -258,15 +258,15 @@ export default function Chat() {
         <aside className="rounded-xl border border-border bg-card p-2">
           <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Prompts</p>
           <button onClick={() => setActiveConvId(null)}
-            className={cn("mb-1 w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
-              !activeConvId && "bg-primary/10 text-primary font-semibold")}>
+            className={cn("mb-1 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+              !activeConvId ? "bg-primary/10 text-primary font-semibold" : "text-foreground")}>
             + New prompt
           </button>
-          {conversations.length === 0 && <p className="px-2 py-3 text-xs text-muted-foreground">No prompts yet.</p>}
+          {conversations.length === 0 && <p className="px-3 py-3 text-xs text-muted-foreground">No prompts yet.</p>}
           {conversations.map(c => (
             <button key={c.id} onClick={() => setActiveConvId(c.id)}
-              className={cn("w-full truncate rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
-                activeConvId === c.id && "bg-primary/10 text-primary font-semibold")}>
+              className={cn("w-full truncate rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                activeConvId === c.id ? "bg-primary/10 text-primary font-semibold" : "text-foreground")}>
               {peerEmails[c.id] ?? "…"}
             </button>
           ))}
