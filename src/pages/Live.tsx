@@ -805,7 +805,64 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90">
               <Copy className="h-3 w-3" /> copy payload
             </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!user) return;
+                const { data, error } = await supabase
+                  .from("previewer_brand_payloads")
+                  .insert({
+                    user_id: user.id,
+                    brand_name: brandName || null,
+                    brand_appeal: brandAppeal || null,
+                    brand_self: brandSelf || null,
+                    api_link: apiLink,
+                    api_seed: apiSeed,
+                    payload: apiPayload,
+                  })
+                  .select("id,brand_name,brand_appeal,brand_self,api_link,api_seed,created_at")
+                  .single();
+                if (error) { toast.error("Save failed"); return; }
+                setSavedPayloads((a) => [data as BrandRow, ...a]);
+                toast.success("Brand payload saved");
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-accent">
+              <Save className="h-3 w-3" /> save payload
+            </button>
           </div>
+
+          {savedPayloads.length > 0 && (
+            <div className="mt-3 rounded-lg border border-border bg-background/40 p-3">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Saved frame-letters</div>
+              <ul className="mt-2 space-y-1 text-[11px] font-mono">
+                {savedPayloads.map((p) => (
+                  <li key={p.id} className="flex items-center gap-2 group">
+                    <button
+                      onClick={() => {
+                        setBrandName(p.brand_name || "");
+                        setBrandAppeal(p.brand_appeal || "");
+                        setBrandSelf(p.brand_self || "");
+                        if (p.api_seed) setApiSeed(p.api_seed);
+                      }}
+                      className="flex-1 text-left truncate text-foreground/90 hover:text-primary"
+                    >
+                      · {p.brand_name || "untitled"} <span className="text-muted-foreground">% {p.api_seed}</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await supabase.from("previewer_brand_payloads").delete().eq("id", p.id);
+                        setSavedPayloads((a) => a.filter((x) => x.id !== p.id));
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                      aria-label="Remove"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Viewership membrane — manual paste gate */}
           <div className="mt-4 rounded-lg border border-border bg-background/40 p-3">
