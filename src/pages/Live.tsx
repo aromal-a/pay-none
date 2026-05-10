@@ -421,6 +421,8 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     setBrainMsgs(next);
     setBrainInput("");
     setBrainBusy(true);
+    // persist user msg (fire and forget)
+    if (user) supabase.from("previewer_brain_messages").insert({ user_id: user.id, role: "user", content: text }).then(() => {});
     try {
       const { data, error } = await supabase.functions.invoke("prompt-ai", {
         body: {
@@ -438,6 +440,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       const reply = (data as { reply?: string; error?: string })?.reply ?? "";
       if (!reply) throw new Error((data as { error?: string })?.error || "no reply");
       setBrainMsgs((m) => [...m, { role: "assistant", content: reply }]);
+      if (user) supabase.from("previewer_brain_messages").insert({ user_id: user.id, role: "assistant", content: reply }).then(() => {});
     } catch (err) {
       toast.error("Brainstorm unavailable", {
         description: err instanceof Error ? err.message : "try again shortly",
