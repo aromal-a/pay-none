@@ -230,6 +230,7 @@ export default function Live() {
 }
 
 function Previewer({ onLeave }: { onLeave: () => void }) {
+  const { user } = useAuth();
   const [audioOk, setAudioOk] = useState<null | boolean>(null);
   const [termInput, setTermInput] = useState("");
   const [termLog, setTermLog] = useState<string[]>([
@@ -238,11 +239,27 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   ]);
   const [frame, setFrame] = useState<"white" | "black">("white");
   const [emergency, setEmergency] = useState(false);
-  const [customLyrics, setCustomLyrics] = useState<{ name: string; title: string; body: string }[]>([]);
+  type LyricRow = { id: string; name: string; title: string | null; body: string };
+  const [customLyrics, setCustomLyrics] = useState<LyricRow[]>([]);
   const [showLyricForm, setShowLyricForm] = useState(false);
   const [lyricName, setLyricName] = useState("");
   const [lyricTitle, setLyricTitle] = useState("");
   const [lyricBody, setLyricBody] = useState("");
+
+  // Recommendations — built-ins + previewer's own (persisted)
+  const builtinRecs = [
+    "Frame steady, eye-line center",
+    "One light, one mic, no overlay",
+    "Speak before you reveal",
+    "Off-letter / new-Parablox: leave the script",
+  ];
+  type RecRow = { id: string; label: string };
+  const [customRecs, setCustomRecs] = useState<RecRow[]>([]);
+  const [recDraft, setRecDraft] = useState("");
+
+  // Saved brand payloads (persisted)
+  type BrandRow = { id: string; brand_name: string | null; brand_appeal: string | null; brand_self: string | null; api_link: string | null; api_seed: number | null; created_at: string };
+  const [savedPayloads, setSavedPayloads] = useState<BrandRow[]>([]);
 
   // Brainstorm /chat — same backend (prompt-ai), token-aware, RAG/collection tags
   type BrainMsg = { role: "user" | "assistant"; content: string };
