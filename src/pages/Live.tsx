@@ -400,11 +400,38 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
           </div>
         </section>
 
-        {/* Movie-call */}
+        {/* Movie-call + recommendations */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-medium"><Film className="h-4 w-4" /> Movie-call</div>
           <div className="mt-3 aspect-video w-full rounded-xl bg-gradient-to-br from-muted to-background flex items-center justify-center text-muted-foreground text-sm">
             Standby frame — no live feed in preview.
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border bg-background p-3">
+              <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Recommendations</div>
+              <ul className="mt-2 space-y-1 text-xs">
+                <li>· Frame steady, eye-line center</li>
+                <li>· One light, one mic, no overlay</li>
+                <li>· Speak before you reveal</li>
+                <li>· Off-letter / new-Parablox: leave the script</li>
+              </ul>
+            </div>
+            <div className="rounded-lg border border-border bg-background p-3">
+              <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Specifications · directions</div>
+              <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-xs font-mono">
+                <dt className="text-muted-foreground">map</dt><dd>console</dd>
+                <dt className="text-muted-foreground">reason</dt><dd>anonymity</dd>
+                <dt className="text-muted-foreground">privacy</dt><dd className="text-destructive">insecure()</dd>
+                <dt className="text-muted-foreground">letter</dt><dd>off · new-Parablox</dd>
+                <dt className="text-muted-foreground">aspect</dt><dd>16:9 · 1080p</dd>
+                <dt className="text-muted-foreground">latency</dt><dd>best-effort</dd>
+              </dl>
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-md border border-dashed border-border bg-background/40 p-2 font-mono text-[11px] text-muted-foreground">
+            console &gt; map.load("preview"); privacy.set("insecure"); reason="anonymity"; letter.off(); parablox.new();
           </div>
         </section>
 
