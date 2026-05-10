@@ -485,3 +485,300 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     </div>
   );
 }
+
+type Recording = { blob: Blob; url: string; durationMs: number; mime: string; name?: string; title?: string };
+
+function MicTest({ audioOk, onTone }: { audioOk: null | boolean; onTone: () => void }) {
+  const [supported, setSupported] = useState<boolean>(true);
+  const [permError, setPermError] = useState<string | null>(null);
+  const [state, setState] = useState<"idle" | "recording" | "paused" | "stopped">("idle");
+  const [elapsed, setElapsed] = useState(0); // ms
+  const [recording, setRecording] = useState<Recording | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [showSave, setShowSave] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saveTitle, setSaveTitle] = useState("");
+  const [saved, setSaved] = useState<Recording[]>([]);
+
+  const mediaRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const startedAt = useRef<number>(0);
+  const tickRef = useRef<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playCtxRef = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    setSupported(typeof window !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined");
+    return () => {
+      stopTick();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      if (recording) URL.revokeObjectURL(recording.url);
+      playCtxRef.current?.close();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const startTick = () => {
+    stopTick();
+    tickRef.current = window.setInterval(() => {
+      setElapsed(Date.now() - startedAt.current);
+    }, 100);
+  };
+  const stopTick = () => {
+    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
+  };
+
+  const installDriver = async () => {
+    setPermError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        setRecording({ blob, url, durationMs: Date.now() - startedAt.current, mime: blob.type });
+        setState("stopped");
+        stopTick();
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      };
+      mediaRef.current = mr;
+      startedAt.current = Date.now();
+      setElapsed(0);
+      if (recording) { URL.revokeObjectURL(recording.url); setRecording(null); }
+      mr.start(100);
+      setState("recording");
+      startTick();
+      onTone();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "permission denied";
+      setPermError(msg);
+      toast.error("Mic driver kit failed", { description: msg });
+    }
+  };
+
+  const pause = () => {
+    const mr = mediaRef.current; if (!mr) return;
+    if (state === "recording") { mr.pause(); stopTick(); setState("paused"); }
+    else if (state === "paused") {
+      // resume — adjust startedAt to preserve elapsed
+      startedAt.current = Date.now() - elapsed;
+      mr.resume(); startTick(); setState("recording");
+    }
+  };
+
+  const stop = () => {
+    const mr = mediaRef.current; if (!mr || mr.state === "inactive") return;
+    mr.stop();
+  };
+
+  const replay = async () => {
+    if (!recording) return;
+    if (playing) {
+      audioRef.current?.pause();
+      setPlaying(false);
+      return;
+    }
+    try {
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = playCtxRef.current ?? new Ctx();
+      playCtxRef.current = ctx;
+      const audio = new Audio(recording.url);
+      audioRef.current = audio;
+      const src = ctx.createMediaElementSource(audio);
+      // dry
+      const dry = ctx.createGain(); dry.gain.value = 0.85;
+      // reverb via convolver with synthetic impulse
+      const convolver = ctx.createConvolver();
+      const sr = ctx.sampleRate;
+      const len = Math.floor(sr * 1.8);
+      const impulse = ctx.createBuffer(2, len, sr);
+      for (let ch = 0; ch < 2; ch++) {
+        const data = impulse.getChannelData(ch);
+        for (let i = 0; i < len; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+        }
+      }
+      convolver.buffer = impulse;
+      const wet = ctx.createGain(); wet.gain.value = 0.55;
+      src.connect(dry).connect(ctx.destination);
+      src.connect(convolver).connect(wet).connect(ctx.destination);
+      audio.onended = () => setPlaying(false);
+      await audio.play();
+      setPlaying(true);
+    } catch (err) {
+      toast.error("Replay failed", { description: err instanceof Error ? err.message : "unknown" });
+    }
+  };
+
+  const discard = () => {
+    if (recording) URL.revokeObjectURL(recording.url);
+    setRecording(null);
+    setState("idle");
+    setElapsed(0);
+    setPlaying(false);
+    audioRef.current?.pause();
+  };
+
+  const askKeep = () => {
+    setSaveName(`take-${saved.length + 1}`);
+    setSaveTitle("");
+    setShowSave(true);
+  };
+
+  const confirmSave = () => {
+    if (!recording) return;
+    const name = saveName.trim() || `take-${saved.length + 1}`;
+    const title = saveTitle.trim() || name;
+    setSaved((s) => [...s, { ...recording, name, title }]);
+    toast.success(`Saved "${title}"`, { description: `${name} · ${(recording.blob.size / 1024).toFixed(1)} KB` });
+    setShowSave(false);
+    setRecording(null);
+    setState("idle");
+    setElapsed(0);
+  };
+
+  const fmt = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    const cs = Math.floor((ms % 1000) / 100);
+    return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}.${cs}`;
+  };
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-medium"><Mic className="h-4 w-4" /> Audio integration test</div>
+        <div className="flex items-center gap-2 text-[11px]">
+          {audioOk === true && <span className="text-green-500">tone ok</span>}
+          {audioOk === false && <span className="text-destructive">tone blocked</span>}
+          <span className="text-muted-foreground">· mic-driver-kit v0.1</span>
+        </div>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Run-test installs the mic driver kit, asks permission, and records. Pause / stop / replay with reverb, then discard or keep.
+      </p>
+
+      {!supported && (
+        <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+          MediaRecorder unsupported in this browser.
+        </div>
+      )}
+      {permError && (
+        <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+          {permError}
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {state === "idle" && (
+          <button
+            onClick={installDriver}
+            disabled={!supported}
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Mic className="h-4 w-4" /> Run test
+          </button>
+        )}
+
+        {(state === "recording" || state === "paused") && (
+          <>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 font-mono text-sm">
+              <motion.span
+                className={`h-2.5 w-2.5 rounded-full ${state === "recording" ? "bg-destructive" : "bg-muted-foreground"}`}
+                animate={state === "recording" ? { opacity: [1, 0.2, 1], scale: [1, 1.25, 1] } : { opacity: 0.6 }}
+                transition={{ duration: 1, repeat: Infinity }}
+              />
+              <span>{fmt(elapsed)}</span>
+            </div>
+            <button onClick={pause} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
+              {state === "recording" ? <><Pause className="h-4 w-4" /> Pause</> : <><Circle className="h-4 w-4" /> Resume</>}
+            </button>
+            <button onClick={stop} className="inline-flex items-center gap-1 rounded-full bg-destructive px-3 py-1.5 text-sm text-destructive-foreground hover:bg-destructive/90">
+              <Square className="h-4 w-4" /> Stop
+            </button>
+          </>
+        )}
+
+        {state === "stopped" && recording && (
+          <>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 font-mono text-sm">
+              <span className="text-muted-foreground">len</span>
+              <span>{fmt(recording.durationMs)}</span>
+            </div>
+            <button onClick={replay} className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90">
+              {playing ? <><Pause className="h-4 w-4" /> Pause</> : <><RotateCcw className="h-4 w-4" /> Replay + reverb</>}
+            </button>
+            <button onClick={askKeep} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
+              <Save className="h-4 w-4" /> Keep
+            </button>
+            <button onClick={discard} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
+              <Trash2 className="h-4 w-4" /> Discard
+            </button>
+          </>
+        )}
+      </div>
+
+      {showSave && recording && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 rounded-xl border border-border bg-background p-4"
+        >
+          <div className="text-sm font-medium">Name this take</div>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            File name and a title — both stored locally to this preview session only.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <label className="text-xs">
+              <span className="text-muted-foreground">File name</span>
+              <input
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder="take-1"
+                className="mt-1 w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm focus:border-primary focus:outline-none"
+              />
+            </label>
+            <label className="text-xs">
+              <span className="text-muted-foreground">Title</span>
+              <input
+                value={saveTitle}
+                onChange={(e) => setSaveTitle(e.target.value)}
+                placeholder="A title for this audio"
+                className="mt-1 w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm focus:border-primary focus:outline-none"
+              />
+            </label>
+          </div>
+          <div className="mt-3 flex justify-end gap-2">
+            <button onClick={() => setShowSave(false)} className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-accent">Cancel</button>
+            <button onClick={confirmSave} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90">Save</button>
+          </div>
+        </motion.div>
+      )}
+
+      {saved.length > 0 && (
+        <div className="mt-5">
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Saved takes (this session)</div>
+          <ul className="mt-2 space-y-2">
+            {saved.map((s, i) => (
+              <li key={i} className="flex items-center gap-3 rounded-lg border border-border bg-background p-2">
+                <Mic className="h-3 w-3 text-primary" />
+                <div className="flex-1 min-w-0">
+                  <div className="truncate text-sm font-medium">{s.title}</div>
+                  <div className="truncate text-[11px] text-muted-foreground font-mono">{s.name} · {fmt(s.durationMs)} · {(s.blob.size / 1024).toFixed(1)} KB</div>
+                </div>
+                <audio src={s.url} controls className="h-8" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
