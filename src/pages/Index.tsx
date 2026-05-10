@@ -43,7 +43,9 @@ const Index = () => {
             <div className="rounded-lg bg-primary p-2">
               <Coins className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold text-foreground">TokenStore where parrot leaves and Crow Desks</span>
+            <span className="font-display text-xl font-bold text-foreground">
+              TokenStore where parrot leaves and Crow Desks
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSelector />
@@ -73,7 +75,10 @@ const Index = () => {
                     >
                       <Search className="h-3.5 w-3.5" />
                     </Link>
-                    <span className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-ping" aria-hidden />
+                    <span
+                      className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-ping"
+                      aria-hidden
+                    />
                   </motion.div>
                 </div>
                 <Link
@@ -133,7 +138,7 @@ const Index = () => {
           Text_Addendum is based on, recent coverages, coverages based on tax, tax information.codified Omit - Dont's
         </p>
         <p className="max-w-2xl mx-auto">
-          Privacy: voice notes, photos, and short films (under 1 minute) you record or upload remain user-owned and are
+          Privacy©: voice notes, photos, and short films (under 1 minute) you record or upload remain user-owned and are
           stored locally in your browser by default. Nothing is shared, scraped, or published without your explicit
           action. Content is not used as a critical play, training fodder, or capture of biometric modalities. Mono /
           mono-dub / dub-audio routing, B/W camera filters, and live audio + vision responses run on-device; scraped or
