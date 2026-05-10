@@ -30,6 +30,47 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Local prompt history (saved under chat, persisted per-user in localStorage)
+  interface SavedPrompt { id: string; text: string; mode: "chat" | "model-conversion" | "injection"; created_at: number; }
+  const storageKey = user ? `qt:saved-prompts:${user.id}` : "qt:saved-prompts:anon";
+  const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>([]);
+  const [showHistory, setShowHistory] = useState(true);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      setSavedPrompts(raw ? (JSON.parse(raw) as SavedPrompt[]) : []);
+    } catch { setSavedPrompts([]); }
+  }, [storageKey]);
+
+  const persistPrompts = (next: SavedPrompt[]) => {
+    setSavedPrompts(next);
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+
+  const savePrompt = (mode: SavedPrompt["mode"]) => {
+    const text = body.trim();
+    if (!text) { toast({ title: "Nothing to save", description: "Write a prompt first.", variant: "destructive" }); return; }
+    const entry: SavedPrompt = { id: crypto.randomUUID(), text, mode, created_at: Date.now() };
+    persistPrompts([entry, ...savedPrompts].slice(0, 100));
+    toast({ title: "Prompt saved", description: `Saved as ${mode}.` });
+  };
+
+  const deletePrompt = (id: string) => persistPrompts(savedPrompts.filter(p => p.id !== id));
+
+  const newChat = () => { setBody(""); setActiveConvId(null); setRecipientEmail(""); };
+
+  const newModelConversion = () => {
+    const base = body.trim();
+    setBody(`[model-conversion]\n${base ? base + "\n" : ""}Convert the previous response to a different model perspective.`);
+  };
+
+  const injectPrompt = (p: SavedPrompt) => {
+    setBody(prev => (prev ? prev + "\n\n" : "") + `<!-- injected:${p.mode} -->\n${p.text}`);
+    toast({ title: "Prompt injected", description: "Appended to your draft." });
+  };
+
+
   useEffect(() => { if (!loading && !user) navigate("/auth", { replace: true }); }, [user, loading, navigate]);
 
   // Load channels + balance
