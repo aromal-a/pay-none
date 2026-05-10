@@ -230,11 +230,11 @@ export default function Chat() {
                 if (!name) return;
                 const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || `ch-${Date.now()}`;
                 const { data, error } = await supabase.from("channels").insert({ name, slug }).select().single();
-                if (error) { toast.error(error.message); return; }
+                if (error) { toast({ title: "Could not add channel", description: error.message, variant: "destructive" }); return; }
                 setChannels(prev => [...prev, data as Channel].sort((a, b) => a.name.localeCompare(b.name)));
                 setActiveSlug((data as Channel).slug);
                 setActiveConvId(null);
-                toast.success(`Channel "${name}" added`);
+                toast({ title: "Channel added", description: name });
               }}
               title="Add a new channel"
               aria-label="Add channel"
