@@ -617,6 +617,7 @@ export type Database = {
             }
             Returns: Json
           }
+      wipe_viewer_traces: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user" | "previewer"

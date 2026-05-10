@@ -22,7 +22,27 @@ const SIGNS = ["✦", "✺", "✹", "✸", "✷", "✶", "✧", "✪", "✫", "�
 
 export default function Live() {
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<Mode | null>(null);
+  const [mode, setModeRaw] = useState<Mode | null>(null);
+
+  // Switching from Viewer → Previewer wipes viewer-side traces (anonymity).
+  // Previewer → Viewer keeps records (allows previewers to spy on viewer surface).
+  const setMode = async (next: Mode | null) => {
+    if (mode === "viewer" && next === "previewer") {
+      try {
+        const { data, error } = await supabase.rpc("wipe_viewer_traces");
+        if (error) throw error;
+        const d = (data as { messages_wiped?: number; requests_wiped?: number } | null) ?? {};
+        if (navigator.vibrate) navigator.vibrate(40);
+        toast.success("Viewer traces wiped", {
+          description: `${d.requests_wiped ?? 0} requests · ${d.messages_wiped ?? 0} messages discarded`,
+        });
+      } catch (e) {
+        toast.error("Wipe failed", { description: e instanceof Error ? e.message : "try again" });
+        return;
+      }
+    }
+    setModeRaw(next);
+  };
   const [peers, setPeers] = useState<Peer[]>([]);
   const [role, setRole] = useState<Role>("viewer");
   const [credits, setCredits] = useState(0);
@@ -282,6 +302,64 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const [brainInput, setBrainInput] = useState("");
   const [brainBusy, setBrainBusy] = useState(false);
   const [brainTags] = useState(["pml", "ppl", "l-si", "CI-clang", "CD-Outlet", "rag:collection"]);
+
+  // 500-word session hold: when the brain input crosses ~500 words the form
+  // is held, FAQ/inbox dim, and only a tokenized retrieval (wallet spend)
+  // can release it. Light haptic on lock + release.
+  const HOLD_THRESHOLD = 500;
+  const HOLD_RELEASE_COST = 25;
+  const brainWords = brainInput.trim() ? brainInput.trim().split(/\s+/).length : 0;
+  const [sessionHeld, setSessionHeld] = useState(false);
+  const [releasing, setReleasing] = useState(false);
+  useEffect(() => {
+    if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
+      setSessionHeld(true);
+      if (navigator.vibrate) navigator.vibrate([30, 20, 60]);
+      toast("Session hold engaged", { description: `≥ ${HOLD_THRESHOLD} words · spend ${HOLD_RELEASE_COST} tokens to release` });
+    }
+  }, [brainWords, sessionHeld]);
+  const releaseHold = async () => {
+    if (releasing) return;
+    setReleasing(true);
+    try {
+      const { error } = await supabase.rpc("spend_tokens", {
+        p_tokens: HOLD_RELEASE_COST,
+        p_reason: "previewer:session-hold-release",
+      });
+      if (error) throw error;
+      if (navigator.vibrate) navigator.vibrate(20);
+      setSessionHeld(false);
+      toast.success("Hold released", { description: `${HOLD_RELEASE_COST} tokens spent` });
+    } catch (e) {
+      toast.error("Release failed", { description: e instanceof Error ? e.message : "insufficient tokens?" });
+    } finally {
+      setReleasing(false);
+    }
+  };
+
+  // Viewer-activity spy: pending requests from viewers across this previewer's channels.
+  type ViewerPing = { id: string; story_plot: string; suggested_role: string; created_at: string };
+  const [viewerPings, setViewerPings] = useState<ViewerPing[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase
+        .from("live_call_requests")
+        .select("id,story_plot,suggested_role,created_at")
+        .eq("previewer_id", user.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (!cancelled && data) setViewerPings(data as ViewerPing[]);
+    };
+    load();
+    const ch = supabase
+      .channel("previewer-spy")
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_call_requests", filter: `previewer_id=eq.${user.id}` }, load)
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [user]);
 
   // API formatter — brand({name, name_appeal, self-services}) → preview-side generator link
   const irand = (lo: number, hi: number) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
@@ -763,20 +841,38 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               </div>
             )}
           </div>
-          <form onSubmit={sendBrain} className="mt-2 flex gap-2">
-            <input
-              value={brainInput}
-              onChange={(e) => setBrainInput(e.target.value)}
-              disabled={brainBusy}
-              className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
-              placeholder="brainstorm an idea…"
-            />
-            <button
-              disabled={brainBusy || !brainInput.trim()}
-              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              <Send className="h-3 w-3" /> send
-            </button>
+          <form onSubmit={sendBrain} className="mt-2 space-y-1">
+            <div className="flex gap-2">
+              <input
+                value={brainInput}
+                onChange={(e) => setBrainInput(e.target.value)}
+                disabled={brainBusy || sessionHeld}
+                className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
+                placeholder="brainstorm an idea…"
+              />
+              <button
+                disabled={brainBusy || !brainInput.trim() || sessionHeld}
+                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                <Send className="h-3 w-3" /> send
+              </button>
+            </div>
+            <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+              <span className={brainWords >= HOLD_THRESHOLD ? "text-destructive" : ""}>
+                {brainWords} / {HOLD_THRESHOLD} words
+              </span>
+              {sessionHeld && (
+                <button
+                  type="button"
+                  onClick={releaseHold}
+                  disabled={releasing}
+                  className="inline-flex items-center gap-1 rounded-md border border-primary/60 bg-primary/10 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20 disabled:opacity-50"
+                >
+                  {releasing ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Sparkles className="h-2.5 w-2.5" />}
+                  spend {HOLD_RELEASE_COST} · release
+                </button>
+              )}
+            </div>
           </form>
         </section>
 
@@ -909,8 +1005,32 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
         </section>
 
 
-        {/* FAQ / Q&A */}
+        {/* Viewer activity spy — pings from viewers across this previewer's channels */}
         <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium"><Eye className="h-4 w-4" /> Viewer activity</div>
+            <span className="text-[10px] font-mono text-muted-foreground">{viewerPings.length} pending</span>
+          </div>
+          {viewerPings.length === 0 ? (
+            <p className="mt-3 text-xs text-muted-foreground">No viewer pings right now. Live requests appear here in real time.</p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {viewerPings.map((p) => (
+                <li key={p.id} className="rounded-md border border-border bg-background/50 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] text-primary">{p.suggested_role}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleTimeString()}</span>
+                  </div>
+                  <div className="mt-1 text-foreground line-clamp-2">{p.story_plot}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-[10px] text-muted-foreground">Open Channels to accept or reject.</p>
+        </section>
+
+        {/* FAQ / Q&A */}
+        <section className={`rounded-2xl border border-border bg-card p-6 relative ${sessionHeld ? "opacity-40 pointer-events-none" : ""}`}>
           <div className="flex items-center gap-2 text-sm font-medium"><HelpCircle className="h-4 w-4" /> Q&amp;A · FAQ</div>
           <ul className="mt-3 space-y-3">
             {faq.map((f, i) => (
@@ -924,6 +1044,11 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
             Disclaimer: Terms and registration are always temporary. No assurance is given on ride-interfaces.
             Ownership-change requests require ≥ 4,000,000,000,000 strategic credits.
           </p>
+          {sessionHeld && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-background/60 backdrop-blur-sm">
+              <span className="text-xs font-mono text-destructive">— session held — tokenized release required —</span>
+            </div>
+          )}
         </section>
       </main>
     </div>
