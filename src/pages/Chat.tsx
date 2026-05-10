@@ -70,6 +70,48 @@ export default function Chat() {
     toast({ title: "Prompt injected", description: "Appended to your draft." });
   };
 
+  // Local attachments — kept client-side only (model input is local to the user)
+  interface LocalAttachment { id: string; name: string; size: number; type: string; url: string; }
+  const [attachments, setAttachments] = useState<LocalAttachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onPickFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const MAX = 50 * 1024 * 1024; // 50MB per file
+    const next: LocalAttachment[] = [];
+    Array.from(files).forEach(f => {
+      if (f.size > MAX) {
+        toast({ title: "File too large", description: `${f.name} exceeds 50MB and was skipped.`, variant: "destructive" });
+        return;
+      }
+      next.push({ id: crypto.randomUUID(), name: f.name, size: f.size, type: f.type || "application/octet-stream", url: URL.createObjectURL(f) });
+    });
+    if (next.length) {
+      setAttachments(prev => [...prev, ...next]);
+      toast({ title: "Attached locally", description: `${next.length} file(s) ready (kept on your device).` });
+    }
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => {
+      const target = prev.find(a => a.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter(a => a.id !== id);
+    });
+  };
+
+  useEffect(() => () => { attachments.forEach(a => URL.revokeObjectURL(a.url)); }, []); // eslint-disable-line
+
+  const attachIcon = (type: string) => {
+    if (type.startsWith("image/")) return <ImageIcon className="h-3 w-3" />;
+    if (type.startsWith("video/")) return <Video className="h-3 w-3" />;
+    if (type === "application/pdf" || type.startsWith("text/")) return <FileText className="h-3 w-3" />;
+    return <File className="h-3 w-3" />;
+  };
+
+  const fmtSize = (n: number) => n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`;
+
+
 
   useEffect(() => { if (!loading && !user) navigate("/auth", { replace: true }); }, [user, loading, navigate]);
 
