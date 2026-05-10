@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Coins, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Coins, Loader2, Send, Plus, RefreshCw, Syringe, Save, Trash2, History } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { countChars, fetchBalance } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,47 @@ export default function Chat() {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Local prompt history (saved under chat, persisted per-user in localStorage)
+  interface SavedPrompt { id: string; text: string; mode: "chat" | "model-conversion" | "injection"; created_at: number; }
+  const storageKey = user ? `qt:saved-prompts:${user.id}` : "qt:saved-prompts:anon";
+  const [savedPrompts, setSavedPrompts] = useState<SavedPrompt[]>([]);
+  const [showHistory, setShowHistory] = useState(true);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      setSavedPrompts(raw ? (JSON.parse(raw) as SavedPrompt[]) : []);
+    } catch { setSavedPrompts([]); }
+  }, [storageKey]);
+
+  const persistPrompts = (next: SavedPrompt[]) => {
+    setSavedPrompts(next);
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+
+  const savePrompt = (mode: SavedPrompt["mode"]) => {
+    const text = body.trim();
+    if (!text) { toast({ title: "Nothing to save", description: "Write a prompt first.", variant: "destructive" }); return; }
+    const entry: SavedPrompt = { id: crypto.randomUUID(), text, mode, created_at: Date.now() };
+    persistPrompts([entry, ...savedPrompts].slice(0, 100));
+    toast({ title: "Prompt saved", description: `Saved as ${mode}.` });
+  };
+
+  const deletePrompt = (id: string) => persistPrompts(savedPrompts.filter(p => p.id !== id));
+
+  const newChat = () => { setBody(""); setActiveConvId(null); setRecipientEmail(""); };
+
+  const newModelConversion = () => {
+    const base = body.trim();
+    setBody(`[model-conversion]\n${base ? base + "\n" : ""}Convert the previous response to a different model perspective.`);
+  };
+
+  const injectPrompt = (p: SavedPrompt) => {
+    setBody(prev => (prev ? prev + "\n\n" : "") + `<!-- injected:${p.mode} -->\n${p.text}`);
+    toast({ title: "Prompt injected", description: "Appended to your draft." });
+  };
+
 
   useEffect(() => { if (!loading && !user) navigate("/auth", { replace: true }); }, [user, loading, navigate]);
 
@@ -196,6 +237,42 @@ export default function Chat() {
           </div>
 
           <div className="border-t border-border p-3">
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+              <Button size="sm" variant="outline" onClick={newChat} className="h-7 px-2 text-xs">
+                <Plus className="mr-1 h-3 w-3" /> New chat
+              </Button>
+              <Button size="sm" variant="outline" onClick={newModelConversion} className="h-7 px-2 text-xs">
+                <RefreshCw className="mr-1 h-3 w-3" /> New-model-conversion
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => savePrompt("injection")} className="h-7 px-2 text-xs">
+                <Syringe className="mr-1 h-3 w-3" /> Prompt-injection
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => savePrompt("chat")} className="h-7 px-2 text-xs">
+                <Save className="mr-1 h-3 w-3" /> Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setShowHistory(s => !s)} className="h-7 px-2 text-xs">
+                <History className="mr-1 h-3 w-3" /> {showHistory ? "Hide" : "Show"} history ({savedPrompts.length})
+              </Button>
+            </div>
+
+            {showHistory && savedPrompts.length > 0 && (
+              <div className="mb-2 max-h-32 space-y-1 overflow-y-auto rounded-md border border-border bg-muted/40 p-1.5">
+                {savedPrompts.map(p => (
+                  <div key={p.id} className="flex items-start gap-1.5 rounded px-1.5 py-1 text-xs hover:bg-background">
+                    <span className="mt-0.5 shrink-0 rounded bg-primary/10 px-1 text-[10px] font-semibold uppercase text-primary">
+                      {p.mode}
+                    </span>
+                    <button onClick={() => injectPrompt(p)} className="flex-1 truncate text-left text-foreground hover:underline" title="Inject into draft">
+                      {p.text}
+                    </button>
+                    <button onClick={() => deletePrompt(p.id)} className="shrink-0 text-muted-foreground hover:text-destructive" aria-label="Delete">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2}
               placeholder="Write your prompt… (1 character = 1 token, transferred to recipient)"
               className={cn(insufficient && "border-destructive focus-visible:ring-destructive")}
