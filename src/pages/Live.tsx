@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2, Link2, Copy, RefreshCw } from "lucide-react";
+import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2, Link2, Copy, RefreshCw, MessageSquare } from "lucide-react";
+import Channels from "@/components/live/Channels";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-type Mode = "viewer" | "previewer";
+type Mode = "viewer" | "previewer" | "channels";
 type Role = "broadcaster" | "viewer";
 type Peer = {
   sign: string;
@@ -98,7 +99,7 @@ export default function Live() {
           <p className="mt-1 text-sm text-muted-foreground">
             Pick your seat. Terms are temporary — no assurance is given on ride-interfaces.
           </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <button
               onClick={() => setMode("viewer")}
               className="group rounded-xl border border-border bg-background p-5 text-left hover:border-primary hover:bg-primary/5 transition"
@@ -119,6 +120,16 @@ export default function Live() {
                 Movie-call, audio test, lyrics, terminal test, Q&amp;A and FAQ.
               </div>
             </button>
+            <button
+              onClick={() => setMode("channels")}
+              className="group rounded-xl border border-border bg-background p-5 text-left hover:border-primary hover:bg-primary/5 transition"
+            >
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <div className="mt-3 font-medium">Channels</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Browse previewer channels, request a movie-call, open a call space with cinephile AI.
+              </div>
+            </button>
           </div>
           <Link to="/" className="mt-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-3 w-3" /> Back home
@@ -130,6 +141,10 @@ export default function Live() {
 
   if (mode === "previewer") {
     return <Previewer onLeave={() => setMode(null)} />;
+  }
+
+  if (mode === "channels") {
+    return <Channels onLeave={() => setMode(null)} />;
   }
 
   // Viewer / audience session
