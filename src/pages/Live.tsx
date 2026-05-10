@@ -594,6 +594,59 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
           </form>
         </section>
 
+        {/* Brainstorm /chat — same backend, AI ideation, RAG:collection */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Sparkles className="h-4 w-4" /> /chat · brainstorm
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {brainTags.map((t) => (
+                <span key={t} className="rounded-md border border-border bg-background/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Same back-end as DM tokens · retrieval-rag : collection · touch pml/ppl/l-si · CI-clang · CD-Outlet. Session-only, wiped on screen-off.
+          </p>
+          <div className="mt-3 rounded-lg bg-background border border-border p-3 h-56 overflow-auto space-y-2 text-sm">
+            {brainMsgs.length === 0 ? (
+              <div className="text-xs text-muted-foreground font-mono">
+                idea? type below — informational musics awareness, static-code, code-dynamics, tethered-self.
+              </div>
+            ) : (
+              brainMsgs.map((m, i) => (
+                <div key={i} className={m.role === "user" ? "text-foreground" : "text-muted-foreground"}>
+                  <span className="font-mono text-[10px] mr-2 opacity-60">{m.role === "user" ? "self>" : "ai>"}</span>
+                  <span className="whitespace-pre-wrap">{m.content}</span>
+                </div>
+              ))
+            )}
+            {brainBusy && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> thinking…
+              </div>
+            )}
+          </div>
+          <form onSubmit={sendBrain} className="mt-2 flex gap-2">
+            <input
+              value={brainInput}
+              onChange={(e) => setBrainInput(e.target.value)}
+              disabled={brainBusy}
+              className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
+              placeholder="brainstorm an idea…"
+            />
+            <button
+              disabled={brainBusy || !brainInput.trim()}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              <Send className="h-3 w-3" /> send
+            </button>
+          </form>
+        </section>
+
         {/* FAQ / Q&A */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-medium"><HelpCircle className="h-4 w-4" /> Q&amp;A · FAQ</div>
