@@ -666,6 +666,49 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
           </form>
         </section>
 
+        {/* API formatter — preview-side generator link */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Link2 className="h-4 w-4" /> API · #formatter · brand()
+            </div>
+            <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+              <span className="rounded-md border border-border bg-background/40 px-1.5 py-0.5">match: live-Db</span>
+              <span className="rounded-md border border-border bg-background/40 px-1.5 py-0.5">Vm-spaces</span>
+              <span className="rounded-md border border-border bg-background/40 px-1.5 py-0.5">Sessions-active</span>
+            </div>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Preview-side only · % = irand(666, 9999) on each regenerate · session-only.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <input value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="name"
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary" />
+            <input value={brandAppeal} onChange={(e) => setBrandAppeal(e.target.value)} placeholder="name_appeal"
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary" />
+            <input value={brandSelf} onChange={(e) => setBrandSelf(e.target.value)} placeholder="self-services"
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary" />
+          </div>
+          <div className="mt-3 rounded-lg bg-background border border-border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <code className="text-xs font-mono break-all text-foreground">{apiLink}</code>
+              <span className="shrink-0 rounded-md border border-border bg-background/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">% {apiSeed}</span>
+            </div>
+            <pre className="mt-2 text-[11px] font-mono text-muted-foreground overflow-auto">{JSON.stringify(apiPayload, null, 2)}</pre>
+          </div>
+          <div className="mt-2 flex gap-2">
+            <button type="button" onClick={() => setApiSeed(irand(666, 9999))}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-accent">
+              <RefreshCw className="h-3 w-3" /> regenerate %
+            </button>
+            <button type="button" onClick={copyApi}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90">
+              <Copy className="h-3 w-3" /> copy payload
+            </button>
+          </div>
+        </section>
+
+
         {/* FAQ / Q&A */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-medium"><HelpCircle className="h-4 w-4" /> Q&amp;A · FAQ</div>
