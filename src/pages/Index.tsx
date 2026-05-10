@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Coins, Wallet, User, LogIn, Search } from "lucide-react";
+import { Coins, Wallet, User, LogIn } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import TokenCard from "@/components/TokenCard";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -43,54 +43,24 @@ const Index = () => {
             <div className="rounded-lg bg-primary p-2">
               <Coins className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold text-foreground">TokenStore</span>
+            <span className="font-display text-xl font-bold text-foreground">TokenStore where parrot leaves and Crow asks$</span>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSelector />
             {user ? (
-              <>
-                <div className="relative">
-                  <button
-                    onClick={() => setAiOpen(true)}
-                    className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 hover:bg-secondary/80 transition-colors"
-                    title="Spend tokens — chat with AI"
-                  >
-                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground">
-                      {balance} {t.balance}
-                    </span>
-                  </button>
-                  <motion.div
-                    aria-hidden
-                    className="pointer-events-none absolute -inset-3"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                  >
-                    <motion.div
-                      className="absolute -top-1 left-1/2 -translate-x-1/2"
-                      animate={{ y: [0, -4, 0, 4, 0], x: [0, 6, 0, -6, 0] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <Link
-                        to="/chat"
-                        title="Prompt the AI — tell us what you need"
-                        aria-label="Open AI chat"
-                        className="pointer-events-auto group relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/40 hover:scale-110 transition-transform"
-                      >
-                        <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
-                        <Search className="relative h-4 w-4" />
-                      </Link>
-                    </motion.div>
-                  </motion.div>
-                  <motion.span
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: [0, 1, 1, 0], y: [4, 0, 0, 4] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", times: [0, 0.15, 0.85, 1] }}
-                    className="pointer-events-none absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground/90 px-2 py-0.5 text-[10px] font-medium text-background shadow"
-                  >
-                    Prompt me ✨
-                  </motion.span>
-                </div>
+      <Frame>
+        <>FrameEvent<>FrameListener(.webhook-url)</></>
+      </Frame>
+                <button
+                  onClick={() => setAiOpen(true)}
+                  className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 hover:bg-secondary/80 transition-colors"
+                  title="Spend tokens — chat with AI"
+                >
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">
+                    {balance} {t.balance}
+                  </span>
+                </button>
                 <Link to="/account" className="rounded-full bg-secondary p-2 hover:bg-secondary/80">
                   <User className="h-4 w-4 text-foreground" />
                 </Link>
