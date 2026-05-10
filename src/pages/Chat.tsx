@@ -273,31 +273,37 @@ export default function Chat() {
         </aside>
 
         {/* Thread */}
-        <section className="flex h-[70vh] flex-col rounded-xl border border-border bg-card">
+        <section className="flex h-[70vh] flex-col rounded-xl border border-border bg-card shadow-sm">
           <div className="border-b border-border px-4 py-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{activeChannel?.name}</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{activeChannel?.name}</p>
             <p className="text-sm font-semibold text-foreground">
               {activeConvId ? peerEmails[activeConvId] ?? "Conversation" : "New prompt"}
             </p>
           </div>
 
-          <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto p-4">
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
             {!activeConvId && (
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">To (email)</label>
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">To (email)</label>
                 <Input type="email" placeholder="recipient@example.com" value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)} />
                 <p className="text-xs text-muted-foreground">Tokens you spend transfer in full to the recipient's wallet.</p>
+              </div>
+            )}
+            {messages.length === 0 && activeConvId && (
+              <div className="flex h-full flex-col items-center justify-center text-center">
+                <p className="text-sm text-muted-foreground">No messages yet.</p>
+                <p className="text-xs text-muted-foreground">Start the conversation below.</p>
               </div>
             )}
             {messages.map(m => {
               const mine = m.sender_id === user.id;
               return (
                 <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
-                  <div className={cn("max-w-[75%] rounded-2xl px-3 py-2 text-sm",
+                  <div className={cn("max-w-[75%] rounded-2xl px-4 py-2.5 text-sm shadow-sm",
                     mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")}>
-                    <p className="whitespace-pre-wrap">{m.body}</p>
-                    <p className={cn("mt-1 text-[10px]", mine ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                    <p className="whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                    <p className={cn("mt-1.5 text-[10px] opacity-70", mine ? "text-primary-foreground/70" : "text-muted-foreground")}>
                       {mine ? `−${m.words}` : `+${m.words}`} tokens · {new Date(m.created_at).toLocaleTimeString()}
                     </p>
                   </div>
