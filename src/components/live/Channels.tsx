@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Radio, Send, Check, X, Loader2, Sparkles, Paperclip, MessageSquare, ArrowLeft, Copy, Infinity as InfinityIcon } from "lucide-react";
+import { Plus, Radio, Send, Check, X, Loader2, Sparkles, Paperclip, MessageSquare, ArrowLeft, Copy, Infinity as InfinityIcon, ImagePlus, Frame as FrameIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -554,7 +554,7 @@ function ActiveCallSpace({ acs, onClose }: { acs: ACS; onClose: () => void }) {
             <div className="text-[10px] text-muted-foreground">cinephile listens in</div>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto" style={{ minHeight: 320, maxHeight: 480 }}>
-            {messages.map((m) => <MessageBubble key={m.id} m={m} acs={acs} meId={user?.id} />)}
+            {messages.filter((m) => !(m.kind === "file" && m.body.startsWith("inspiration:"))).map((m) => <MessageBubble key={m.id} m={m} acs={acs} meId={user?.id} />)}
             {messages.length === 0 && (
               <p className="text-center text-xs text-muted-foreground py-10">Say hello — the cinephile is listening.</p>
             )}
@@ -567,6 +567,146 @@ function ActiveCallSpace({ acs, onClose }: { acs: ACS; onClose: () => void }) {
           </form>
         </div>
       </section>
+
+      <section className="mx-auto max-w-6xl px-6 pb-10">
+        <InspirationFrame acs={acs} messages={messages} canUpload={isPreviewer} bonded={bonded} />
+      </section>
+    </div>
+  );
+}
+
+function InspirationFrame({ acs, messages, canUpload, bonded }: { acs: ACS; messages: Msg[]; canUpload: boolean; bonded: boolean }) {
+  const { user } = useAuth();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [caption, setCaption] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [urls, setUrls] = useState<Record<string, string>>({});
+
+  const inspirations = useMemo(
+    () => messages.filter((m) => m.kind === "file" && m.body.startsWith("inspiration:") && m.file_path),
+    [messages]
+  );
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const next: Record<string, string> = {};
+      await Promise.all(
+        inspirations.map(async (m) => {
+          if (!m.file_path || urls[m.id]) { if (urls[m.id]) next[m.id] = urls[m.id]; return; }
+          const { data } = await supabase.storage.from("acs-files").createSignedUrl(m.file_path, 60 * 30);
+          if (data?.signedUrl) next[m.id] = data.signedUrl;
+        })
+      );
+      if (active) setUrls((prev) => ({ ...prev, ...next }));
+    })();
+    return () => { active = false; };
+  }, [inspirations]);
+
+  const upload = async (file: File) => {
+    if (!user) return;
+    setBusy(true);
+    const path = `${acs.id}/inspiration-${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("acs-files").upload(path, file);
+    if (error) { setBusy(false); toast.error(error.message); return; }
+    const { error: e2 } = await supabase.from("live_acs_messages").insert({
+      acs_id: acs.id, author_id: user.id, kind: "file",
+      body: `inspiration:${caption.trim() || file.name}`, file_path: path,
+    });
+    setBusy(false);
+    if (e2) { toast.error(e2.message); return; }
+    setCaption("");
+    if (inputRef.current) inputRef.current.value = "";
+    toast.success("Inspiration framed");
+  };
+
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!f.type.startsWith("image/")) { toast.error("Pick an image"); return; }
+    upload(f);
+  };
+
+  const latest = inspirations[inspirations.length - 1];
+  const rest = inspirations.slice(0, -1).reverse();
+
+  return (
+    <div className={`rounded-xl border bg-card p-5 ${bonded ? "border-primary/60 shadow-[0_0_24px_-8px_hsl(var(--primary)/0.5)]" : "border-border"}`}>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FrameIcon className="h-4 w-4 text-primary" />
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">Inspiration frame</div>
+        </div>
+        <div className="text-[10px] text-muted-foreground">{canUpload ? "previewer-only upload" : "view only"}</div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_320px]">
+        {/* The frame */}
+        <div className="flex items-center justify-center">
+          {latest && urls[latest.id] ? (
+            <figure className="group relative max-w-full">
+              <div className="rounded-sm bg-gradient-to-br from-amber-100 via-amber-50 to-amber-200 p-4 pb-14 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.55)] ring-1 ring-black/10 transition-transform duration-500 group-hover:-rotate-1">
+                <div className="overflow-hidden rounded-[2px] bg-black ring-1 ring-black/30">
+                  <img
+                    src={urls[latest.id]}
+                    alt={latest.body.replace(/^inspiration:/, "")}
+                    className="block max-h-[420px] w-full object-cover"
+                  />
+                </div>
+                <figcaption className="absolute bottom-3 left-0 right-0 text-center font-display text-sm italic text-stone-700">
+                  {latest.body.replace(/^inspiration:/, "") || "Untitled"}
+                </figcaption>
+              </div>
+              <div className="pointer-events-none absolute -inset-2 -z-10 rounded-sm bg-primary/20 blur-2xl opacity-60" />
+            </figure>
+          ) : (
+            <div className="flex h-64 w-full max-w-md flex-col items-center justify-center rounded-md border-2 border-dashed border-border text-center text-muted-foreground">
+              <ImagePlus className="mb-2 h-8 w-8" />
+              <div className="text-sm">No inspiration yet.</div>
+              <div className="text-xs">{canUpload ? "Upload an image to set the mood." : "Waiting for the previewer to share an image."}</div>
+            </div>
+          )}
+        </div>
+
+        {/* Upload + gallery */}
+        <div className="space-y-4">
+          {canUpload && (
+            <div className="rounded-md border border-border bg-background p-3">
+              <div className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">Hang a new picture</div>
+              <input
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                placeholder="Caption (optional)"
+                className="mb-2 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+              />
+              <input ref={inputRef} type="file" accept="image/*" onChange={onPick} className="hidden" />
+              <button
+                onClick={() => inputRef.current?.click()}
+                disabled={busy}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImagePlus className="h-3 w-3" />}
+                {busy ? "Uploading…" : "Upload from device"}
+              </button>
+            </div>
+          )}
+
+          {rest.length > 0 && (
+            <div>
+              <div className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">Previously framed</div>
+              <div className="grid grid-cols-3 gap-2">
+                {rest.map((m) => (
+                  urls[m.id] ? (
+                    <div key={m.id} className="aspect-square overflow-hidden rounded-sm bg-amber-50 p-1 shadow ring-1 ring-black/10">
+                      <img src={urls[m.id]} alt={m.body} className="h-full w-full object-cover" />
+                    </div>
+                  ) : null
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
