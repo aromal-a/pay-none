@@ -251,6 +251,25 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const [brainBusy, setBrainBusy] = useState(false);
   const [brainTags] = useState(["pml", "ppl", "l-si", "CI-clang", "CD-Outlet", "rag:collection"]);
 
+  // API formatter — brand({name, name_appeal, self-services}) → preview-side generator link
+  const irand = (lo: number, hi: number) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
+  const [brandName, setBrandName] = useState("");
+  const [brandAppeal, setBrandAppeal] = useState("");
+  const [brandSelf, setBrandSelf] = useState("");
+  const [apiSeed, setApiSeed] = useState(() => irand(666, 9999));
+  const apiSlug = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
+  const apiLink = `preview://brand/${apiSlug(brandName)}/${apiSlug(brandAppeal)}/${apiSlug(brandSelf)}?match=live-db,vm-spaces,sessions-active&pct=${apiSeed}`;
+  const apiPayload = {
+    brand: { name: brandName, name_appeal: brandAppeal, "self-services": brandSelf },
+    "generator-link": apiLink,
+    match: ["live-Db", "Vm-spaces", "Sessions-active"],
+    "%": apiSeed,
+  };
+  const copyApi = async () => {
+    try { await navigator.clipboard.writeText(JSON.stringify(apiPayload, null, 2)); toast.success("API payload copied"); }
+    catch { toast.error("Copy failed"); }
+  };
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
