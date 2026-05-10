@@ -1251,7 +1251,7 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
           </div>
           <div className="mt-3 flex justify-end gap-2">
             <button onClick={() => setShowSave(false)} className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-accent">Cancel</button>
-            <button onClick={confirmSave} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90">Save</button>
+            <button onClick={confirmSave} disabled={savingTake} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1">{savingTake ? <><Loader2 className="h-3 w-3 animate-spin" /> Saving</> : "Save"}</button>
           </div>
         </motion.div>
       )}
