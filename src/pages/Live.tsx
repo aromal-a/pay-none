@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X } from "lucide-react";
+import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -244,6 +244,13 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const [lyricTitle, setLyricTitle] = useState("");
   const [lyricBody, setLyricBody] = useState("");
 
+  // Brainstorm /chat — same backend (prompt-ai), token-aware, RAG/collection tags
+  type BrainMsg = { role: "user" | "assistant"; content: string };
+  const [brainMsgs, setBrainMsgs] = useState<BrainMsg[]>([]);
+  const [brainInput, setBrainInput] = useState("");
+  const [brainBusy, setBrainBusy] = useState(false);
+  const [brainTags] = useState(["pml", "ppl", "l-si", "CI-clang", "CD-Outlet", "rag:collection"]);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
@@ -252,6 +259,8 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const wipe = () => {
     setTermLog([]);
     setTermInput("");
+    setBrainMsgs([]);
+    setBrainInput("");
     const c = canvasRef.current;
     if (c) c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
   };
@@ -330,6 +339,42 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       description: "Ownership change requires ≥ 4,000,000,000,000 strategic credits.",
     });
     setTimeout(() => setEmergency(false), 4000);
+  };
+
+  const sendBrain = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = brainInput.trim();
+    if (!text || brainBusy) return;
+    const next: BrainMsg[] = [...brainMsgs, { role: "user", content: text }];
+    setBrainMsgs(next);
+    setBrainInput("");
+    setBrainBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("prompt-ai", {
+        body: {
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a brainstorming partner inside a temporary previewer session. Tone: musical-awareness, static-code & code-dynamics, tethered self-info. Tag ideas with [pml] [ppl] [l-si] [CI-clang] [CD-Outlet] when relevant. Treat retrieval as RAG:collection. Be concise.",
+            },
+            ...next.map((m) => ({ role: m.role, content: m.content })),
+          ],
+        },
+      });
+      if (error) throw error;
+      const reply = (data as { reply?: string; error?: string })?.reply ?? "";
+      if (!reply) throw new Error((data as { error?: string })?.error || "no reply");
+      setBrainMsgs((m) => [...m, { role: "assistant", content: reply }]);
+    } catch (err) {
+      toast.error("Brainstorm unavailable", {
+        description: err instanceof Error ? err.message : "try again shortly",
+      });
+      setBrainMsgs((m) => m.slice(0, -1));
+      setBrainInput(text);
+    } finally {
+      setBrainBusy(false);
+    }
   };
 
   const lyrics = [
@@ -546,6 +591,59 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               placeholder="type a command…"
             />
             <button className="rounded-md bg-secondary px-3 py-1.5 text-sm hover:bg-secondary/80">run</button>
+          </form>
+        </section>
+
+        {/* Brainstorm /chat — same backend, AI ideation, RAG:collection */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Sparkles className="h-4 w-4" /> /chat · brainstorm
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {brainTags.map((t) => (
+                <span key={t} className="rounded-md border border-border bg-background/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Same back-end as DM tokens · retrieval-rag : collection · touch pml/ppl/l-si · CI-clang · CD-Outlet. Session-only, wiped on screen-off.
+          </p>
+          <div className="mt-3 rounded-lg bg-background border border-border p-3 h-56 overflow-auto space-y-2 text-sm">
+            {brainMsgs.length === 0 ? (
+              <div className="text-xs text-muted-foreground font-mono">
+                idea? type below — informational musics awareness, static-code, code-dynamics, tethered-self.
+              </div>
+            ) : (
+              brainMsgs.map((m, i) => (
+                <div key={i} className={m.role === "user" ? "text-foreground" : "text-muted-foreground"}>
+                  <span className="font-mono text-[10px] mr-2 opacity-60">{m.role === "user" ? "self>" : "ai>"}</span>
+                  <span className="whitespace-pre-wrap">{m.content}</span>
+                </div>
+              ))
+            )}
+            {brainBusy && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> thinking…
+              </div>
+            )}
+          </div>
+          <form onSubmit={sendBrain} className="mt-2 flex gap-2">
+            <input
+              value={brainInput}
+              onChange={(e) => setBrainInput(e.target.value)}
+              disabled={brainBusy}
+              className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
+              placeholder="brainstorm an idea…"
+            />
+            <button
+              disabled={brainBusy || !brainInput.trim()}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              <Send className="h-3 w-3" /> send
+            </button>
           </form>
         </section>
 
