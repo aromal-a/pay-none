@@ -178,6 +178,14 @@ export default function Chat() {
       if (error) throw error;
       const result = data as { conversation_id: string; sender_remaining: number };
       setBalance(result.sender_remaining);
+
+      // Auto-save the sent prompt to history so the user can revisit later
+      const sentText = body.trim();
+      if (sentText) {
+        const entry: SavedPrompt = { id: crypto.randomUUID(), text: sentText, mode: "chat", created_at: Date.now() };
+        persistPrompts([entry, ...savedPrompts].slice(0, 100));
+      }
+
       setBody("");
       setRecipientEmail("");
       if (!activeConvId) setActiveConvId(result.conversation_id);
