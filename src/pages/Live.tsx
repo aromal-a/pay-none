@@ -1265,7 +1265,7 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
                 <Mic className="h-3 w-3 text-primary" />
                 <div className="flex-1 min-w-0">
                   <div className="truncate text-sm font-medium">{s.title}</div>
-                  <div className="truncate text-[11px] text-muted-foreground font-mono">{s.name} · {fmt(s.durationMs)} · {(s.blob.size / 1024).toFixed(1)} KB</div>
+                  <div className="truncate text-[11px] text-muted-foreground font-mono">{s.name} · {fmt(s.durationMs)}{s.blob ? ` · ${(s.blob.size / 1024).toFixed(1)} KB` : ""}</div>
                 </div>
                 <audio src={s.url} controls className="h-8" />
               </li>
