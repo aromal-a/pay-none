@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Coins, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Coins, Loader2, Send, Plus, RefreshCw, Syringe, Save, Trash2, History } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { countChars, fetchBalance } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
