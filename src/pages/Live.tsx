@@ -435,16 +435,9 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
           </div>
         </section>
 
-        {/* Audio integration test */}
-        <section className="rounded-2xl border border-border bg-card p-6">
-          <div className="flex items-center gap-2 text-sm font-medium"><Mic className="h-4 w-4" /> Audio integration test</div>
-          <p className="mt-1 text-xs text-muted-foreground">Plays a 440 Hz tone for ~0.3s.</p>
-          <div className="mt-3 flex items-center gap-3">
-            <button onClick={testAudio} className="rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90">Run test</button>
-            {audioOk === true && <span className="text-xs text-green-500">audio ok</span>}
-            {audioOk === false && <span className="text-xs text-destructive">audio blocked</span>}
-          </div>
-        </section>
+        {/* Audio integration test — mic recorder */}
+        <MicTest audioOk={audioOk} onTone={testAudio} />
+
 
         {/* Lyrics */}
         <section className="rounded-2xl border border-border bg-card p-6">
