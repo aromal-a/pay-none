@@ -226,7 +226,7 @@ export default function Chat() {
           <div className="space-y-0.5">
             {channels.map(c => (
               <button key={c.id} onClick={() => { setActiveSlug(c.slug); setActiveConvId(null); }}
-                className={cn("w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
+                className={cn("w-full px-2 py-1.5 text-left text-sm hover:bg-muted border-current border-dotted rounded-md bg-slate-400 shadow-sm",
                   activeSlug === c.slug && "bg-primary/10 text-primary font-semibold")}>
                 {c.name}
               </button>
