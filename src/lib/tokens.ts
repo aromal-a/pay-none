@@ -1,13 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// 1 token = 1 word/punctuation unit. Tokens increment only when a space
-// or punctuation is added — not on every letter typed.
-// Example: "hello world" = 2 tokens, "hi, there!" = 4 tokens (hi , there !)
+// 1 token = 1 word. A word is finalized when a letter is followed by a
+// space (or end of input). Punctuation is ignored entirely — never counted
+// and never treated as a separator that creates a new token on its own.
+// Example: "hello world" = 2 tokens, "hi, there!" = 2 tokens, "hi," = 1.
 export const countChars = (text: string): number => {
-  const t = (text ?? "").trim();
-  if (!t) return 0;
-  // Match word runs OR single punctuation marks. Each match = 1 token.
-  const matches = t.match(/[A-Za-z0-9'’\-]+|[.,!?;:()"“”\/\\&%#@]/g);
+  const cleaned = (text ?? "").replace(/[^A-Za-z0-9'’\-\s]+/g, " ").trim();
+  if (!cleaned) return 0;
+  const matches = cleaned.match(/[A-Za-z0-9'’\-]+/g);
   return matches ? matches.length : 0;
 };
 // Backwards-compatible alias used by older components
