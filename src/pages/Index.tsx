@@ -62,24 +62,16 @@ const Index = () => {
                       {balance} {t.balance}
                     </span>
                   </button>
-                  <motion.div
-                    aria-hidden
-                    className="pointer-events-auto absolute -top-3 -right-3"
-                    animate={{ y: [0, -4, 0, 4, 0], x: [0, 6, 0, -6, 0], rotate: 360 }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  <Link
+                    to="/chat"
+                    title="Open prompt chat"
+                    className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm hover:bg-secondary/80 transition-colors w-64"
                   >
-                    <Link
-                      to="/chat"
-                      title="Open prompt chat"
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/40"
-                    >
-                      <Search className="h-3.5 w-3.5" />
-                    </Link>
-                    <span
-                      className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-ping"
-                      aria-hidden
-                    />
-                  </motion.div>
+                    <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground truncate">
+                      Share resources to pull leverages
+                    </span>
+                  </Link>
                 </div>
                 <Link
                   to="/live"
