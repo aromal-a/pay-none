@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Radio, Send, Check, X, Loader2, Sparkles, Paperclip, MessageSquare, ArrowLeft, Copy, Infinity as InfinityIcon } from "lucide-react";
+import { Plus, Radio, Send, Check, X, Loader2, Sparkles, Paperclip, MessageSquare, ArrowLeft, Copy, Infinity as InfinityIcon, ImagePlus, Frame as FrameIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
