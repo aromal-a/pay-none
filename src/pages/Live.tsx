@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle } from "lucide-react";
+import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -235,6 +236,28 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     "preview-shell v0.1 — temporary session, no assurances.",
     'try: "ping", "echo hi", "whoami", "clear"',
   ]);
+  const [frame, setFrame] = useState<"white" | "black">("white");
+  const [emergency, setEmergency] = useState(false);
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawing = useRef(false);
+  const last = useRef<{ x: number; y: number } | null>(null);
+
+  // Wipe session on screen-off / tab-hide / unmount (chat-session is temporary)
+  const wipe = () => {
+    setTermLog([]);
+    setTermInput("");
+    const c = canvasRef.current;
+    if (c) c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
+  };
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === "hidden") wipe(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      wipe();
+    };
+  }, []);
 
   const testAudio = async () => {
     try {
@@ -267,6 +290,43 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     setTermInput("");
   };
 
+  const pos = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+  const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    drawing.current = true;
+    last.current = pos(e);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const moveDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawing.current || !last.current) return;
+    const c = canvasRef.current; if (!c) return;
+    const ctx = c.getContext("2d"); if (!ctx) return;
+    const p = pos(e);
+    ctx.strokeStyle = frame === "white" ? "#000" : "#fff";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(last.current.x, last.current.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    last.current = p;
+  };
+  const endDraw = () => { drawing.current = false; last.current = null; };
+  const clearBoard = () => {
+    const c = canvasRef.current; if (!c) return;
+    c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
+  };
+
+  const triggerEmergency = () => {
+    setEmergency(true);
+    toast.error("Emergency alert raised — viewership owner notified.", {
+      description: "Ownership change requires ≥ 4,000,000,000,000 strategic credits.",
+    });
+    setTimeout(() => setEmergency(false), 4000);
+  };
+
   const lyrics = [
     "Frame-pour, letter-references, IOP",
     "Onset, drive — auto.bahn, creamy layer-call",
@@ -280,22 +340,66 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     { q: "Will I appear in the audience?", a: "Not while previewing. Switch to viewer to join." },
   ];
 
+  const leave = () => { wipe(); onLeave(); };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <button onClick={onLeave} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <button onClick={leave} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Switch
           </button>
           <div className="flex items-center gap-2">
             <Film className="h-4 w-4" />
             <span className="font-display text-lg font-semibold">Previewer</span>
           </div>
-          <div className="text-xs text-muted-foreground">temporary</div>
+          <button
+            onClick={triggerEmergency}
+            className="inline-flex items-center gap-1 rounded-full border border-destructive/40 px-3 py-1 text-xs text-destructive hover:bg-destructive/10"
+          >
+            <AlertTriangle className="h-3 w-3" /> Emergency
+          </button>
         </div>
+        {emergency && (
+          <div className="bg-destructive/10 text-destructive text-center text-xs py-1">
+            Alert dispatched — owner-only viewership. Contact requires strategic threshold.
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-10 space-y-8">
+        {/* Whiteboard — new_open(.pen, classics) */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium"><Pencil className="h-4 w-4" /> Virtual whiteboard</div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setFrame(frame === "white" ? "black" : "white")}
+                className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
+              >
+                Frame: {frame}
+              </button>
+              <button onClick={clearBoard} className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-accent">
+                <Eraser className="h-3 w-3" /> Clear
+              </button>
+            </div>
+          </div>
+          <p className="mt-1 text-[11px] text-muted-foreground">Pen · classics. Agreement = black-end. Board empties on screen-off.</p>
+          <div className={`mt-3 rounded-xl border border-border overflow-hidden ${frame === "white" ? "bg-white" : "bg-black"}`}>
+            <canvas
+              ref={canvasRef}
+              width={900}
+              height={420}
+              onPointerDown={startDraw}
+              onPointerMove={moveDraw}
+              onPointerUp={endDraw}
+              onPointerLeave={endDraw}
+              className="block w-full touch-none cursor-crosshair"
+              style={{ height: 320 }}
+            />
+          </div>
+        </section>
+
         {/* Movie-call */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-medium"><Film className="h-4 w-4" /> Movie-call</div>
@@ -354,6 +458,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
           </ul>
           <p className="mt-4 text-[11px] text-muted-foreground">
             Disclaimer: Terms and registration are always temporary. No assurance is given on ride-interfaces.
+            Ownership-change requests require ≥ 4,000,000,000,000 strategic credits.
           </p>
         </section>
       </main>
