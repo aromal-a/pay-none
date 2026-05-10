@@ -237,6 +237,42 @@ export default function Chat() {
           </div>
 
           <div className="border-t border-border p-3">
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+              <Button size="sm" variant="outline" onClick={newChat} className="h-7 px-2 text-xs">
+                <Plus className="mr-1 h-3 w-3" /> New chat
+              </Button>
+              <Button size="sm" variant="outline" onClick={newModelConversion} className="h-7 px-2 text-xs">
+                <RefreshCw className="mr-1 h-3 w-3" /> New-model-conversion
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => savePrompt("injection")} className="h-7 px-2 text-xs">
+                <Syringe className="mr-1 h-3 w-3" /> Prompt-injection
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => savePrompt("chat")} className="h-7 px-2 text-xs">
+                <Save className="mr-1 h-3 w-3" /> Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setShowHistory(s => !s)} className="h-7 px-2 text-xs">
+                <History className="mr-1 h-3 w-3" /> {showHistory ? "Hide" : "Show"} history ({savedPrompts.length})
+              </Button>
+            </div>
+
+            {showHistory && savedPrompts.length > 0 && (
+              <div className="mb-2 max-h-32 space-y-1 overflow-y-auto rounded-md border border-border bg-muted/40 p-1.5">
+                {savedPrompts.map(p => (
+                  <div key={p.id} className="flex items-start gap-1.5 rounded px-1.5 py-1 text-xs hover:bg-background">
+                    <span className="mt-0.5 shrink-0 rounded bg-primary/10 px-1 text-[10px] font-semibold uppercase text-primary">
+                      {p.mode}
+                    </span>
+                    <button onClick={() => injectPrompt(p)} className="flex-1 truncate text-left text-foreground hover:underline" title="Inject into draft">
+                      {p.text}
+                    </button>
+                    <button onClick={() => deletePrompt(p.id)} className="shrink-0 text-muted-foreground hover:text-destructive" aria-label="Delete">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2}
               placeholder="Write your prompt… (1 character = 1 token, transferred to recipient)"
               className={cn(insufficient && "border-destructive focus-visible:ring-destructive")}
