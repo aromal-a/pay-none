@@ -266,6 +266,23 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
           {paying ? "Loading…" : isAuthenticated ? t.buyNow : "Sign in to buy"}
         </button>
       </div>
+      {egg && eggOpen && (
+        <div className="mt-4 rounded-xl border border-dashed border-primary/40 bg-card/70 p-3 text-left text-xs backdrop-blur">
+          <div className="font-display text-sm font-bold text-foreground">access · {egg.code}</div>
+          <div className="mt-1 text-muted-foreground">lane = {egg.lane}</div>
+          <div className="text-muted-foreground">lecture = {egg.lecture}</div>
+          <div className="mt-2 text-[10px] text-muted-foreground/70">
+            tier-private · invisible to other packages · feeds Transformative-AI fact-coded validation
+          </div>
+          <button
+            type="button"
+            onClick={() => setEggOpen(false)}
+            className="mt-2 text-[10px] underline text-muted-foreground hover:text-foreground"
+          >
+            hide
+          </button>
+        </div>
+      )}
       <PromptDialog open={promptOpen} onOpenChange={setPromptOpen} />
     </motion.div>
   );
