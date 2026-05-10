@@ -238,6 +238,11 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   ]);
   const [frame, setFrame] = useState<"white" | "black">("white");
   const [emergency, setEmergency] = useState(false);
+  const [customLyrics, setCustomLyrics] = useState<{ name: string; title: string; body: string }[]>([]);
+  const [showLyricForm, setShowLyricForm] = useState(false);
+  const [lyricName, setLyricName] = useState("");
+  const [lyricTitle, setLyricTitle] = useState("");
+  const [lyricBody, setLyricBody] = useState("");
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
