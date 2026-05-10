@@ -621,12 +621,21 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
             <Film className="h-4 w-4" />
             <span className="font-display text-lg font-semibold">Previewer</span>
           </div>
-          <button
-            onClick={triggerEmergency}
-            className="inline-flex items-center gap-1 rounded-full border border-destructive/40 px-3 py-1 text-xs text-destructive hover:bg-destructive/10"
-          >
-            <AlertTriangle className="h-3 w-3" /> Emergency
-          </button>
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs font-mono"
+              title="Your token wallet"
+            >
+              <Wallet className="h-3 w-3 text-primary" />
+              {tokenBalance === null ? "—" : tokenBalance.toLocaleString()}
+            </span>
+            <button
+              onClick={triggerEmergency}
+              className="inline-flex items-center gap-1 rounded-full border border-destructive/40 px-3 py-1 text-xs text-destructive hover:bg-destructive/10"
+            >
+              <AlertTriangle className="h-3 w-3" /> Emergency
+            </button>
+          </div>
         </div>
         {emergency && (
           <div className="bg-destructive/10 text-destructive text-center text-xs py-1">
