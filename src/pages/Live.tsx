@@ -528,9 +528,8 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
         {/* Movie-call + recommendations */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-medium"><Film className="h-4 w-4" /> Movie-call</div>
-          <div className="mt-3 aspect-video w-full rounded-xl bg-gradient-to-br from-muted to-background flex items-center justify-center text-muted-foreground text-sm">
-            Standby frame — no live feed in preview.
-          </div>
+          <MovieCall userId={user?.id ?? null} />
+
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border bg-background p-3">
