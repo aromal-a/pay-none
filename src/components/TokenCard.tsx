@@ -202,10 +202,19 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
       )}
 
       <div
+        onClick={() => {
+          const next = eggTaps + 1;
+          setEggTaps(next);
+          if (next >= 3) {
+            setEggOpen(true);
+            setEggTaps(0);
+          }
+        }}
         className={cn(
-          "mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br",
+          "mx-auto mb-4 flex h-14 w-14 cursor-pointer items-center justify-center rounded-xl bg-gradient-to-br select-none",
           config.gradient,
         )}
+        title={egg?.hint}
       >
         <Icon className="h-7 w-7 text-primary-foreground" />
       </div>
