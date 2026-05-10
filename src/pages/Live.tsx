@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2, Link2, Copy, RefreshCw, MessageSquare } from "lucide-react";
+import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2, Link2, Copy, RefreshCw, MessageSquare, Wallet, Coins } from "lucide-react";
 import Channels from "@/components/live/Channels";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 type Mode = "viewer" | "previewer" | "channels";
 type Role = "broadcaster" | "viewer";
@@ -307,10 +310,26 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   // is held, FAQ/inbox dim, and only a tokenized retrieval (wallet spend)
   // can release it. Light haptic on lock + release.
   const HOLD_THRESHOLD = 500;
-  const HOLD_RELEASE_COST = 25;
+  const HOLD_RELEASE_COST = 250;
   const brainWords = brainInput.trim() ? brainInput.trim().split(/\s+/).length : 0;
   const [sessionHeld, setSessionHeld] = useState(false);
   const [releasing, setReleasing] = useState(false);
+
+  // Token balance — refreshed on mount and after every spend/award
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const refreshBalance = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("profiles").select("token_balance").eq("user_id", user.id).maybeSingle();
+    setTokenBalance(data?.token_balance ?? 0);
+  };
+  useEffect(() => { refreshBalance(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user]);
+
+  // Hold-release confirmation dialog state
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const [utilityNote, setUtilityNote] = useState("");
+  const [speechNote, setSpeechNote] = useState("");
+  const [viewerActivityNote, setViewerActivityNote] = useState("");
+
   useEffect(() => {
     if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
       setSessionHeld(true);
@@ -318,20 +337,51 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       toast("Session hold engaged", { description: `≥ ${HOLD_THRESHOLD} words · spend ${HOLD_RELEASE_COST} tokens to release` });
     }
   }, [brainWords, sessionHeld]);
-  const releaseHold = async () => {
+
+  const confirmRelease = async () => {
     if (releasing) return;
+    if (!utilityNote.trim() || !viewerActivityNote.trim()) {
+      toast.error("Describe utility & viewer activity to release");
+      return;
+    }
+    if (tokenBalance !== null && tokenBalance < HOLD_RELEASE_COST) {
+      toast.error("Not enough tokens", { description: `Need ${HOLD_RELEASE_COST}, have ${tokenBalance}` });
+      return;
+    }
     setReleasing(true);
     try {
-      const { error } = await supabase.rpc("spend_tokens", {
+      // 1) Spend the gate fee with full audit log (description of work).
+      const { error: spendErr } = await supabase.rpc("spend_tokens", {
         p_tokens: HOLD_RELEASE_COST,
         p_reason: "previewer:session-hold-release",
-      });
-      if (error) throw error;
+        p_original_text: brainInput.slice(0, 4000),
+        p_string_appeal: utilityNote,
+        p_currency_issues: speechNote || null,
+        p_log_hold: viewerActivityNote,
+        p_hold_place: "previewer:brain:500w",
+      } as never);
+      if (spendErr) throw spendErr;
+
+      // 2) Award the previewer back for the documented work action — fool-proof,
+      //    reserved economy: the gate fee is returned in full as a work-credit.
+      if (user) {
+        const { error: awardErr } = await supabase.rpc("credit_tokens", {
+          p_user_id: user.id,
+          p_tokens: HOLD_RELEASE_COST,
+        } as never);
+        if (awardErr) throw awardErr;
+      }
+
       if (navigator.vibrate) navigator.vibrate(20);
       setSessionHeld(false);
-      toast.success("Hold released", { description: `${HOLD_RELEASE_COST} tokens spent` });
+      setReleaseOpen(false);
+      setUtilityNote(""); setSpeechNote(""); setViewerActivityNote("");
+      await refreshBalance();
+      toast.success("Hold released · work credited", {
+        description: `${HOLD_RELEASE_COST} spent · ${HOLD_RELEASE_COST} returned to your wallet`,
+      });
     } catch (e) {
-      toast.error("Release failed", { description: e instanceof Error ? e.message : "insufficient tokens?" });
+      toast.error("Release failed", { description: e instanceof Error ? e.message : "try again" });
     } finally {
       setReleasing(false);
     }
@@ -571,12 +621,21 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
             <Film className="h-4 w-4" />
             <span className="font-display text-lg font-semibold">Previewer</span>
           </div>
-          <button
-            onClick={triggerEmergency}
-            className="inline-flex items-center gap-1 rounded-full border border-destructive/40 px-3 py-1 text-xs text-destructive hover:bg-destructive/10"
-          >
-            <AlertTriangle className="h-3 w-3" /> Emergency
-          </button>
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs font-mono"
+              title="Your token wallet"
+            >
+              <Wallet className="h-3 w-3 text-primary" />
+              {tokenBalance === null ? "—" : tokenBalance.toLocaleString()}
+            </span>
+            <button
+              onClick={triggerEmergency}
+              className="inline-flex items-center gap-1 rounded-full border border-destructive/40 px-3 py-1 text-xs text-destructive hover:bg-destructive/10"
+            >
+              <AlertTriangle className="h-3 w-3" /> Emergency
+            </button>
+          </div>
         </div>
         {emergency && (
           <div className="bg-destructive/10 text-destructive text-center text-xs py-1">
@@ -864,7 +923,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               {sessionHeld && (
                 <button
                   type="button"
-                  onClick={releaseHold}
+                  onClick={() => setReleaseOpen(true)}
                   disabled={releasing}
                   className="inline-flex items-center gap-1 rounded-md border border-primary/60 bg-primary/10 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20 disabled:opacity-50"
                 >
@@ -1051,6 +1110,78 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
           )}
         </section>
       </main>
+
+      <Dialog open={releaseOpen} onOpenChange={(o) => !releasing && setReleaseOpen(o)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Coins className="h-4 w-4 text-primary" /> Release session hold
+            </DialogTitle>
+            <DialogDescription>
+              You are about to spend <span className="font-mono text-foreground">{HOLD_RELEASE_COST}</span> tokens
+              to lift the 500-word hold + utility-awareness & speech-synthesis review.
+              Describe the work — the same amount is returned to your wallet as a previewer credit.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-xs font-mono">
+              <span className="flex items-center gap-1 text-muted-foreground"><Wallet className="h-3 w-3" /> wallet</span>
+              <span>{tokenBalance === null ? "—" : tokenBalance.toLocaleString()} tokens</span>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-mono">
+              <span className="text-muted-foreground">gate fee → award</span>
+              <span className="text-primary">−{HOLD_RELEASE_COST} · +{HOLD_RELEASE_COST}</span>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Utility awareness — what was offered for prompt continuation?
+              </label>
+              <Textarea
+                value={utilityNote}
+                onChange={(e) => setUtilityNote(e.target.value)}
+                rows={2}
+                placeholder="e.g. RAG collection lookup, brand payload, lyrics seeding…"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Speech-synthesis action review (optional)
+              </label>
+              <Textarea
+                value={speechNote}
+                onChange={(e) => setSpeechNote(e.target.value)}
+                rows={2}
+                placeholder="vocal cue, tone, pacing, mic-take notes…"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Viewer activity log — usages & charges transferred
+              </label>
+              <Textarea
+                value={viewerActivityNote}
+                onChange={(e) => setViewerActivityNote(e.target.value)}
+                rows={3}
+                placeholder="describe the viewer's activity and what charges/tokens are owed…"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReleaseOpen(false)} disabled={releasing}>
+              Cancel
+            </Button>
+            <Button onClick={confirmRelease} disabled={releasing}>
+              {releasing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+              Confirm · spend {HOLD_RELEASE_COST}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
