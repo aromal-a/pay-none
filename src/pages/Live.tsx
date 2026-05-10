@@ -841,20 +841,38 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               </div>
             )}
           </div>
-          <form onSubmit={sendBrain} className="mt-2 flex gap-2">
-            <input
-              value={brainInput}
-              onChange={(e) => setBrainInput(e.target.value)}
-              disabled={brainBusy}
-              className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
-              placeholder="brainstorm an idea…"
-            />
-            <button
-              disabled={brainBusy || !brainInput.trim()}
-              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              <Send className="h-3 w-3" /> send
-            </button>
+          <form onSubmit={sendBrain} className="mt-2 space-y-1">
+            <div className="flex gap-2">
+              <input
+                value={brainInput}
+                onChange={(e) => setBrainInput(e.target.value)}
+                disabled={brainBusy || sessionHeld}
+                className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
+                placeholder="brainstorm an idea…"
+              />
+              <button
+                disabled={brainBusy || !brainInput.trim() || sessionHeld}
+                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                <Send className="h-3 w-3" /> send
+              </button>
+            </div>
+            <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+              <span className={brainWords >= HOLD_THRESHOLD ? "text-destructive" : ""}>
+                {brainWords} / {HOLD_THRESHOLD} words
+              </span>
+              {sessionHeld && (
+                <button
+                  type="button"
+                  onClick={releaseHold}
+                  disabled={releasing}
+                  className="inline-flex items-center gap-1 rounded-md border border-primary/60 bg-primary/10 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20 disabled:opacity-50"
+                >
+                  {releasing ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Sparkles className="h-2.5 w-2.5" />}
+                  spend {HOLD_RELEASE_COST} · release
+                </button>
+              )}
+            </div>
           </form>
         </section>
 
