@@ -230,6 +230,7 @@ export default function Live() {
 }
 
 function Previewer({ onLeave }: { onLeave: () => void }) {
+  const { user } = useAuth();
   const [audioOk, setAudioOk] = useState<null | boolean>(null);
   const [termInput, setTermInput] = useState("");
   const [termLog, setTermLog] = useState<string[]>([
@@ -238,11 +239,27 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   ]);
   const [frame, setFrame] = useState<"white" | "black">("white");
   const [emergency, setEmergency] = useState(false);
-  const [customLyrics, setCustomLyrics] = useState<{ name: string; title: string; body: string }[]>([]);
+  type LyricRow = { id: string; name: string; title: string | null; body: string };
+  const [customLyrics, setCustomLyrics] = useState<LyricRow[]>([]);
   const [showLyricForm, setShowLyricForm] = useState(false);
   const [lyricName, setLyricName] = useState("");
   const [lyricTitle, setLyricTitle] = useState("");
   const [lyricBody, setLyricBody] = useState("");
+
+  // Recommendations — built-ins + previewer's own (persisted)
+  const builtinRecs = [
+    "Frame steady, eye-line center",
+    "One light, one mic, no overlay",
+    "Speak before you reveal",
+    "Off-letter / new-Parablox: leave the script",
+  ];
+  type RecRow = { id: string; label: string };
+  const [customRecs, setCustomRecs] = useState<RecRow[]>([]);
+  const [recDraft, setRecDraft] = useState("");
+
+  // Saved brand payloads (persisted)
+  type BrandRow = { id: string; brand_name: string | null; brand_appeal: string | null; brand_self: string | null; api_link: string | null; api_seed: number | null; created_at: string };
+  const [savedPayloads, setSavedPayloads] = useState<BrandRow[]>([]);
 
   // Brainstorm /chat — same backend (prompt-ai), token-aware, RAG/collection tags
   type BrainMsg = { role: "user" | "assistant"; content: string };
@@ -291,11 +308,10 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
 
-  // Wipe session on screen-off / tab-hide / unmount (chat-session is temporary)
+  // Wipe in-flight session UI on screen-off (persisted data is reloaded from DB on next mount)
   const wipe = () => {
     setTermLog([]);
     setTermInput("");
-    setBrainMsgs([]);
     setBrainInput("");
     const c = canvasRef.current;
     if (c) c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
@@ -308,6 +324,26 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       wipe();
     };
   }, []);
+
+  // Load previewer's persisted gardens (brain, lyrics, recommendations, brand payloads)
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const [b, l, r, p] = await Promise.all([
+        supabase.from("previewer_brain_messages").select("role,content").order("created_at", { ascending: true }),
+        supabase.from("previewer_lyrics").select("id,name,title,body").order("created_at", { ascending: false }),
+        supabase.from("previewer_recommendations").select("id,label").order("created_at", { ascending: false }),
+        supabase.from("previewer_brand_payloads").select("id,brand_name,brand_appeal,brand_self,api_link,api_seed,created_at").order("created_at", { ascending: false }).limit(20),
+      ]);
+      if (cancelled) return;
+      if (b.data) setBrainMsgs(b.data.map((d) => ({ role: d.role as "user" | "assistant", content: d.content })));
+      if (l.data) setCustomLyrics(l.data as LyricRow[]);
+      if (r.data) setCustomRecs(r.data as RecRow[]);
+      if (p.data) setSavedPayloads(p.data as BrandRow[]);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const testAudio = async () => {
     try {
@@ -385,6 +421,8 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     setBrainMsgs(next);
     setBrainInput("");
     setBrainBusy(true);
+    // persist user msg (fire and forget)
+    if (user) supabase.from("previewer_brain_messages").insert({ user_id: user.id, role: "user", content: text }).then(() => {});
     try {
       const { data, error } = await supabase.functions.invoke("prompt-ai", {
         body: {
@@ -402,6 +440,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       const reply = (data as { reply?: string; error?: string })?.reply ?? "";
       if (!reply) throw new Error((data as { error?: string })?.error || "no reply");
       setBrainMsgs((m) => [...m, { role: "assistant", content: reply }]);
+      if (user) supabase.from("previewer_brain_messages").insert({ user_id: user.id, role: "assistant", content: reply }).then(() => {});
     } catch (err) {
       toast.error("Brainstorm unavailable", {
         description: err instanceof Error ? err.message : "try again shortly",
@@ -495,13 +534,53 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border bg-background p-3">
-              <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Recommendations</div>
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Recommendations</div>
+              </div>
               <ul className="mt-2 space-y-1 text-xs">
-                <li>· Frame steady, eye-line center</li>
-                <li>· One light, one mic, no overlay</li>
-                <li>· Speak before you reveal</li>
-                <li>· Off-letter / new-Parablox: leave the script</li>
+                {builtinRecs.map((l, i) => <li key={i}>· {l}</li>)}
+                {customRecs.map((r) => (
+                  <li key={r.id} className="flex items-center gap-2 group">
+                    <span className="flex-1">· {r.label}</span>
+                    <button
+                      onClick={async () => {
+                        await supabase.from("previewer_recommendations").delete().eq("id", r.id);
+                        setCustomRecs((a) => a.filter((x) => x.id !== r.id));
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                      aria-label="Remove"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
               </ul>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const text = recDraft.trim();
+                  if (!text || !user) return;
+                  const { data, error } = await supabase
+                    .from("previewer_recommendations")
+                    .insert({ user_id: user.id, label: text })
+                    .select("id,label")
+                    .single();
+                  if (error) { toast.error("Couldn't save"); return; }
+                  setCustomRecs((a) => [data as RecRow, ...a]);
+                  setRecDraft("");
+                }}
+                className="mt-2 flex gap-1"
+              >
+                <input
+                  value={recDraft}
+                  onChange={(e) => setRecDraft(e.target.value)}
+                  placeholder="add your own…"
+                  className="flex-1 rounded-md border border-border bg-card px-2 py-1 text-[11px] focus:outline-none focus:border-primary"
+                />
+                <button className="rounded-md border border-border bg-card px-2 py-1 text-[11px] hover:bg-accent" aria-label="Add recommendation">
+                  <Plus className="h-3 w-3" />
+                </button>
+              </form>
             </div>
             <div className="rounded-lg border border-border bg-background p-3">
               <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Specifications · directions</div>
@@ -522,7 +601,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
         </section>
 
         {/* Audio integration test — mic recorder */}
-        <MicTest audioOk={audioOk} onTone={testAudio} />
+        <MicTest audioOk={audioOk} onTone={testAudio} userId={user?.id ?? null} />
 
 
         {/* Lyrics */}
@@ -543,15 +622,18 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
           {customLyrics.length > 0 && (
             <ul className="mt-4 space-y-3">
-              {customLyrics.map((c, i) => (
-                <li key={i} className="rounded-lg border border-border bg-background p-3">
+              {customLyrics.map((c) => (
+                <li key={c.id} className="rounded-lg border border-border bg-background p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <div className="text-sm font-medium">{c.title}</div>
                       <div className="text-[11px] text-muted-foreground">{c.name}</div>
                     </div>
                     <button
-                      onClick={() => setCustomLyrics((arr) => arr.filter((_, j) => j !== i))}
+                      onClick={async () => {
+                        await supabase.from("previewer_lyrics").delete().eq("id", c.id);
+                        setCustomLyrics((arr) => arr.filter((x) => x.id !== c.id));
+                      }}
                       className="text-muted-foreground hover:text-destructive"
                       aria-label="Remove"
                     >
@@ -566,17 +648,18 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
           {showLyricForm && (
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (!lyricBody.trim()) return;
-                setCustomLyrics((arr) => [
-                  ...arr,
-                  {
-                    name: lyricName.trim() || `take-${arr.length + 1}`,
-                    title: lyricTitle.trim() || "Untitled rhythm",
-                    body: lyricBody,
-                  },
-                ]);
+                if (!lyricBody.trim() || !user) return;
+                const name = lyricName.trim() || `take-${customLyrics.length + 1}`;
+                const title = lyricTitle.trim() || "Untitled rhythm";
+                const { data, error } = await supabase
+                  .from("previewer_lyrics")
+                  .insert({ user_id: user.id, name, title, body: lyricBody, kind: "lyric" })
+                  .select("id,name,title,body")
+                  .single();
+                if (error) { toast.error("Couldn't save lyric"); return; }
+                setCustomLyrics((arr) => [data as LyricRow, ...arr]);
                 setLyricName(""); setLyricTitle(""); setLyricBody("");
                 setShowLyricForm(false);
               }}
@@ -722,7 +805,64 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90">
               <Copy className="h-3 w-3" /> copy payload
             </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!user) return;
+                const { data, error } = await supabase
+                  .from("previewer_brand_payloads")
+                  .insert({
+                    user_id: user.id,
+                    brand_name: brandName || null,
+                    brand_appeal: brandAppeal || null,
+                    brand_self: brandSelf || null,
+                    api_link: apiLink,
+                    api_seed: apiSeed,
+                    payload: apiPayload,
+                  })
+                  .select("id,brand_name,brand_appeal,brand_self,api_link,api_seed,created_at")
+                  .single();
+                if (error) { toast.error("Save failed"); return; }
+                setSavedPayloads((a) => [data as BrandRow, ...a]);
+                toast.success("Brand payload saved");
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-accent">
+              <Save className="h-3 w-3" /> save payload
+            </button>
           </div>
+
+          {savedPayloads.length > 0 && (
+            <div className="mt-3 rounded-lg border border-border bg-background/40 p-3">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Saved frame-letters</div>
+              <ul className="mt-2 space-y-1 text-[11px] font-mono">
+                {savedPayloads.map((p) => (
+                  <li key={p.id} className="flex items-center gap-2 group">
+                    <button
+                      onClick={() => {
+                        setBrandName(p.brand_name || "");
+                        setBrandAppeal(p.brand_appeal || "");
+                        setBrandSelf(p.brand_self || "");
+                        if (p.api_seed) setApiSeed(p.api_seed);
+                      }}
+                      className="flex-1 text-left truncate text-foreground/90 hover:text-primary"
+                    >
+                      · {p.brand_name || "untitled"} <span className="text-muted-foreground">% {p.api_seed}</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await supabase.from("previewer_brand_payloads").delete().eq("id", p.id);
+                        setSavedPayloads((a) => a.filter((x) => x.id !== p.id));
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                      aria-label="Remove"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Viewership membrane — manual paste gate */}
           <div className="mt-4 rounded-lg border border-border bg-background/40 p-3">
@@ -776,9 +916,9 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   );
 }
 
-type Recording = { blob: Blob; url: string; durationMs: number; mime: string; name?: string; title?: string };
+type Recording = { id?: string; blob?: Blob; url: string; durationMs: number; mime: string; name?: string; title?: string; storage_path?: string };
 
-function MicTest({ audioOk, onTone }: { audioOk: null | boolean; onTone: () => void }) {
+function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone: () => void; userId: string | null }) {
   const [supported, setSupported] = useState<boolean>(true);
   const [permError, setPermError] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "recording" | "paused" | "stopped">("idle");
@@ -789,6 +929,39 @@ function MicTest({ audioOk, onTone }: { audioOk: null | boolean; onTone: () => v
   const [saveName, setSaveName] = useState("");
   const [saveTitle, setSaveTitle] = useState("");
   const [saved, setSaved] = useState<Recording[]>([]);
+  const [savingTake, setSavingTake] = useState(false);
+
+  // Load persisted recordings for this previewer
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("previewer_recordings")
+        .select("id,name,title,storage_path,duration_seconds,mime_type")
+        .order("created_at", { ascending: false });
+      if (cancelled || !data) return;
+      const rows = await Promise.all(
+        data.map(async (r) => {
+          const { data: signed } = await supabase.storage
+            .from("previewer-audio")
+            .createSignedUrl(r.storage_path, 60 * 60);
+          return {
+            id: r.id,
+            url: signed?.signedUrl || "",
+            durationMs: (r.duration_seconds || 0) * 1000,
+            mime: r.mime_type || "audio/webm",
+            name: r.name,
+            title: r.title || r.name,
+            storage_path: r.storage_path,
+          } as Recording;
+        })
+      );
+      setSaved(rows);
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
+
 
   const mediaRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -921,16 +1094,47 @@ function MicTest({ audioOk, onTone }: { audioOk: null | boolean; onTone: () => v
     setShowSave(true);
   };
 
-  const confirmSave = () => {
-    if (!recording) return;
+  const confirmSave = async () => {
+    if (!recording || !recording.blob) return;
     const name = saveName.trim() || `take-${saved.length + 1}`;
     const title = saveTitle.trim() || name;
-    setSaved((s) => [...s, { ...recording, name, title }]);
-    toast.success(`Saved "${title}"`, { description: `${name} · ${(recording.blob.size / 1024).toFixed(1)} KB` });
-    setShowSave(false);
-    setRecording(null);
-    setState("idle");
-    setElapsed(0);
+    if (!userId) {
+      // fallback: keep locally
+      setSaved((s) => [...s, { ...recording, name, title }]);
+      toast.success(`Saved "${title}" (local only)`);
+      setShowSave(false); setRecording(null); setState("idle"); setElapsed(0);
+      return;
+    }
+    setSavingTake(true);
+    try {
+      const ext = (recording.mime.split("/")[1] || "webm").split(";")[0];
+      const path = `${userId}/${Date.now()}-${name.replace(/[^a-z0-9-_]/gi, "_")}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("previewer-audio")
+        .upload(path, recording.blob, { contentType: recording.mime, upsert: false });
+      if (upErr) throw upErr;
+      const { data: row, error: insErr } = await supabase
+        .from("previewer_recordings")
+        .insert({
+          user_id: userId,
+          name,
+          title,
+          storage_path: path,
+          duration_seconds: Math.round(recording.durationMs / 1000),
+          mime_type: recording.mime,
+        })
+        .select("id")
+        .single();
+      if (insErr) throw insErr;
+      const { data: signed } = await supabase.storage.from("previewer-audio").createSignedUrl(path, 60 * 60);
+      setSaved((s) => [{ ...recording, id: row?.id, name, title, storage_path: path, url: signed?.signedUrl || recording.url }, ...s]);
+      toast.success(`Saved "${title}"`, { description: `${name} · ${(recording.blob.size / 1024).toFixed(1)} KB` });
+      setShowSave(false); setRecording(null); setState("idle"); setElapsed(0);
+    } catch (err) {
+      toast.error("Save failed", { description: err instanceof Error ? err.message : "unknown" });
+    } finally {
+      setSavingTake(false);
+    }
   };
 
   const fmt = (ms: number) => {
@@ -1047,7 +1251,7 @@ function MicTest({ audioOk, onTone }: { audioOk: null | boolean; onTone: () => v
           </div>
           <div className="mt-3 flex justify-end gap-2">
             <button onClick={() => setShowSave(false)} className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-accent">Cancel</button>
-            <button onClick={confirmSave} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90">Save</button>
+            <button onClick={confirmSave} disabled={savingTake} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1">{savingTake ? <><Loader2 className="h-3 w-3 animate-spin" /> Saving</> : "Save"}</button>
           </div>
         </motion.div>
       )}
@@ -1061,7 +1265,7 @@ function MicTest({ audioOk, onTone }: { audioOk: null | boolean; onTone: () => v
                 <Mic className="h-3 w-3 text-primary" />
                 <div className="flex-1 min-w-0">
                   <div className="truncate text-sm font-medium">{s.title}</div>
-                  <div className="truncate text-[11px] text-muted-foreground font-mono">{s.name} · {fmt(s.durationMs)} · {(s.blob.size / 1024).toFixed(1)} KB</div>
+                  <div className="truncate text-[11px] text-muted-foreground font-mono">{s.name} · {fmt(s.durationMs)}{s.blob ? ` · ${(s.blob.size / 1024).toFixed(1)} KB` : ""}</div>
                 </div>
                 <audio src={s.url} controls className="h-8" />
               </li>
