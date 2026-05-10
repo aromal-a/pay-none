@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, ArrowLeft, Mic, Eye, Hand } from "lucide-react";
+import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+type Mode = "viewer" | "previewer";
 type Role = "broadcaster" | "viewer";
 type Peer = {
   sign: string;
@@ -19,6 +20,7 @@ const SIGNS = ["✦", "✺", "✹", "✸", "✷", "✶", "✧", "✪", "✫", "�
 
 export default function Live() {
   const { user, loading } = useAuth();
+  const [mode, setMode] = useState<Mode | null>(null);
   const [peers, setPeers] = useState<Peer[]>([]);
   const [role, setRole] = useState<Role>("viewer");
   const [credits, setCredits] = useState(0);
@@ -35,7 +37,7 @@ export default function Live() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !identity) return;
+    if (!user || !identity || mode !== "viewer") return;
     const ch = supabase.channel("live-room", {
       config: { presence: { key: user.id } },
     });
@@ -55,9 +57,8 @@ export default function Live() {
       ch.unsubscribe();
       setChannel(null);
     };
-  }, [user, identity]);
+  }, [user, identity, mode]);
 
-  // Re-track when role/credits change
   useEffect(() => {
     if (!channel || !identity) return;
     channel.track({ ...identity, role, credits } as Peer);
@@ -65,12 +66,11 @@ export default function Live() {
 
   const broadcasters = peers.filter((p) => p.role === "broadcaster");
   const viewers = peers.filter((p) => p.role === "viewer");
-  const featured = broadcasters[0]; // single-stage broadcast frame
+  const featured = broadcasters[0];
 
   const sendCredit = () => {
     if (!featured || featured.user_id === user?.id) return;
     setCredits((c) => c + 1);
-    // broadcast a credit event so the broadcaster's view can react
     channel?.send({
       type: "broadcast",
       event: "credit",
@@ -81,20 +81,71 @@ export default function Live() {
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
 
+  // Mode picker
+  if (!mode) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-lg rounded-2xl border border-border bg-card p-8 shadow-lg"
+        >
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Radio className="h-4 w-4" /> Live entry
+          </div>
+          <h1 className="mt-2 font-display text-2xl font-semibold">How are you joining?</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Pick your seat. Terms are temporary — no assurance is given on ride-interfaces.
+          </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button
+              onClick={() => setMode("viewer")}
+              className="group rounded-xl border border-border bg-background p-5 text-left hover:border-primary hover:bg-primary/5 transition"
+            >
+              <Eye className="h-5 w-5 text-primary" />
+              <div className="mt-3 font-medium">Viewer</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Join the audio + audience session in progress.
+              </div>
+            </button>
+            <button
+              onClick={() => setMode("previewer")}
+              className="group rounded-xl border border-border bg-background p-5 text-left hover:border-primary hover:bg-primary/5 transition"
+            >
+              <Film className="h-5 w-5 text-primary" />
+              <div className="mt-3 font-medium">Previewer</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Movie-call, audio test, lyrics, terminal test, Q&amp;A and FAQ.
+              </div>
+            </button>
+          </div>
+          <Link to="/" className="mt-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-3 w-3" /> Back home
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (mode === "previewer") {
+    return <Previewer onLeave={() => setMode(null)} />;
+  }
+
+  // Viewer / audience session
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Link>
+          <button onClick={() => setMode(null)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Switch
+          </button>
           <div className="flex items-center gap-2">
             <motion.span
               className="inline-block h-2 w-2 rounded-full bg-destructive"
               animate={{ opacity: [1, 0.3, 1] }}
               transition={{ duration: 1.2, repeat: Infinity }}
             />
-            <span className="font-display text-lg font-semibold">Live Broadcast</span>
+            <span className="font-display text-lg font-semibold">Audience Session</span>
             <Radio className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -104,17 +155,11 @@ export default function Live() {
         </div>
       </header>
 
-      {/* Stage / Frame */}
       <section className="mx-auto max-w-3xl px-6 pt-10">
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card to-muted">
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {featured ? (
-              <motion.div
-                key={featured.user_id}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="text-center"
-              >
+              <motion.div key={featured.user_id} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
                 <div className="text-7xl">{featured.sign}</div>
                 <div className="mt-3 font-mono text-2xl font-bold">#{featured.number}</div>
                 <div className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">on stage</div>
@@ -133,28 +178,18 @@ export default function Live() {
           )}
         </div>
 
-        {/* Controls */}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           {role === "viewer" ? (
-            <button
-              onClick={() => setRole("broadcaster")}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
+            <button onClick={() => setRole("broadcaster")} className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
               <Mic className="h-4 w-4" /> Go live
             </button>
           ) : (
-            <button
-              onClick={() => setRole("viewer")}
-              className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2 text-sm font-medium hover:bg-secondary/80"
-            >
+            <button onClick={() => setRole("viewer")} className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2 text-sm font-medium hover:bg-secondary/80">
               <Eye className="h-4 w-4" /> Step down
             </button>
           )}
           {featured && featured.user_id !== user.id && (
-            <button
-              onClick={sendCredit}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2 text-sm font-medium hover:bg-accent"
-            >
+            <button onClick={sendCredit} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2 text-sm font-medium hover:bg-accent">
               <Hand className="h-4 w-4" /> Credit the act
             </button>
           )}
@@ -164,10 +199,9 @@ export default function Live() {
         </p>
       </section>
 
-      {/* Viewers grid */}
       <section className="mx-auto max-w-4xl px-6 pb-20 pt-10">
         <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          Viewers ({viewers.length})
+          Audience ({viewers.length})
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
           <AnimatePresence>
@@ -184,17 +218,145 @@ export default function Live() {
               >
                 <span className="text-xl">{p.sign}</span>
                 <span className="font-mono text-sm">#{p.number}</span>
-                {p.user_id === user.id && (
-                  <span className="ml-auto text-[10px] text-primary">you</span>
-                )}
+                {p.user_id === user.id && <span className="ml-auto text-[10px] text-primary">you</span>}
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
-        {peers.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground">Connecting…</p>
-        )}
       </section>
+    </div>
+  );
+}
+
+function Previewer({ onLeave }: { onLeave: () => void }) {
+  const [audioOk, setAudioOk] = useState<null | boolean>(null);
+  const [termInput, setTermInput] = useState("");
+  const [termLog, setTermLog] = useState<string[]>([
+    "preview-shell v0.1 — temporary session, no assurances.",
+    'try: "ping", "echo hi", "whoami", "clear"',
+  ]);
+
+  const testAudio = async () => {
+    try {
+      const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+      const ctx = new Ctx();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      g.gain.value = 0.05;
+      o.frequency.value = 440;
+      o.connect(g).connect(ctx.destination);
+      o.start();
+      setTimeout(() => { o.stop(); ctx.close(); }, 350);
+      setAudioOk(true);
+    } catch {
+      setAudioOk(false);
+    }
+  };
+
+  const runTerm = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cmd = termInput.trim();
+    if (!cmd) return;
+    let out = "";
+    if (cmd === "clear") { setTermLog([]); setTermInput(""); return; }
+    else if (cmd === "ping") out = "pong (≈12ms, no SLA)";
+    else if (cmd.startsWith("echo ")) out = cmd.slice(5);
+    else if (cmd === "whoami") out = "previewer — temporary registration";
+    else out = `command not found: ${cmd}`;
+    setTermLog((l) => [...l, `$ ${cmd}`, out]);
+    setTermInput("");
+  };
+
+  const lyrics = [
+    "Frame-pour, letter-references, IOP",
+    "Onset, drive — auto.bahn, creamy layer-call",
+    "New-grand, new-miss, new-miss-drive",
+    "Crowd-source the chorus; the chorus is you",
+  ];
+
+  const faq = [
+    { q: "Is my preview saved?", a: "No. Terms are temporary — sessions don't persist." },
+    { q: "Can I be billed here?", a: "No. Previewer mode is observational; no rides, no charges." },
+    { q: "Will I appear in the audience?", a: "Not while previewing. Switch to viewer to join." },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <button onClick={onLeave} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Switch
+          </button>
+          <div className="flex items-center gap-2">
+            <Film className="h-4 w-4" />
+            <span className="font-display text-lg font-semibold">Previewer</span>
+          </div>
+          <div className="text-xs text-muted-foreground">temporary</div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl px-6 py-10 space-y-8">
+        {/* Movie-call */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center gap-2 text-sm font-medium"><Film className="h-4 w-4" /> Movie-call</div>
+          <div className="mt-3 aspect-video w-full rounded-xl bg-gradient-to-br from-muted to-background flex items-center justify-center text-muted-foreground text-sm">
+            Standby frame — no live feed in preview.
+          </div>
+        </section>
+
+        {/* Audio integration test */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center gap-2 text-sm font-medium"><Mic className="h-4 w-4" /> Audio integration test</div>
+          <p className="mt-1 text-xs text-muted-foreground">Plays a 440 Hz tone for ~0.3s.</p>
+          <div className="mt-3 flex items-center gap-3">
+            <button onClick={testAudio} className="rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90">Run test</button>
+            {audioOk === true && <span className="text-xs text-green-500">audio ok</span>}
+            {audioOk === false && <span className="text-xs text-destructive">audio blocked</span>}
+          </div>
+        </section>
+
+        {/* Lyrics */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center gap-2 text-sm font-medium"><Music className="h-4 w-4" /> Lyrical collection</div>
+          <ul className="mt-3 space-y-1 text-sm text-muted-foreground font-mono">
+            {lyrics.map((l, i) => <li key={i}>· {l}</li>)}
+          </ul>
+        </section>
+
+        {/* Terminal */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center gap-2 text-sm font-medium"><Terminal className="h-4 w-4" /> Terminal test</div>
+          <div className="mt-3 rounded-lg bg-background border border-border p-3 font-mono text-xs h-48 overflow-auto">
+            {termLog.map((line, i) => <div key={i} className="whitespace-pre-wrap">{line}</div>)}
+          </div>
+          <form onSubmit={runTerm} className="mt-2 flex gap-2">
+            <span className="font-mono text-sm text-muted-foreground self-center">$</span>
+            <input
+              value={termInput}
+              onChange={(e) => setTermInput(e.target.value)}
+              className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 font-mono text-sm focus:outline-none focus:border-primary"
+              placeholder="type a command…"
+            />
+            <button className="rounded-md bg-secondary px-3 py-1.5 text-sm hover:bg-secondary/80">run</button>
+          </form>
+        </section>
+
+        {/* FAQ / Q&A */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center gap-2 text-sm font-medium"><HelpCircle className="h-4 w-4" /> Q&amp;A · FAQ</div>
+          <ul className="mt-3 space-y-3">
+            {faq.map((f, i) => (
+              <li key={i}>
+                <div className="text-sm font-medium">{f.q}</div>
+                <div className="text-xs text-muted-foreground">{f.a}</div>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            Disclaimer: Terms and registration are always temporary. No assurance is given on ride-interfaces.
+          </p>
+        </section>
+      </main>
     </div>
   );
 }
