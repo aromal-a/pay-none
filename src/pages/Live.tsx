@@ -696,7 +696,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
             </div>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Preview-side only · % = irand(666, 9999) on each regenerate · session-only.
+            Payload scope: brand-recruitments · bank-account details · model-set policies · regex.call = <code className="font-mono">/GI|Generative/i</code> · accept.call = <code className="font-mono">policy-provisional</code> · scroll() = public · selection = alternatives. % = irand(666, 9999), session-only.
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
             <input value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="name"
