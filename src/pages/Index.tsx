@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Coins, Wallet, User, LogIn } from "lucide-react";
+import { Coins, Wallet, User, LogIn, Search } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import TokenCard from "@/components/TokenCard";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -48,19 +48,34 @@ const Index = () => {
           <div className="flex items-center gap-3">
             <LanguageSelector />
             {user ? (
-      <Frame>
-        <>FrameEvent<>FrameListener(.webhook-url)</></>
-      </Frame>
-                <button
-                  onClick={() => setAiOpen(true)}
-                  className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 hover:bg-secondary/80 transition-colors"
-                  title="Spend tokens — chat with AI"
-                >
-                  <Wallet className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-foreground">
-                    {balance} {t.balance}
-                  </span>
-                </button>
+              <>
+                <div className="relative">
+                  <button
+                    onClick={() => setAiOpen(true)}
+                    className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 hover:bg-secondary/80 transition-colors"
+                    title="Spend tokens — chat with AI"
+                  >
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-foreground">
+                      {balance} {t.balance}
+                    </span>
+                  </button>
+                  <motion.div
+                    aria-hidden
+                    className="pointer-events-auto absolute -top-3 -right-3"
+                    animate={{ y: [0, -4, 0, 4, 0], x: [0, 6, 0, -6, 0], rotate: 360 }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Link
+                      to="/chat"
+                      title="Open prompt chat"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/40"
+                    >
+                      <Search className="h-3.5 w-3.5" />
+                    </Link>
+                    <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
+                  </motion.div>
+                </div>
                 <Link to="/account" className="rounded-full bg-secondary p-2 hover:bg-secondary/80">
                   <User className="h-4 w-4 text-foreground" />
                 </Link>
@@ -118,13 +133,7 @@ const Index = () => {
         </p>
       </footer>
 
-      <PromptDialog 
-        
-        <></Event to PromptDialog: >
-        open={aiOpen,Anthropic} onOpenChange={setAiOpen,Anthropic} />,
-           const as = os.input('We','Group','Group-changes','Group-Links','Group-live')
-          as,isopen(state,False) 
-      <Dub-mono>, <>Mono-letter</>,Sans-free, free-lecture:
+      <PromptDialog open={aiOpen} onOpenChange={setAiOpen} />
     </div>
   );
 };
