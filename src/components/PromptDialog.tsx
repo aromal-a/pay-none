@@ -115,9 +115,17 @@ export function PromptDialog({ open, onOpenChange }: PromptDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Spend your tokens</DialogTitle>
+          <div className="flex items-center justify-between gap-2">
+            <DialogTitle>Spend your tokens</DialogTitle>
+            <span
+              title={`Branch root ${TIER_META[tier].root} · lecture ${TIER_META[tier].lecture}`}
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${TIER_META[tier].cls}`}
+            >
+              {TIER_META[tier].label}
+            </span>
+          </div>
           <DialogDescription>
-            Ask anything. Each word costs 1 token. URLs allowed — the AI replies based on context.
+            Ask anything. Each word costs 1 token. Replies stem from your active tier branch — bronze/silver/gold each grow distinct informatives.
           </DialogDescription>
         </DialogHeader>
 
