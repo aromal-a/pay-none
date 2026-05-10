@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle } from "lucide-react";
+import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -238,6 +238,11 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   ]);
   const [frame, setFrame] = useState<"white" | "black">("white");
   const [emergency, setEmergency] = useState(false);
+  const [customLyrics, setCustomLyrics] = useState<{ name: string; title: string; body: string }[]>([]);
+  const [showLyricForm, setShowLyricForm] = useState(false);
+  const [lyricName, setLyricName] = useState("");
+  const [lyricTitle, setLyricTitle] = useState("");
+  const [lyricBody, setLyricBody] = useState("");
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
@@ -441,10 +446,89 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
         {/* Lyrics */}
         <section className="rounded-2xl border border-border bg-card p-6">
-          <div className="flex items-center gap-2 text-sm font-medium"><Music className="h-4 w-4" /> Lyrical collection</div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium"><Music className="h-4 w-4" /> Lyrical collection</div>
+            <button
+              onClick={() => setShowLyricForm((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
+              aria-label="Add lyrics or rhythm annotation"
+            >
+              {showLyricForm ? <><X className="h-3 w-3" /> Close</> : <><Plus className="h-3 w-3" /> Add</>}
+            </button>
+          </div>
           <ul className="mt-3 space-y-1 text-sm text-muted-foreground font-mono">
             {lyrics.map((l, i) => <li key={i}>· {l}</li>)}
           </ul>
+
+          {customLyrics.length > 0 && (
+            <ul className="mt-4 space-y-3">
+              {customLyrics.map((c, i) => (
+                <li key={i} className="rounded-lg border border-border bg-background p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-medium">{c.title}</div>
+                      <div className="text-[11px] text-muted-foreground">{c.name}</div>
+                    </div>
+                    <button
+                      onClick={() => setCustomLyrics((arr) => arr.filter((_, j) => j !== i))}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label="Remove"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <pre className="mt-2 whitespace-pre-wrap font-mono text-xs text-foreground/90">{c.body}</pre>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {showLyricForm && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!lyricBody.trim()) return;
+                setCustomLyrics((arr) => [
+                  ...arr,
+                  {
+                    name: lyricName.trim() || `take-${arr.length + 1}`,
+                    title: lyricTitle.trim() || "Untitled rhythm",
+                    body: lyricBody,
+                  },
+                ]);
+                setLyricName(""); setLyricTitle(""); setLyricBody("");
+                setShowLyricForm(false);
+              }}
+              className="mt-4 space-y-2 rounded-lg border border-dashed border-border bg-background/40 p-3"
+            >
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input
+                  value={lyricName}
+                  onChange={(e) => setLyricName(e.target.value)}
+                  placeholder="file name"
+                  className="rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:border-primary"
+                />
+                <input
+                  value={lyricTitle}
+                  onChange={(e) => setLyricTitle(e.target.value)}
+                  placeholder="title"
+                  className="rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:border-primary"
+                />
+              </div>
+              <textarea
+                value={lyricBody}
+                onChange={(e) => setLyricBody(e.target.value)}
+                placeholder="lyrics or rhythm annotation…"
+                rows={5}
+                className="w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-xs focus:outline-none focus:border-primary"
+              />
+              <div className="flex justify-end">
+                <button className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90">
+                  <Save className="h-3 w-3" /> Save
+                </button>
+              </div>
+            </form>
+          )}
         </section>
 
         {/* Terminal */}
