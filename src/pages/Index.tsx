@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Coins, Wallet, User, LogIn, Search } from "lucide-react";
+import { Coins, Wallet, User, LogIn, Search, Radio } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import TokenCard from "@/components/TokenCard";
 import LanguageSelector from "@/components/LanguageSelector";
