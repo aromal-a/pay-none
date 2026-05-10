@@ -303,6 +303,64 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const [brainBusy, setBrainBusy] = useState(false);
   const [brainTags] = useState(["pml", "ppl", "l-si", "CI-clang", "CD-Outlet", "rag:collection"]);
 
+  // 500-word session hold: when the brain input crosses ~500 words the form
+  // is held, FAQ/inbox dim, and only a tokenized retrieval (wallet spend)
+  // can release it. Light haptic on lock + release.
+  const HOLD_THRESHOLD = 500;
+  const HOLD_RELEASE_COST = 25;
+  const brainWords = brainInput.trim() ? brainInput.trim().split(/\s+/).length : 0;
+  const [sessionHeld, setSessionHeld] = useState(false);
+  const [releasing, setReleasing] = useState(false);
+  useEffect(() => {
+    if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
+      setSessionHeld(true);
+      if (navigator.vibrate) navigator.vibrate([30, 20, 60]);
+      toast("Session hold engaged", { description: `≥ ${HOLD_THRESHOLD} words · spend ${HOLD_RELEASE_COST} tokens to release` });
+    }
+  }, [brainWords, sessionHeld]);
+  const releaseHold = async () => {
+    if (releasing) return;
+    setReleasing(true);
+    try {
+      const { error } = await supabase.rpc("spend_tokens", {
+        p_tokens: HOLD_RELEASE_COST,
+        p_reason: "previewer:session-hold-release",
+      });
+      if (error) throw error;
+      if (navigator.vibrate) navigator.vibrate(20);
+      setSessionHeld(false);
+      toast.success("Hold released", { description: `${HOLD_RELEASE_COST} tokens spent` });
+    } catch (e) {
+      toast.error("Release failed", { description: e instanceof Error ? e.message : "insufficient tokens?" });
+    } finally {
+      setReleasing(false);
+    }
+  };
+
+  // Viewer-activity spy: pending requests from viewers across this previewer's channels.
+  type ViewerPing = { id: string; story_plot: string; suggested_role: string; created_at: string };
+  const [viewerPings, setViewerPings] = useState<ViewerPing[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase
+        .from("live_call_requests")
+        .select("id,story_plot,suggested_role,created_at")
+        .eq("previewer_id", user.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (!cancelled && data) setViewerPings(data as ViewerPing[]);
+    };
+    load();
+    const ch = supabase
+      .channel("previewer-spy")
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_call_requests", filter: `previewer_id=eq.${user.id}` }, load)
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [user]);
+
   // API formatter — brand({name, name_appeal, self-services}) → preview-side generator link
   const irand = (lo: number, hi: number) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
   const [brandName, setBrandName] = useState("");
