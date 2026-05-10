@@ -244,6 +244,13 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const [lyricTitle, setLyricTitle] = useState("");
   const [lyricBody, setLyricBody] = useState("");
 
+  // Brainstorm /chat — same backend (prompt-ai), token-aware, RAG/collection tags
+  type BrainMsg = { role: "user" | "assistant"; content: string };
+  const [brainMsgs, setBrainMsgs] = useState<BrainMsg[]>([]);
+  const [brainInput, setBrainInput] = useState("");
+  const [brainBusy, setBrainBusy] = useState(false);
+  const [brainTags] = useState(["pml", "ppl", "l-si", "CI-clang", "CD-Outlet", "rag:collection"]);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
