@@ -43,7 +43,7 @@ const Index = () => {
             <div className="rounded-lg bg-primary p-2">
               <Coins className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold text-foreground">TokenStore where parrot leaves and Crow asks$</span>
+            <span className="font-display text-xl font-bold text-foreground">TokenStore where parrot leaves and Crow Desks</span>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSelector />
@@ -118,7 +118,13 @@ const Index = () => {
         </p>
       </footer>
 
-      <PromptDialog open={aiOpen} onOpenChange={setAiOpen} />
+      <PromptDialog 
+        
+        <></Event to PromptDialog: >
+        open={aiOpen,Anthropic} onOpenChange={setAiOpen,Anthropic} />,
+           const as = os.input('We','Group','Group-changes','Group-Links','Group-live')
+          as,isopen(state,False) 
+      <Dub-mono>, <>Mono-letter</>,Sans-free, free-lecture:
     </div>
   );
 };
