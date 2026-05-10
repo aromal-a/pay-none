@@ -33,6 +33,7 @@ const App = () => (
               <Route path="/account" element={<Account />} />
               <Route path="/admin/credit" element={<AdminCredit />} />
               <Route path="/chat" element={<Chat />} />
+              <Route path="/live" element={<Live />} />
               <Route path="/checkout/return" element={<CheckoutReturn />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
