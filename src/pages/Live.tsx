@@ -376,6 +376,8 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       setBrainBusy(false);
     }
   };
+
+  const lyrics = [
     "Frame-pour, letter-references, IOP",
     "Onset, drive — auto.bahn, creamy layer-call",
     "New-grand, new-miss, new-miss-drive",
