@@ -222,7 +222,27 @@ export default function Chat() {
       <main className="mx-auto grid max-w-6xl grid-cols-1 gap-4 px-4 py-6 md:grid-cols-[180px_240px_1fr] md:px-6">
         {/* Channels */}
         <aside className="rounded-xl border border-border bg-card p-2">
-          <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Channels</p>
+          <div className="flex items-center justify-between px-2 pb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Channels</p>
+            <button
+              onClick={async () => {
+                const name = window.prompt("New channel name?")?.trim();
+                if (!name) return;
+                const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || `ch-${Date.now()}`;
+                const { data, error } = await supabase.from("channels").insert({ name, slug }).select().single();
+                if (error) { toast({ title: "Could not add channel", description: error.message, variant: "destructive" }); return; }
+                setChannels(prev => [...prev, data as Channel].sort((a, b) => a.name.localeCompare(b.name)));
+                setActiveSlug((data as Channel).slug);
+                setActiveConvId(null);
+                toast({ title: "Channel added", description: name });
+              }}
+              title="Add a new channel"
+              aria-label="Add channel"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              +
+            </button>
+          </div>
           <div className="space-y-0.5">
             {channels.map(c => (
               <button key={c.id} onClick={() => { setActiveSlug(c.slug); setActiveConvId(null); }}

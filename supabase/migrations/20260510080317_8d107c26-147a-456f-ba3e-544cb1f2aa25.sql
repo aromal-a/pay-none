@@ -1,0 +1,1 @@
+CREATE POLICY "Authenticated users can create channels" ON public.channels FOR INSERT TO authenticated WITH CHECK (true);
