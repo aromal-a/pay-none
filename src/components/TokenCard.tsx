@@ -10,6 +10,33 @@ import { PromptDialog } from "@/components/PromptDialog";
 /* Tier-Terminologies: expressive tier naming lives here */
 /* Tier: bronze = Ozonized, silver = Sub_vertical, gold = Freak_code */
 
+/*
+ * Tier-exclusive easter-eggs (access specifiers).
+ * Each card hides ONE specifier visible only on its own tier — used downstream
+ * by Transformative-AI to grade user-spend, lecture-formation tier, and
+ * server-knowledge distribution lane for next-gen format/template validation.
+ */
+const tierEasterEgg: Record<string, { code: string; lane: string; lecture: string; hint: string }> = {
+  bronze: {
+    code: "OZ-Δ-112",
+    lane: "fact.lane/seed",
+    lecture: "L0 · seed-formation",
+    hint: "tap the coin 3×",
+  },
+  silver: {
+    code: "SV-Σ-578",
+    lane: "fact.lane/vertical",
+    lecture: "L1 · vertical-distribution",
+    hint: "tap the bolt 3×",
+  },
+  gold: {
+    code: "GD-Ω-957",
+    lane: "fact.lane/freak",
+    lecture: "L2 · freak-code lecture",
+    hint: "tap the crown 3×",
+  },
+};
+
 declare global {
   interface Window {
     Razorpay: any;
