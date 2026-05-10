@@ -310,10 +310,26 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   // is held, FAQ/inbox dim, and only a tokenized retrieval (wallet spend)
   // can release it. Light haptic on lock + release.
   const HOLD_THRESHOLD = 500;
-  const HOLD_RELEASE_COST = 25;
+  const HOLD_RELEASE_COST = 250;
   const brainWords = brainInput.trim() ? brainInput.trim().split(/\s+/).length : 0;
   const [sessionHeld, setSessionHeld] = useState(false);
   const [releasing, setReleasing] = useState(false);
+
+  // Token balance — refreshed on mount and after every spend/award
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const refreshBalance = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("profiles").select("token_balance").eq("user_id", user.id).maybeSingle();
+    setTokenBalance(data?.token_balance ?? 0);
+  };
+  useEffect(() => { refreshBalance(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user]);
+
+  // Hold-release confirmation dialog state
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const [utilityNote, setUtilityNote] = useState("");
+  const [speechNote, setSpeechNote] = useState("");
+  const [viewerActivityNote, setViewerActivityNote] = useState("");
+
   useEffect(() => {
     if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
       setSessionHeld(true);
@@ -321,20 +337,51 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       toast("Session hold engaged", { description: `≥ ${HOLD_THRESHOLD} words · spend ${HOLD_RELEASE_COST} tokens to release` });
     }
   }, [brainWords, sessionHeld]);
-  const releaseHold = async () => {
+
+  const confirmRelease = async () => {
     if (releasing) return;
+    if (!utilityNote.trim() || !viewerActivityNote.trim()) {
+      toast.error("Describe utility & viewer activity to release");
+      return;
+    }
+    if (tokenBalance !== null && tokenBalance < HOLD_RELEASE_COST) {
+      toast.error("Not enough tokens", { description: `Need ${HOLD_RELEASE_COST}, have ${tokenBalance}` });
+      return;
+    }
     setReleasing(true);
     try {
-      const { error } = await supabase.rpc("spend_tokens", {
+      // 1) Spend the gate fee with full audit log (description of work).
+      const { error: spendErr } = await supabase.rpc("spend_tokens", {
         p_tokens: HOLD_RELEASE_COST,
         p_reason: "previewer:session-hold-release",
-      });
-      if (error) throw error;
+        p_original_text: brainInput.slice(0, 4000),
+        p_string_appeal: utilityNote,
+        p_currency_issues: speechNote || null,
+        p_log_hold: viewerActivityNote,
+        p_hold_place: "previewer:brain:500w",
+      } as never);
+      if (spendErr) throw spendErr;
+
+      // 2) Award the previewer back for the documented work action — fool-proof,
+      //    reserved economy: the gate fee is returned in full as a work-credit.
+      if (user) {
+        const { error: awardErr } = await supabase.rpc("credit_tokens", {
+          p_user_id: user.id,
+          p_tokens: HOLD_RELEASE_COST,
+        } as never);
+        if (awardErr) throw awardErr;
+      }
+
       if (navigator.vibrate) navigator.vibrate(20);
       setSessionHeld(false);
-      toast.success("Hold released", { description: `${HOLD_RELEASE_COST} tokens spent` });
+      setReleaseOpen(false);
+      setUtilityNote(""); setSpeechNote(""); setViewerActivityNote("");
+      await refreshBalance();
+      toast.success("Hold released · work credited", {
+        description: `${HOLD_RELEASE_COST} spent · ${HOLD_RELEASE_COST} returned to your wallet`,
+      });
     } catch (e) {
-      toast.error("Release failed", { description: e instanceof Error ? e.message : "insufficient tokens?" });
+      toast.error("Release failed", { description: e instanceof Error ? e.message : "try again" });
     } finally {
       setReleasing(false);
     }
