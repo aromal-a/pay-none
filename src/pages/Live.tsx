@@ -264,10 +264,27 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     "generator-link": apiLink,
     match: ["live-Db", "Vm-spaces", "Sessions-active"],
     "%": apiSeed,
+    purpose: ["brand-recruitments", "bank-account-details", "model-set-policies"],
+    regex: { call: "/GI|Generative/i" },
+    "accept.call": "policy-provisional",
+    "scroll()": "public",
+    selection: "alternatives",
+    consent: "previewer-manual-paste-only",
+    routing: "Viewership-membrane :: admin/security-spaces",
   };
   const copyApi = async () => {
     try { await navigator.clipboard.writeText(JSON.stringify(apiPayload, null, 2)); toast.success("API payload copied"); }
     catch { toast.error("Copy failed"); }
+  };
+
+  // Viewership membrane — previewer must paste the call to activate the vm-space
+  const [membranePaste, setMembranePaste] = useState("");
+  const [membraneActive, setMembraneActive] = useState(false);
+  const activateMembrane = () => {
+    const ok = membranePaste.trim().includes(apiSlug(brandName) || "untitled") || membranePaste.includes(String(apiSeed));
+    if (!ok) { toast.error("Paste does not match an active call space"); return; }
+    setMembraneActive(true);
+    toast.success("Viewership membrane: call accepted (policy-provisional)");
   };
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -679,7 +696,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
             </div>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Preview-side only · % = irand(666, 9999) on each regenerate · session-only.
+            Payload scope: brand-recruitments · bank-account details · model-set policies · regex.call = <code className="font-mono">/GI|Generative/i</code> · accept.call = <code className="font-mono">policy-provisional</code> · scroll() = public · selection = alternatives. % = irand(666, 9999), session-only.
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
             <input value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="name"
@@ -705,6 +722,35 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90">
               <Copy className="h-3 w-3" /> copy payload
             </button>
+          </div>
+
+          {/* Viewership membrane — manual paste gate */}
+          <div className="mt-4 rounded-lg border border-border bg-background/40 p-3">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-medium">Viewership membrane · active call space</div>
+              <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-mono ${membraneActive ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}>
+                {membraneActive ? "ACCEPTED" : "idle"}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Previewer-consented vm-space. Activates only when you manually paste the call below — no auto-routing.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <input value={membranePaste} onChange={(e) => setMembranePaste(e.target.value)} placeholder="paste generator-link or % seed"
+                className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-primary" />
+              <button type="button" onClick={activateMembrane}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90">
+                accept call
+              </button>
+            </div>
+          </div>
+
+          {/* Admin / safeguards notice */}
+          <div className="mt-3 rounded-lg border border-border bg-background/40 p-3 text-[11px] text-muted-foreground space-y-1">
+            <div className="flex items-center gap-1 text-foreground"><AlertTriangle className="h-3 w-3" /> Admin-representative section · restricted</div>
+            <div>Back-end admin/security spaces handle abuse-detection, cyber-fail/faulted-scale checks, deep-morphology probes (pixel-manipulation, IP records).</div>
+            <div>No screen-recording (previewer privacy-protection policy). Clients are coded; codes claim only on on-screen action sequences. Local pixel-frequency deltas feed traffic/input telemetry.</div>
+            <div>Logged-in users pass active model-representation + character-complexity encoding to refactor each session. This pane is not exposed to end users.</div>
           </div>
         </section>
 
