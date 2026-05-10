@@ -124,6 +124,9 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
   const [quantity, setQuantity] = useState(1);
   const [paying, setPaying] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
+  const [eggTaps, setEggTaps] = useState(0);
+  const [eggOpen, setEggOpen] = useState(false);
+  const egg = tierEasterEgg[tier];
 
   useEffect(() => {
     loadRazorpay();
