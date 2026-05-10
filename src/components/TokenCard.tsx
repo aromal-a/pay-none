@@ -10,6 +10,33 @@ import { PromptDialog } from "@/components/PromptDialog";
 /* Tier-Terminologies: expressive tier naming lives here */
 /* Tier: bronze = Ozonized, silver = Sub_vertical, gold = Freak_code */
 
+/*
+ * Tier-exclusive easter-eggs (access specifiers).
+ * Each card hides ONE specifier visible only on its own tier — used downstream
+ * by Transformative-AI to grade user-spend, lecture-formation tier, and
+ * server-knowledge distribution lane for next-gen format/template validation.
+ */
+const tierEasterEgg: Record<string, { code: string; lane: string; lecture: string; hint: string }> = {
+  bronze: {
+    code: "OZ-Δ-112",
+    lane: "fact.lane/seed",
+    lecture: "L0 · seed-formation",
+    hint: "tap the coin 3×",
+  },
+  silver: {
+    code: "SV-Σ-578",
+    lane: "fact.lane/vertical",
+    lecture: "L1 · vertical-distribution",
+    hint: "tap the bolt 3×",
+  },
+  gold: {
+    code: "GD-Ω-957",
+    lane: "fact.lane/freak",
+    lecture: "L2 · freak-code lecture",
+    hint: "tap the crown 3×",
+  },
+};
+
 declare global {
   interface Window {
     Razorpay: any;
@@ -97,6 +124,9 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
   const [quantity, setQuantity] = useState(1);
   const [paying, setPaying] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
+  const [eggTaps, setEggTaps] = useState(0);
+  const [eggOpen, setEggOpen] = useState(false);
+  const egg = tierEasterEgg[tier];
 
   useEffect(() => {
     loadRazorpay();
@@ -172,10 +202,19 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
       )}
 
       <div
+        onClick={() => {
+          const next = eggTaps + 1;
+          setEggTaps(next);
+          if (next >= 3) {
+            setEggOpen(true);
+            setEggTaps(0);
+          }
+        }}
         className={cn(
-          "mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br",
+          "mx-auto mb-4 flex h-14 w-14 cursor-pointer items-center justify-center rounded-xl bg-gradient-to-br select-none",
           config.gradient,
         )}
+        title={egg?.hint}
       >
         <Icon className="h-7 w-7 text-primary-foreground" />
       </div>
@@ -227,6 +266,23 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
           {paying ? "Loading…" : isAuthenticated ? t.buyNow : "Sign in to buy"}
         </button>
       </div>
+      {egg && eggOpen && (
+        <div className="mt-4 rounded-xl border border-dashed border-primary/40 bg-card/70 p-3 text-left text-xs backdrop-blur">
+          <div className="font-display text-sm font-bold text-foreground">access · {egg.code}</div>
+          <div className="mt-1 text-muted-foreground">lane = {egg.lane}</div>
+          <div className="text-muted-foreground">lecture = {egg.lecture}</div>
+          <div className="mt-2 text-[10px] text-muted-foreground/70">
+            tier-private · invisible to other packages · feeds Transformative-AI fact-coded validation
+          </div>
+          <button
+            type="button"
+            onClick={() => setEggOpen(false)}
+            className="mt-2 text-[10px] underline text-muted-foreground hover:text-foreground"
+          >
+            hide
+          </button>
+        </div>
+      )}
       <PromptDialog open={promptOpen} onOpenChange={setPromptOpen} />
     </motion.div>
   );
