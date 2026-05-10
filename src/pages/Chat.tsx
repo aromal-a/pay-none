@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Coins, Loader2, Send, Plus, RefreshCw, Syringe, Save, Trash2, History } from "lucide-react";
+import { ArrowLeft, Coins, Loader2, Send, Plus, RefreshCw, Syringe, Save, Trash2, History, Paperclip, X, FileText, Image as ImageIcon, Video, File } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { countChars, fetchBalance } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -69,6 +69,48 @@ export default function Chat() {
     setBody(prev => (prev ? prev + "\n\n" : "") + `<!-- injected:${p.mode} -->\n${p.text}`);
     toast({ title: "Prompt injected", description: "Appended to your draft." });
   };
+
+  // Local attachments — kept client-side only (model input is local to the user)
+  interface LocalAttachment { id: string; name: string; size: number; type: string; url: string; }
+  const [attachments, setAttachments] = useState<LocalAttachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onPickFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const MAX = 50 * 1024 * 1024; // 50MB per file
+    const next: LocalAttachment[] = [];
+    Array.from(files).forEach(f => {
+      if (f.size > MAX) {
+        toast({ title: "File too large", description: `${f.name} exceeds 50MB and was skipped.`, variant: "destructive" });
+        return;
+      }
+      next.push({ id: crypto.randomUUID(), name: f.name, size: f.size, type: f.type || "application/octet-stream", url: URL.createObjectURL(f) });
+    });
+    if (next.length) {
+      setAttachments(prev => [...prev, ...next]);
+      toast({ title: "Attached locally", description: `${next.length} file(s) ready (kept on your device).` });
+    }
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => {
+      const target = prev.find(a => a.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter(a => a.id !== id);
+    });
+  };
+
+  useEffect(() => () => { attachments.forEach(a => URL.revokeObjectURL(a.url)); }, []); // eslint-disable-line
+
+  const attachIcon = (type: string) => {
+    if (type.startsWith("image/")) return <ImageIcon className="h-3 w-3" />;
+    if (type.startsWith("video/")) return <Video className="h-3 w-3" />;
+    if (type === "application/pdf" || type.startsWith("text/")) return <FileText className="h-3 w-3" />;
+    return <File className="h-3 w-3" />;
+  };
+
+  const fmtSize = (n: number) => n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`;
+
 
 
   useEffect(() => { if (!loading && !user) navigate("/auth", { replace: true }); }, [user, loading, navigate]);
@@ -136,6 +178,14 @@ export default function Chat() {
       if (error) throw error;
       const result = data as { conversation_id: string; sender_remaining: number };
       setBalance(result.sender_remaining);
+
+      // Auto-save the sent prompt to history so the user can revisit later
+      const sentText = body.trim();
+      if (sentText) {
+        const entry: SavedPrompt = { id: crypto.randomUUID(), text: sentText, mode: "chat", created_at: Date.now() };
+        persistPrompts([entry, ...savedPrompts].slice(0, 100));
+      }
+
       setBody("");
       setRecipientEmail("");
       if (!activeConvId) setActiveConvId(result.conversation_id);
@@ -250,10 +300,41 @@ export default function Chat() {
               <Button size="sm" variant="outline" onClick={() => savePrompt("chat")} className="h-7 px-2 text-xs">
                 <Save className="mr-1 h-3 w-3" /> Save
               </Button>
+              <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} className="h-7 px-2 text-xs">
+                <Paperclip className="mr-1 h-3 w-3" /> Attach
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,video/*,audio/*,.pdf,.txt,.md,.json,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,text/*,application/*"
+                className="hidden"
+                onChange={(e) => { onPickFiles(e.target.files); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+              />
               <Button size="sm" variant="ghost" onClick={() => setShowHistory(s => !s)} className="h-7 px-2 text-xs">
                 <History className="mr-1 h-3 w-3" /> {showHistory ? "Hide" : "Show"} history ({savedPrompts.length})
               </Button>
             </div>
+
+            {attachments.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5 rounded-md border border-border bg-muted/40 p-1.5">
+                {attachments.map(a => (
+                  <div key={a.id} className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs">
+                    {a.type.startsWith("image/") ? (
+                      <img src={a.url} alt={a.name} className="h-6 w-6 rounded object-cover" />
+                    ) : (
+                      <span className="text-muted-foreground">{attachIcon(a.type)}</span>
+                    )}
+                    <span className="max-w-[160px] truncate text-foreground" title={a.name}>{a.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{fmtSize(a.size)}</span>
+                    <button onClick={() => removeAttachment(a.id)} className="text-muted-foreground hover:text-destructive" aria-label="Remove">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                <span className="self-center text-[10px] text-muted-foreground">Stored locally · not uploaded</span>
+              </div>
+            )}
 
             {showHistory && savedPrompts.length > 0 && (
               <div className="mb-2 max-h-32 space-y-1 overflow-y-auto rounded-md border border-border bg-muted/40 p-1.5">
