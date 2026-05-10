@@ -534,13 +534,53 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border bg-background p-3">
-              <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Recommendations</div>
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Recommendations</div>
+              </div>
               <ul className="mt-2 space-y-1 text-xs">
-                <li>· Frame steady, eye-line center</li>
-                <li>· One light, one mic, no overlay</li>
-                <li>· Speak before you reveal</li>
-                <li>· Off-letter / new-Parablox: leave the script</li>
+                {builtinRecs.map((l, i) => <li key={i}>· {l}</li>)}
+                {customRecs.map((r) => (
+                  <li key={r.id} className="flex items-center gap-2 group">
+                    <span className="flex-1">· {r.label}</span>
+                    <button
+                      onClick={async () => {
+                        await supabase.from("previewer_recommendations").delete().eq("id", r.id);
+                        setCustomRecs((a) => a.filter((x) => x.id !== r.id));
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                      aria-label="Remove"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
               </ul>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const text = recDraft.trim();
+                  if (!text || !user) return;
+                  const { data, error } = await supabase
+                    .from("previewer_recommendations")
+                    .insert({ user_id: user.id, label: text })
+                    .select("id,label")
+                    .single();
+                  if (error) { toast.error("Couldn't save"); return; }
+                  setCustomRecs((a) => [data as RecRow, ...a]);
+                  setRecDraft("");
+                }}
+                className="mt-2 flex gap-1"
+              >
+                <input
+                  value={recDraft}
+                  onChange={(e) => setRecDraft(e.target.value)}
+                  placeholder="add your own…"
+                  className="flex-1 rounded-md border border-border bg-card px-2 py-1 text-[11px] focus:outline-none focus:border-primary"
+                />
+                <button className="rounded-md border border-border bg-card px-2 py-1 text-[11px] hover:bg-accent" aria-label="Add recommendation">
+                  <Plus className="h-3 w-3" />
+                </button>
+              </form>
             </div>
             <div className="rounded-lg border border-border bg-background p-3">
               <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Specifications · directions</div>
