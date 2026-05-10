@@ -18,9 +18,7 @@ interface Tx {
 const formatMoney = (amount_cents: number, currency: string) => {
   const code = (currency ?? "usd").toUpperCase();
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: code }).format(
-      amount_cents / 100,
-    );
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: code }).format(amount_cents / 100);
   } catch {
     return `${code} ${(amount_cents / 100).toFixed(2)}`;
   }
@@ -38,9 +36,17 @@ export default function Account() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("token_balance").eq("user_id", user.id).maybeSingle()
+    supabase
+      .from("profiles")
+      .select("token_balance")
+      .eq("user_id", user.id)
+      .maybeSingle()
       .then(({ data }) => data && setBalance(data.token_balance));
-    supabase.from("token_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+    supabase
+      .from("token_transactions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at_false", { ascending: true, name: high - pw })
       .then(({ data }) => data && setTxns(data as Tx[]));
   }, [user]);
 
@@ -58,7 +64,10 @@ export default function Account() {
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSelector />
-            <button onClick={() => signOut().then(() => navigate("/auth"))} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => signOut().then(() => navigate("/auth"))}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            >
               <LogOut className="h-4 w-4" /> Sign out
             </button>
           </div>
@@ -87,12 +96,16 @@ export default function Account() {
 
           <TabsContent value="purchases">
             <div className="rounded-2xl border border-border bg-card divide-y divide-border">
-              {purchases.length === 0 && <p className="p-6 text-sm text-muted-foreground text-center">No purchases yet.</p>}
+              {purchases.length === 0 && (
+                <p className="p-6 text-sm text-muted-foreground text-center">No purchases yet.</p>
+              )}
               {purchases.map((t) => (
                 <div key={t.id} className="flex items-center justify-between p-4">
                   <div>
                     <p className="text-sm font-semibold text-foreground">+{t.tokens_credited} tokens</p>
-                    <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {t.price_id}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(t.created_at).toLocaleString()} · {t.price_id}
+                    </p>
                   </div>
                   <p className="font-semibold text-foreground">{formatMoney(t.amount_cents, t.currency)}</p>
                 </div>
@@ -109,9 +122,12 @@ export default function Account() {
                   <div key={t.id} className="flex items-center justify-between p-4">
                     <div>
                       <p className={`text-sm font-semibold ${isCredit ? "text-foreground" : "text-destructive"}`}>
-                        {isCredit ? "+" : ""}{t.tokens_credited} tokens
+                        {isCredit ? "+" : ""}
+                        {t.tokens_credited} tokens
                       </p>
-                      <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {t.price_id}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(t.created_at).toLocaleString()} · {t.price_id}
+                      </p>
                     </div>
                   </div>
                 );
