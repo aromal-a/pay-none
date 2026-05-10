@@ -73,7 +73,7 @@ const Index = () => {
                     >
                       <Search className="h-3.5 w-3.5" />
                     </Link>
-                    <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
+                    <span className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-ping" aria-hidden />
                   </motion.div>
                 </div>
                 <Link to="/account" className="rounded-full bg-secondary p-2 hover:bg-secondary/80">
