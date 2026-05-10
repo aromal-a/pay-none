@@ -341,7 +341,41 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     setTimeout(() => setEmergency(false), 4000);
   };
 
-  const lyrics = [
+  const sendBrain = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = brainInput.trim();
+    if (!text || brainBusy) return;
+    const next: BrainMsg[] = [...brainMsgs, { role: "user", content: text }];
+    setBrainMsgs(next);
+    setBrainInput("");
+    setBrainBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("prompt-ai", {
+        body: {
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a brainstorming partner inside a temporary previewer session. Tone: musical-awareness, static-code & code-dynamics, tethered self-info. Tag ideas with [pml] [ppl] [l-si] [CI-clang] [CD-Outlet] when relevant. Treat retrieval as RAG:collection. Be concise.",
+            },
+            ...next.map((m) => ({ role: m.role, content: m.content })),
+          ],
+        },
+      });
+      if (error) throw error;
+      const reply = (data as { reply?: string; error?: string })?.reply ?? "";
+      if (!reply) throw new Error((data as { error?: string })?.error || "no reply");
+      setBrainMsgs((m) => [...m, { role: "assistant", content: reply }]);
+    } catch (err) {
+      toast.error("Brainstorm unavailable", {
+        description: err instanceof Error ? err.message : "try again shortly",
+      });
+      setBrainMsgs((m) => m.slice(0, -1));
+      setBrainInput(text);
+    } finally {
+      setBrainBusy(false);
+    }
+  };
     "Frame-pour, letter-references, IOP",
     "Onset, drive — auto.bahn, creamy layer-call",
     "New-grand, new-miss, new-miss-drive",
