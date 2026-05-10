@@ -111,6 +111,153 @@ export type Database = {
           },
         ]
       }
+      previewer_brain_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      previewer_brand_payloads: {
+        Row: {
+          api_link: string | null
+          api_seed: number | null
+          brand_appeal: string | null
+          brand_name: string | null
+          brand_self: string | null
+          created_at: string
+          id: string
+          payload: Json | null
+          user_id: string
+        }
+        Insert: {
+          api_link?: string | null
+          api_seed?: number | null
+          brand_appeal?: string | null
+          brand_name?: string | null
+          brand_self?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          user_id: string
+        }
+        Update: {
+          api_link?: string | null
+          api_seed?: number | null
+          brand_appeal?: string | null
+          brand_name?: string | null
+          brand_self?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      previewer_lyrics: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      previewer_recommendations: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          meta: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          meta?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          meta?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      previewer_recordings: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          mime_type: string | null
+          name: string
+          storage_path: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          storage_path: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          storage_path?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
