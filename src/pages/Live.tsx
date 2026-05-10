@@ -1094,16 +1094,47 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
     setShowSave(true);
   };
 
-  const confirmSave = () => {
-    if (!recording) return;
+  const confirmSave = async () => {
+    if (!recording || !recording.blob) return;
     const name = saveName.trim() || `take-${saved.length + 1}`;
     const title = saveTitle.trim() || name;
-    setSaved((s) => [...s, { ...recording, name, title }]);
-    toast.success(`Saved "${title}"`, { description: `${name} · ${(recording.blob.size / 1024).toFixed(1)} KB` });
-    setShowSave(false);
-    setRecording(null);
-    setState("idle");
-    setElapsed(0);
+    if (!userId) {
+      // fallback: keep locally
+      setSaved((s) => [...s, { ...recording, name, title }]);
+      toast.success(`Saved "${title}" (local only)`);
+      setShowSave(false); setRecording(null); setState("idle"); setElapsed(0);
+      return;
+    }
+    setSavingTake(true);
+    try {
+      const ext = (recording.mime.split("/")[1] || "webm").split(";")[0];
+      const path = `${userId}/${Date.now()}-${name.replace(/[^a-z0-9-_]/gi, "_")}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("previewer-audio")
+        .upload(path, recording.blob, { contentType: recording.mime, upsert: false });
+      if (upErr) throw upErr;
+      const { data: row, error: insErr } = await supabase
+        .from("previewer_recordings")
+        .insert({
+          user_id: userId,
+          name,
+          title,
+          storage_path: path,
+          duration_seconds: Math.round(recording.durationMs / 1000),
+          mime_type: recording.mime,
+        })
+        .select("id")
+        .single();
+      if (insErr) throw insErr;
+      const { data: signed } = await supabase.storage.from("previewer-audio").createSignedUrl(path, 60 * 60);
+      setSaved((s) => [{ ...recording, id: row?.id, name, title, storage_path: path, url: signed?.signedUrl || recording.url }, ...s]);
+      toast.success(`Saved "${title}"`, { description: `${name} · ${(recording.blob.size / 1024).toFixed(1)} KB` });
+      setShowSave(false); setRecording(null); setState("idle"); setElapsed(0);
+    } catch (err) {
+      toast.error("Save failed", { description: err instanceof Error ? err.message : "unknown" });
+    } finally {
+      setSavingTake(false);
+    }
   };
 
   const fmt = (ms: number) => {
