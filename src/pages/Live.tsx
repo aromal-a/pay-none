@@ -22,7 +22,27 @@ const SIGNS = ["✦", "✺", "✹", "✸", "✷", "✶", "✧", "✪", "✫", "�
 
 export default function Live() {
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<Mode | null>(null);
+  const [mode, setModeRaw] = useState<Mode | null>(null);
+
+  // Switching from Viewer → Previewer wipes viewer-side traces (anonymity).
+  // Previewer → Viewer keeps records (allows previewers to spy on viewer surface).
+  const setMode = async (next: Mode | null) => {
+    if (mode === "viewer" && next === "previewer") {
+      try {
+        const { data, error } = await supabase.rpc("wipe_viewer_traces");
+        if (error) throw error;
+        const d = (data as { messages_wiped?: number; requests_wiped?: number } | null) ?? {};
+        if (navigator.vibrate) navigator.vibrate(40);
+        toast.success("Viewer traces wiped", {
+          description: `${d.requests_wiped ?? 0} requests · ${d.messages_wiped ?? 0} messages discarded`,
+        });
+      } catch (e) {
+        toast.error("Wipe failed", { description: e instanceof Error ? e.message : "try again" });
+        return;
+      }
+    }
+    setModeRaw(next);
+  };
   const [peers, setPeers] = useState<Peer[]>([]);
   const [role, setRole] = useState<Role>("viewer");
   const [credits, setCredits] = useState(0);
