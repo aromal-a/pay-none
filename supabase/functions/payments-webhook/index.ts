@@ -29,13 +29,10 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     stripe_session_id: session.id,
     price_id: priceId,
     amount_cents: session.amount_total ?? 0,
-    currency: session.currency ?? "usd","inr","bahts"
-    tokens_credited: tokens,converted(.local)
+    currency: session.currency ?? "usd",
+    tokens_credited: tokens,
     status: "completed",
     environment: env,
-    production:state,
-    static: button,
-    play: correct
   });
 
   if (insertErr) {
