@@ -76,6 +76,14 @@ const Index = () => {
                     <span className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-ping" aria-hidden />
                   </motion.div>
                 </div>
+                <Link
+                  to="/live"
+                  title="Join the live room"
+                  className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-sm hover:bg-secondary/80"
+                >
+                  <Radio className="h-4 w-4 text-destructive" />
+                  <span className="font-medium text-foreground">Live</span>
+                </Link>
                 <Link to="/account" className="rounded-full bg-secondary p-2 hover:bg-secondary/80">
                   <User className="h-4 w-4 text-foreground" />
                 </Link>
