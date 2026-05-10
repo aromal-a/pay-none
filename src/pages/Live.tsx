@@ -1404,7 +1404,7 @@ function MovieCall({ userId }: { userId: string | null }) {
         <ul className="mt-2 space-y-1">
           <li>· Sessions &amp; session-directive guard every Previewer. Audience are consumers of traffic only — zero handshake, zero wireframe.</li>
           <li>· Pour-text from Viewers tagged <span className="font-mono">rage · R-sector · keyboard-ratio · disrespect</span> trips the pull-back strap.</li>
-          <li>· Identity vectors (she/he/they/them/binary/non-binary/non-sensual/sensual/romantic/gay) are protected vectors — never audience-facing, never queryable.</li>
+          <li>· Identity vectors (she/he/they/them/binary/non-binary/non-sensual/sensual/romantic/gay/trans) are protected vectors — never audience-facing, never queryable.</li>
           <li>· Lock-on folders open only via greed-derivative payloads, gated by <span className="font-mono">reason · intent · tact</span>.</li>
           <li>· Camera/Mic/Speaker streams stay local; clips persist only in your private gallery (RLS-scoped).</li>
         </ul>
