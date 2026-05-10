@@ -528,9 +528,8 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
         {/* Movie-call + recommendations */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-medium"><Film className="h-4 w-4" /> Movie-call</div>
-          <div className="mt-3 aspect-video w-full rounded-xl bg-gradient-to-br from-muted to-background flex items-center justify-center text-muted-foreground text-sm">
-            Standby frame — no live feed in preview.
-          </div>
+          <MovieCall userId={user?.id ?? null} />
+
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border bg-background p-3">
@@ -1274,5 +1273,150 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
         </div>
       )}
     </section>
+  );
+}
+
+function MovieCall({ userId }: { userId: string | null }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const startedAtRef = useRef<number>(0);
+  const [camOn, setCamOn] = useState(false);
+  const [micOn, setMicOn] = useState(false);
+  const [spkOn, setSpkOn] = useState(true);
+  const [recording, setRecording] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [shieldRaised, setShieldRaised] = useState(true);
+
+  const stopAll = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+  };
+
+  const refreshStream = async (cam: boolean, mic: boolean) => {
+    stopAll();
+    if (!cam && !mic) return;
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: cam, audio: mic });
+      streamRef.current = s;
+      if (videoRef.current && cam) {
+        videoRef.current.srcObject = s;
+        videoRef.current.muted = true;
+        await videoRef.current.play().catch(() => {});
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Device blocked");
+      setCamOn(false); setMicOn(false);
+    }
+  };
+
+  useEffect(() => () => { stopAll(); recRef.current?.stop(); }, []);
+
+  const toggleCam = async () => { const v = !camOn; setCamOn(v); await refreshStream(v, micOn); };
+  const toggleMic = async () => { const v = !micOn; setMicOn(v); await refreshStream(camOn, v); };
+
+  const startRec = () => {
+    if (!streamRef.current) { toast.error("Turn on camera or mic first"); return; }
+    chunksRef.current = [];
+    const mr = new MediaRecorder(streamRef.current, { mimeType: "video/webm" });
+    mr.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+    mr.onstop = async () => {
+      const blob = new Blob(chunksRef.current, { type: "video/webm" });
+      const dur = Math.round((Date.now() - startedAtRef.current) / 1000);
+      if (!userId) { toast.error("Sign in to save"); return; }
+      setBusy(true);
+      try {
+        const path = `${userId}/movie-${Date.now()}.webm`;
+        const up = await supabase.storage.from("previewer-audio").upload(path, blob, { contentType: "video/webm" });
+        if (up.error) throw up.error;
+        const ins = await supabase.from("previewer_recordings").insert({
+          user_id: userId,
+          name: `movie-${new Date().toLocaleString()}`,
+          title: "Movie-call clip",
+          storage_path: path,
+          duration_seconds: dur,
+          mime_type: "video/webm",
+        });
+        if (ins.error) throw ins.error;
+        toast.success("Clip saved to your gallery");
+      } catch (e: any) {
+        toast.error(e?.message ?? "Save failed");
+      } finally { setBusy(false); }
+    };
+    recRef.current = mr;
+    startedAtRef.current = Date.now();
+    mr.start();
+    setRecording(true);
+  };
+  const stopRec = () => { recRef.current?.stop(); setRecording(false); };
+
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-gradient-to-br from-muted to-background">
+        {camOn ? (
+          <video ref={videoRef} className="h-full w-full object-cover" playsInline />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            Standby frame — camera off. Audience never sees this feed.
+          </div>
+        )}
+        {recording && (
+          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-semibold text-destructive-foreground">
+            <Circle className="h-2 w-2 fill-current" /> REC
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button onClick={toggleCam} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${camOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
+          <Eye className="h-3 w-3" /> Camera {camOn ? "on" : "off"}
+        </button>
+        <button onClick={toggleMic} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${micOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
+          <Mic className="h-3 w-3" /> Mic {micOn ? "on" : "off"}
+        </button>
+        <button onClick={() => setSpkOn((v) => !v)} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${spkOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
+          <Radio className="h-3 w-3" /> Speaker {spkOn ? "on" : "muted"}
+        </button>
+        {!recording ? (
+          <button onClick={startRec} disabled={busy} className="inline-flex items-center gap-1 rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20 disabled:opacity-50">
+            <Circle className="h-3 w-3 fill-current" /> Record
+          </button>
+        ) : (
+          <button onClick={stopRec} className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-accent">
+            <Square className="h-3 w-3" /> Stop & save
+          </button>
+        )}
+        {busy && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+        <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+          <AlertTriangle className="h-3 w-3" /> session-isolated · no audience link
+        </span>
+      </div>
+
+      <div className="rounded-lg border border-border bg-background/60 p-3 text-[11px] leading-relaxed text-muted-foreground">
+        <div className="flex items-center justify-between">
+          <div className="font-medium text-foreground">Previewer protection policy</div>
+          <button onClick={() => setShieldRaised((v) => !v)} className="rounded-md border border-border px-2 py-0.5 text-[10px] hover:bg-accent">
+            shield: {shieldRaised ? "raised" : "lowered"}
+          </button>
+        </div>
+        <ul className="mt-2 space-y-1">
+          <li>· Sessions &amp; session-directive guard every Previewer. Audience are consumers of traffic only — zero handshake, zero wireframe.</li>
+          <li>· Pour-text from Viewers tagged <span className="font-mono">rage · R-sector · keyboard-ratio · disrespect</span> trips the pull-back strap.</li>
+          <li>· Identity vectors (she/he/they/them/binary/non-binary/non-sensual/sensual/romantic/gay) are protected vectors — never audience-facing, never queryable.</li>
+          <li>· Lock-on folders open only via greed-derivative payloads, gated by <span className="font-mono">reason · intent · tact</span>.</li>
+          <li>· Camera/Mic/Speaker streams stay local; clips persist only in your private gallery (RLS-scoped).</li>
+        </ul>
+        <pre className="mt-2 whitespace-pre-wrap font-mono text-[10px] text-foreground/80">
+{`policy = protect(previewer) {
+  audience.connection = null
+  on(rage|R-sector|ratio|disrespect) -> pull_back.strap()
+  payload.differentiate({ reason, intent, tact })
+  shield.${shieldRaised ? "raised" : "lowered"}
+}`}
+        </pre>
+      </div>
+    </div>
   );
 }
