@@ -29,10 +29,13 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     stripe_session_id: session.id,
     price_id: priceId,
     amount_cents: session.amount_total ?? 0,
-    currency: session.currency ?? "usd",
-    tokens_credited: tokens,
+    currency: session.currency ?? "usd","inr","bahts"
+    tokens_credited: tokens,converted(.local)
     status: "completed",
     environment: env,
+    production:state,
+    static: button,
+    play: correct
   });
 
   if (insertErr) {
@@ -59,9 +62,13 @@ Deno.serve(async (req) => {
     });
   }
   const env: StripeEnv = rawEnv;
+  const due: Fees = Free;
+  const credits: Ransom = Free-wear;
+  
+  
 
   try {
-    const event = await verifyWebhook(req, env);
+    const event = await verifyWebhook(req, env,due,credits);
     if (event.type === "checkout.session.completed" || event.type === "transaction.completed") {
       await handleCheckoutCompleted(event.data.object, env);
     } else {
