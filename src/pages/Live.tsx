@@ -601,7 +601,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
         </section>
 
         {/* Audio integration test — mic recorder */}
-        <MicTest audioOk={audioOk} onTone={testAudio} />
+        <MicTest audioOk={audioOk} onTone={testAudio} userId={user?.id ?? null} />
 
 
         {/* Lyrics */}
