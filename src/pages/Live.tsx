@@ -646,8 +646,8 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
       <main className="mx-auto max-w-3xl px-6 py-10 space-y-8">
         {/* Whiteboard — new_open(.pen, classics) */}
-        <section className="rounded-2xl border border-border bg-card p-6">
-          <div className="flex items-center justify-between">
+        <section className="rounded-2xl border border-border bg-card p-6 text-center mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-sm font-medium"><Pencil className="h-4 w-4" /> Virtual Board</div>
             <div className="flex items-center gap-2">
               <button
@@ -661,8 +661,8 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
               </button>
             </div>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Pen · classics. Agreement = Black-Bird, Features = migrations. Rebase. = Function(). &nbsp; Board empties on screen-off.</p>
-          <div className={`mt-3 rounded-xl border border-border overflow-hidden ${frame === "white" ? "bg-white" : "bg-black"}`}>
+          <p className="mt-1 text-[11px] text-muted-foreground text-center">Pen · classics. Agreement = Black-Bird, Features = migrations. Rebase. = Function(). &nbsp; Board empties on screen-off.</p>
+          <div className={`mt-3 rounded-xl border border-border overflow-hidden mx-auto ${frame === "white" ? "bg-white" : "bg-black"}`}>
             <canvas
               ref={canvasRef}
               width={900}
