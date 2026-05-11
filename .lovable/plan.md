@@ -1,4 +1,3 @@
-
 # Previewer ↔ Viewer channels + Active Call Space
 
 ## What we're building (slice 1: Channels + 1‑to‑many broadcast)
@@ -48,7 +47,7 @@ Add `'previewer'` to the existing `app_role` enum. `has_role(uid, 'previewer')` 
 
 - Triggered from the client whenever a new participant message lands in an ACS (debounced ~6s; also after every 4 messages).
 - Reads the last ~30 messages of that ACS (service role), calls Lovable AI Gateway with `openai/gpt-5` and a tight system prompt:
-  > "You are a curious cinephile and a fun third-wheeler in a 2-person creative call between a Previewer and a Viewer. Speak in third person about *both* of them. Be brief (1–2 sentences max), warm, very curious about the story, never bossy. Skip if you have nothing genuinely useful or playful to add — return empty string."
+  > "You are a curious cinephile and a fun third-wheeler in a 2-person creative call between a Previewer and a Viewer. Speak in third person about _both_ of them. Be brief (1–2 sentences max), warm, very curious about the story, never bossy. Skip if you have nothing genuinely useful or playful to add — return empty string."
 - If the model returns non-empty, insert a row into `live_acs_messages` with `kind='ai'`. Empty → no-op (keeps token use low).
 - Auth: verify the caller's JWT, then verify they belong to the ACS. Handle 429/402.
 
@@ -57,6 +56,7 @@ Add `'previewer'` to the existing `app_role` enum. `has_role(uid, 'previewer')` 
 Inside `src/pages/Live.tsx`, add a third top-level section (besides Viewer/Previewer mode picker): **Channels**.
 
 New components in `src/components/live/`:
+
 - `ChannelsPanel.tsx` — browse open channels; "Create channel" button shown only if `has_role 'previewer'`.
 - `ChannelRoom.tsx` — Previewer activity feed (existing addendum + STT events stream as `live_acs_messages` siblings on the channel) and "Request movie-call" button for Viewers.
 - `CallRequestDialog.tsx` — Viewer writes story plot + suggested role (preset chips: Drag-Queen, Re-Birth, Deathly-harbinger, Life's gateway, etc.).
