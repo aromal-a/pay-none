@@ -38,23 +38,23 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary p-2">
+        <div className="mx-auto flex max-w-5xl flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
+            <div className="rounded-lg bg-primary p-2 shrink-0">
               <Coins className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold text-foreground">
+            <span className="font-display text-base sm:text-xl font-bold text-foreground truncate">
               TokenStore where parrot leaves and Crow Desks
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <LanguageSelector />
             {user ? (
               <>
-                <div className="mx-0">
+                <div className="flex flex-col sm:flex-row items-center gap-2">
                   <button
                     onClick={() => setAiOpen(true)}
-                    className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 hover:bg-secondary/80 transition-colors mx-[46px]"
+                    className="flex items-center gap-2 rounded-full bg-secondary px-3 sm:px-4 py-2 hover:bg-secondary/80 transition-colors text-sm whitespace-nowrap"
                     title="Spend tokens — chat with AI"
                   >
                     <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -65,7 +65,7 @@ const Index = () => {
                   <Link
                     to="/chat"
                     title="Open prompt chat"
-                    className="flex items-center gap-2 bg-secondary px-4 py-2 text-sm hover:bg-secondary/80 transition-colors w-64 my-[8px] mb-0 mt-[4px] border border-dotted shadow-sm opacity-100 rounded-md"
+                    className="flex items-center gap-2 bg-secondary px-3 sm:px-4 py-2 text-sm hover:bg-secondary/80 transition-colors w-full max-w-[180px] sm:w-64 border border-dotted shadow-sm opacity-100 rounded-md"
                   >
                     <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="text-muted-foreground truncate">
@@ -76,7 +76,7 @@ const Index = () => {
                 <Link
                   to="/live"
                   title="Join the live room"
-                  className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-sm hover:bg-secondary/80"
+                  className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-sm hover:bg-secondary/80 whitespace-nowrap"
                 >
                   <Radio className="h-4 w-4 text-destructive" />
                   <span className="font-medium text-foreground">Live</span>
