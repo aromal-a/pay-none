@@ -127,7 +127,7 @@ const Index = () => {
 
       <footer className="mx-auto max-w-4xl px-6 pb-10 text-center text-xs text-muted-foreground space-y-2">
         <p>
-          Text_Addendum is based on, recent coverages, coverages based on tax, tax information.codified Omit - Dont's
+          Text_Addendum is based on, recent coverages, coverages based on tax, tax information.codified Emit - Dont's , Remit - FONTS
         </p>
         <p className="max-w-2xl mx-auto">
           Privacy©: voice notes, photos, and short films (under 1 minute) you record or upload remain user-owned and are
