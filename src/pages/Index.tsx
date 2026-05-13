@@ -18,6 +18,14 @@ const tokenPackages = [
 const Index = () => {
   const [balance, setBalance] = useState(0);
   const [aiOpen, setAiOpen] = useState(false);
+  const [tcAccepted, setTcAccepted] = useState<boolean>(() =>
+    typeof window !== "undefined" && localStorage.getItem("qt_tc_accepted") === "1"
+  );
+  const acceptTC = () => {
+    localStorage.setItem("qt_tc_accepted", "1");
+    localStorage.setItem("qt_tc_accepted_at", new Date().toISOString());
+    setTcAccepted(true);
+  };
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
