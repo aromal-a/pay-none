@@ -130,7 +130,43 @@ export default function MidiHapticsResearch() {
 
   const stopBoxLoop = (i: number) => {
     const timers = loopTimersRef.current.get(i);
-    if (timers)
+    if (timers) timers.forEach((t) => clearTimeout(t));
+    loopTimersRef.current.delete(i);
+    setPlayingBoxes((prev) => {
+      const next = new Set(prev);
+      next.delete(i);
+      return next;
+    });
+  };
+
+  const startBoxLoop = (i: number) => {
+    const notes = boxes[i].midiNotes;
+    if (!notes.length) return;
+    const stepMs = 220;
+    const gapMs = 400;
+    setPlayingBoxes((prev) => new Set(prev).add(i));
+    const playOnce = () => {
+      const timers: number[] = [];
+      notes.forEach((n, k) => {
+        const t = window.setTimeout(() => {
+          setFlashBox(i);
+          window.setTimeout(() => setFlashBox(-1), 100);
+          if (midi.isConnected) {
+            midi.sendNoteOn(n, 100);
+            window.setTimeout(() => midi.sendNoteOff(n), stepMs - 20);
+          }
+          synthPlay(n, stepMs);
+        }, k * stepMs);
+        timers.push(t);
+      });
+      const loopT = window.setTimeout(() => {
+        if (loopTimersRef.current.has(i)) playOnce();
+      }, notes.length * stepMs + gapMs);
+      timers.push(loopT);
+      loopTimersRef.current.set(i, timers);
+    };
+    playOnce();
+  };
 
   useEffect(() => {
     midi.onMIDIMessage((data: MIDICallbackData) => {
