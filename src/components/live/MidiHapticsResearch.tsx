@@ -93,6 +93,81 @@ export default function MidiHapticsResearch() {
 
   const mapNoteToBox = (n: number) => (n >= 60 && n < 69 ? n - 60 : -1);
 
+  // Built-in Web Audio synth (fallback when no MIDI output device)
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const getCtx = () => {
+    if (!audioCtxRef.current) {
+      const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+      audioCtxRef.current = new Ctx();
+    }
+    return audioCtxRef.current!;
+  };
+  const noteToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
+  const synthPlay = (note: number, durationMs = 220, velocity = 100) => {
+    try {
+      const ctx = getCtx();
+      if (ctx.state === "suspended") ctx.resume();
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = noteToFreq(note);
+      const peak = Math.min(0.35, (velocity / 127) * 0.4);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(peak, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durationMs / 1000);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + durationMs / 1000 + 0.05);
+    } catch (e) {
+      console.error("synth error", e);
+    }
+  };
+
+  // Per-box loop playback timers
+  const loopTimersRef = useRef<Map<number, number[]>>(new Map());
+  const [playingBoxes, setPlayingBoxes] = useState<Set<number>>(new Set());
+
+  const stopBoxLoop = (i: number) => {
+    const timers = loopTimersRef.current.get(i);
+    if (timers) timers.forEach((t) => clearTimeout(t));
+    loopTimersRef.current.delete(i);
+    setPlayingBoxes((prev) => {
+      const next = new Set(prev);
+      next.delete(i);
+      return next;
+    });
+  };
+
+  const startBoxLoop = (i: number) => {
+    const notes = boxes[i].midiNotes;
+    if (!notes.length) return;
+    const stepMs = 220;
+    const gapMs = 400;
+    setPlayingBoxes((prev) => new Set(prev).add(i));
+    const playOnce = () => {
+      const timers: number[] = [];
+      notes.forEach((n, k) => {
+        const t = window.setTimeout(() => {
+          setFlashBox(i);
+          window.setTimeout(() => setFlashBox(-1), 100);
+          if (midi.isConnected) {
+            midi.sendNoteOn(n, 100);
+            window.setTimeout(() => midi.sendNoteOff(n), stepMs - 20);
+          }
+          synthPlay(n, stepMs);
+        }, k * stepMs);
+        timers.push(t);
+      });
+      const loopT = window.setTimeout(() => {
+        if (loopTimersRef.current.has(i)) playOnce();
+      }, notes.length * stepMs + gapMs);
+      timers.push(loopT);
+      loopTimersRef.current.set(i, timers);
+    };
+    playOnce();
+  };
+
   useEffect(() => {
     midi.onMIDIMessage((data: MIDICallbackData) => {
       if (data.type !== "noteOn") return;
@@ -181,23 +256,33 @@ export default function MidiHapticsResearch() {
 
   const triggerBox = (i: number) => {
     setActiveBox(i);
-    setFlashBox(i);
-    window.setTimeout(() => setFlashBox(-1), 120);
-    const note = boxes[i].midiNotes[0];
-    if (note != null && midi.isConnected) {
-      midi.sendNoteOn(note, 100);
-      setTimeout(() => midi.sendNoteOff(note), 200);
+    if (playingBoxes.has(i)) {
+      stopBoxLoop(i);
+      return;
     }
-    if (isRecRef.current && note != null) {
-      seqRef.current.push({
-        type: "noteOn",
-        note,
-        velocity: 100,
-        time: Date.now() - startedAtRef.current,
-        box: i + 1,
-      });
+    if (boxes[i].midiNotes.length > 0) {
+      startBoxLoop(i);
+      if (isRecRef.current) {
+        seqRef.current.push({
+          type: "noteOn",
+          note: boxes[i].midiNotes[0],
+          velocity: 100,
+          time: Date.now() - startedAtRef.current,
+          box: i + 1,
+        });
+      }
+    } else {
+      setFlashBox(i);
+      window.setTimeout(() => setFlashBox(-1), 120);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      loopTimersRef.current.forEach((arr) => arr.forEach((t) => clearTimeout(t)));
+      loopTimersRef.current.clear();
+    };
+  }, []);
 
   const uploadMidi = async () => {
     if (!selectedFile) {
