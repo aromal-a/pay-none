@@ -71,9 +71,7 @@ export default function MidiHapticsResearch() {
   const [micStatus, setMicStatus] = useState<string>("No Mic");
   const [micVolume, setMicVolumeState] = useState(100);
 
-  const [boxes, setBoxes] = useState<BoxData[]>(() =>
-    Array.from({ length: 9 }, () => emptyBox())
-  );
+  const [boxes, setBoxes] = useState<BoxData[]>(() => Array.from({ length: 9 }, () => emptyBox()));
   const [activeBox, setActiveBox] = useState<number>(-1);
   const [flashBox, setFlashBox] = useState<number>(-1);
 
@@ -97,7 +95,8 @@ export default function MidiHapticsResearch() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const getCtx = () => {
     if (!audioCtxRef.current) {
-      const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+      const Ctx =
+        window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       audioCtxRef.current = new Ctx();
     }
     return audioCtxRef.current!;
@@ -159,9 +158,12 @@ export default function MidiHapticsResearch() {
         }, k * stepMs);
         timers.push(t);
       });
-      const loopT = window.setTimeout(() => {
-        if (loopTimersRef.current.has(i)) playOnce();
-      }, notes.length * stepMs + gapMs);
+      const loopT = window.setTimeout(
+        () => {
+          if (loopTimersRef.current.has(i)) playOnce();
+        },
+        notes.length * stepMs + gapMs,
+      );
       timers.push(loopT);
       loopTimersRef.current.set(i, timers);
     };
@@ -186,7 +188,7 @@ export default function MidiHapticsResearch() {
           box: idx + 1,
         });
         setBoxes((prev) => {
-          const next = prev.slice();
+          const next = prev.slice(0, 10);
           next[idx] = {
             ...next[idx],
             recordedCount: next[idx].recordedCount + 1,
@@ -327,11 +329,15 @@ export default function MidiHapticsResearch() {
 
           <div className="controls-section">
             <div className="midi-controls">
-              <button className="btn btn-primary" onClick={requestMidi}>🔌 Request MIDI Access</button>
+              <button className="btn btn-primary" onClick={requestMidi}>
+                🔌 Request MIDI Access
+              </button>
               <span className={`status-badge${midiConnected ? " connected" : ""}`}>{midiStatus}</span>
             </div>
             <div className="audio-controls">
-              <button className="btn btn-secondary" onClick={requestMic}>🎤 Request Microphone</button>
+              <button className="btn btn-secondary" onClick={requestMic}>
+                🎤 Request Microphone
+              </button>
               <span className={`status-badge${micConnected ? " connected" : ""}`}>{micStatus}</span>
               <div className="volume-control">
                 <label htmlFor="mhr-mic-vol">Mic Volume:</label>
@@ -362,8 +368,8 @@ export default function MidiHapticsResearch() {
               const info = b.customMIDI
                 ? `📁 ${b.customMIDIName}`
                 : b.recordedCount > 0
-                ? `🎹 ${b.recordedCount} notes`
-                : "empty";
+                  ? `🎹 ${b.recordedCount} notes`
+                  : "empty";
               return (
                 <div
                   key={i}
