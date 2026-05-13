@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2, Link2, Copy, RefreshCw, MessageSquare, Wallet, Coins } from "lucide-react";
 import Channels from "@/components/live/Channels";
+import MidiHapticsResearch from "@/components/live/MidiHapticsResearch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -1544,106 +1545,8 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
         </div>
       )}
 
-      {/* MIDI-HAPTICS RESEARCH — styled per provided spec, scoped via .mhr */}
-      <style>{`
-        .mhr { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 6px; margin-top: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
-        .mhr-inner { background: white; border-radius: 12px; padding: 32px; color: #333; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        .mhr header { text-align: center; margin-bottom: 28px; border-bottom: 3px solid #667eea; padding-bottom: 16px; }
-        .mhr header h2 { font-size: 1.8em; color: #667eea; margin: 0 0 6px; font-weight: 700; }
-        .mhr header p { font-size: 1em; color: #666; margin: 0; }
-        .mhr .controls-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-        .mhr .midi-controls, .mhr .audio-controls { background: #f5f5f5; padding: 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; }
-        .mhr .volume-control { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
-        .mhr .volume-control label { font-weight: 600; min-width: 90px; font-size: 0.9em; }
-        .mhr .volume-control input { flex: 1; height: 6px; cursor: pointer; }
-        .mhr .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 0.95em; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: white; }
-        .mhr .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
-        .mhr .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .mhr .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .mhr .btn-secondary { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .mhr .btn-record { background: linear-gradient(135deg, #ff4757 0%, #ee5a6f 100%); font-size: 1em; padding: 12px 24px; }
-        .mhr .btn-stop { background: linear-gradient(135deg, #2f3542 0%, #57606f 100%); }
-        .mhr .btn-success { background: linear-gradient(135deg, #26de81 0%, #20c997 100%); }
-        .mhr .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 600; background: #e0e0e0; color: #666; }
-        .mhr .timer { font-weight: 600; font-size: 1.2em; color: #667eea; font-family: 'Courier New', monospace; }
-        .mhr .midi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: #f9f9f9; padding: 16px; border-radius: 12px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; }
-        .mhr .grid-box { aspect-ratio: 1; border: 3px solid #ddd; border-radius: 12px; background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%); cursor: pointer; transition: all 0.15s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-weight: 600; user-select: none; }
-        .mhr .grid-box:hover { border-color: #667eea; background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%); }
-        .mhr .box-number { font-size: 2em; color: #667eea; }
-        .mhr .box-info { font-size: 0.7em; opacity: 0.7; color: #666; }
-        .mhr .recording-section { display: flex; align-items: center; gap: 16px; background: #f0f0f0; padding: 16px; border-radius: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-        .mhr .recording-controls { display: flex; gap: 12px; flex: 1; align-items: center; flex-wrap: wrap; }
-        .mhr .file-section, .mhr .export-section { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
-        .mhr .upload-area { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; }
-        .mhr .upload-area label { font-weight: 600; font-size: 0.9em; }
-        .mhr .upload-area input[type="file"], .mhr .upload-area select { padding: 7px 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 0.9em; background: white; }
-        .mhr footer { text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; color: #999; font-size: 0.85em; }
-        @media (max-width: 768px) { .mhr-inner { padding: 20px; } .mhr .controls-section { grid-template-columns: 1fr; } .mhr .recording-section { flex-direction: column; } .mhr .upload-area { grid-template-columns: 1fr; } }
-      `}</style>
-      <div className="mhr">
-        <div className="mhr-inner">
-          <header>
-            <h2>🎛️ MIDI Haptics Research</h2>
-            <p>3×3 Touch MIDI Grid Recorder</p>
-          </header>
-
-          <div className="controls-section">
-            <div className="midi-controls">
-              <button className="btn btn-primary" disabled>🔌 Request MIDI Access</button>
-              <span className="status-badge">No MIDI</span>
-            </div>
-            <div className="audio-controls">
-              <button className="btn btn-secondary" disabled>🎤 Request Microphone</button>
-              <span className="status-badge">No Mic</span>
-              <div className="volume-control">
-                <label htmlFor="mhr-mic-vol">Mic Volume:</label>
-                <input id="mhr-mic-vol" type="range" min={0} max={100} defaultValue={100} disabled />
-                <span>100%</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="midi-grid">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="grid-box">
-                <div className="box-number">{i + 1}</div>
-                <div className="box-info">empty</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="recording-section">
-            <div className="recording-controls">
-              <button className="btn btn-record" disabled>🔴 Master Record</button>
-              <button className="btn btn-stop" disabled>⏹️ Stop Recording</button>
-              <span className="timer">00:00</span>
-            </div>
-            <span className="status-badge">idle</span>
-          </div>
-
-          <div className="file-section">
-            <div className="upload-area">
-              <label htmlFor="mhr-file">📁 Upload Custom MIDI to Box:</label>
-              <input id="mhr-file" type="file" accept=".mid,.midi" disabled />
-              <select disabled defaultValue="1">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <option key={i} value={i + 1}>Box {i + 1}</option>
-                ))}
-              </select>
-              <button className="btn btn-secondary" disabled>Upload to Box</button>
-            </div>
-          </div>
-
-          <div className="export-section">
-            <button className="btn btn-success" disabled>📥 Export Recording</button>
-            <div className="recordings-list" />
-          </div>
-
-          <footer>
-            <p>Connect a MIDI device, record touches and vocals, export synchronized audio + MIDI</p>
-          </footer>
-        </div>
-      </div>
+      {/* MIDI-HAPTICS RESEARCH — wired (MIDI + mic + grid + recording + export) */}
+      <MidiHapticsResearch />
     </section>
   );
 }
