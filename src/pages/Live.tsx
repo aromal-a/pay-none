@@ -1543,6 +1543,57 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
           </ul>
         </div>
       )}
+
+      {/* MIDI-HAPTICS RESEARCH — spec only, wired up later */}
+      <div className="mt-6 rounded-xl border border-dashed border-border bg-background/60 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-sm font-medium tracking-wide">🎛️ MIDI-HAPTICS RESEARCH</div>
+          <span className="rounded-full border border-border bg-card px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+            spec · not wired
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          3×3 Touch MIDI Grid Recorder. Other sources will be hooked in later — this block describes the planned surface.
+        </p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">MIDI</div>
+            <ul className="mt-1.5 space-y-1 text-xs">
+              <li>🔌 Request MIDI Access · status: No MIDI</li>
+              <li>3×3 grid pads (id: midiGrid)</li>
+              <li>Upload custom .mid / .midi to a selected box</li>
+            </ul>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Audio</div>
+            <ul className="mt-1.5 space-y-1 text-xs">
+              <li>🎤 Request Microphone · status: No Mic</li>
+              <li>Mic volume slider 0–100%</li>
+              <li>Synchronized vocal capture with MIDI events</li>
+            </ul>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Recording</div>
+            <ul className="mt-1.5 space-y-1 text-xs">
+              <li>🔴 Master Record / ⏹️ Stop</li>
+              <li>Live timer (00:00)</li>
+              <li>Recording status badge</li>
+            </ul>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Export</div>
+            <ul className="mt-1.5 space-y-1 text-xs">
+              <li>📥 Export synchronized audio + MIDI</li>
+              <li>Recordings list (per session)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-md border border-border bg-card/60 p-2 text-[11px] text-muted-foreground">
+          Modules planned: <code className="font-mono">midiHandler.js</code> · <code className="font-mono">audioHandler.js</code> · <code className="font-mono">gridController.js</code> · <code className="font-mono">app.js</code>
+        </div>
+      </div>
     </section>
   );
 }
