@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Coins, Wallet, User, LogIn, Search, Radio } from "lucide-react";
+import { Coins, Wallet, User, LogIn, Search, Radio, ShieldCheck, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import TokenCard from "@/components/TokenCard";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -18,6 +18,14 @@ const tokenPackages = [
 const Index = () => {
   const [balance, setBalance] = useState(0);
   const [aiOpen, setAiOpen] = useState(false);
+  const [tcAccepted, setTcAccepted] = useState<boolean>(() =>
+    typeof window !== "undefined" && localStorage.getItem("qt_tc_accepted") === "1"
+  );
+  const acceptTC = () => {
+    localStorage.setItem("qt_tc_accepted", "1");
+    localStorage.setItem("qt_tc_accepted_at", new Date().toISOString());
+    setTcAccepted(true);
+  };
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -122,6 +130,55 @@ const Index = () => {
               />
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-6 pb-12">
+        <div className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              Terms & Conditions — Ethics Dashboard
+            </h2>
+          </div>
+          <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5">
+            <li>
+              The <strong className="text-foreground">Previewer</strong> is the entity always holding
+              <em> action</em>, <em>cut</em>, and <em>call</em>.
+            </li>
+            <li>
+              The <strong className="text-foreground">Viewer</strong> is a paid choice, available only to users
+              with a token balance.
+            </li>
+            <li>
+              No viewer action is argued over count balances — only the <strong className="text-foreground">spending involved</strong> matters.
+            </li>
+            <li>
+              When no spending is involved and access is not cached, the relation is a specific
+              <em> self-renouncement</em> by the participant.
+            </li>
+            <li>
+              Paired actions remain simple; entity animosity is governed by these terms and the same
+              ethics surfaced on this dashboard.
+            </li>
+          </ul>
+          <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs text-muted-foreground">
+              Click to confirm you have read and agree to these terms.
+            </p>
+            {tcAccepted ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
+                <Check className="h-4 w-4" /> Accepted
+              </span>
+            ) : (
+              <button
+                onClick={acceptTC}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                <Check className="h-4 w-4" /> I Agree
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
