@@ -93,6 +93,45 @@ export default function MidiHapticsResearch() {
 
   const mapNoteToBox = (n: number) => (n >= 60 && n < 69 ? n - 60 : -1);
 
+  // Built-in Web Audio synth (fallback when no MIDI output device)
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const getCtx = () => {
+    if (!audioCtxRef.current) {
+      const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+      audioCtxRef.current = new Ctx();
+    }
+    return audioCtxRef.current!;
+  };
+  const noteToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
+  const synthPlay = (note: number, durationMs = 220, velocity = 100) => {
+    try {
+      const ctx = getCtx();
+      if (ctx.state === "suspended") ctx.resume();
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = noteToFreq(note);
+      const peak = Math.min(0.35, (velocity / 127) * 0.4);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(peak, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durationMs / 1000);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + durationMs / 1000 + 0.05);
+    } catch (e) {
+      console.error("synth error", e);
+    }
+  };
+
+  // Per-box loop playback timers
+  const loopTimersRef = useRef<Map<number, number[]>>(new Map());
+  const [playingBoxes, setPlayingBoxes] = useState<Set<number>>(new Set());
+
+  const stopBoxLoop = (i: number) => {
+    const timers = loopTimersRef.current.get(i);
+    if (timers)
+
   useEffect(() => {
     midi.onMIDIMessage((data: MIDICallbackData) => {
       if (data.type !== "noteOn") return;
