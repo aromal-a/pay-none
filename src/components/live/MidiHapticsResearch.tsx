@@ -256,23 +256,33 @@ export default function MidiHapticsResearch() {
 
   const triggerBox = (i: number) => {
     setActiveBox(i);
-    setFlashBox(i);
-    window.setTimeout(() => setFlashBox(-1), 120);
-    const note = boxes[i].midiNotes[0];
-    if (note != null && midi.isConnected) {
-      midi.sendNoteOn(note, 100);
-      setTimeout(() => midi.sendNoteOff(note), 200);
+    if (playingBoxes.has(i)) {
+      stopBoxLoop(i);
+      return;
     }
-    if (isRecRef.current && note != null) {
-      seqRef.current.push({
-        type: "noteOn",
-        note,
-        velocity: 100,
-        time: Date.now() - startedAtRef.current,
-        box: i + 1,
-      });
+    if (boxes[i].midiNotes.length > 0) {
+      startBoxLoop(i);
+      if (isRecRef.current) {
+        seqRef.current.push({
+          type: "noteOn",
+          note: boxes[i].midiNotes[0],
+          velocity: 100,
+          time: Date.now() - startedAtRef.current,
+          box: i + 1,
+        });
+      }
+    } else {
+      setFlashBox(i);
+      window.setTimeout(() => setFlashBox(-1), 120);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      loopTimersRef.current.forEach((arr) => arr.forEach((t) => clearTimeout(t)));
+      loopTimersRef.current.clear();
+    };
+  }, []);
 
   const uploadMidi = async () => {
     if (!selectedFile) {
