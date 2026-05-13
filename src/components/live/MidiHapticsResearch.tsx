@@ -1,0 +1,234 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MIDIHandler, type MIDICallbackData } from "@/lib/midiHandler";
+import { AudioHandler } from "@/lib/audioHandler";
+
+type BoxData = {
+  customMIDI: ArrayBuffer | null;
+  midiNotes: number[];
+  recordedCount: number;
+  customMIDIName: string;
+};
+
+type RecEvent = { type: "noteOn"; note: number; velocity: number; time: number; box: number };
+
+const emptyBox = (): BoxData => ({
+  customMIDI: null,
+  midiNotes: [],
+  recordedCount: 0,
+  customMIDIName: "",
+});
+
+export default function MidiHapticsResearch() {
+  const midi = useMemo(() => new MIDIHandler(), []);
+  const audio = useMemo(() => new AudioHandler(), []);
+
+  const [midiStatus, setMidiStatus] = useState<string>("No MIDI");
+  const [micStatus, setMicStatus] = useState<string>("No Mic");
+  const [micVolume, setMicVolumeState] = useState(100);
+
+  const [boxes, setBoxes] = useState<BoxData[]>(() =>
+    Array.from({ length: 9 }, () => emptyBox())
+  );
+  const [activeBox, setActiveBox] = useState<number>(-1);
+  const [flashBox, setFlashBox] = useState<number>(-1);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [timer, setTimer] = useState("00:00");
+  const startedAtRef = useRef(0);
+  const seqRef = useRef<RecEvent[]>([]);
+  const timerIdRef = useRef<number | null>(null);
+  const isRecRef = useRef(false);
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadBox, setUploadBox] = useState(0);
+
+  const [downloads, setDownloads] = useState<
+    Array<{ id: number; title: string; ts: string; duration: number; audio: Blob | null; midi: RecEvent[] }>
+  >([]);
+
+  const mapNoteToBox = (n: number) => (n >= 60 && n < 69 ? n - 60 : -1);
+
+  useEffect(() => {
+    midi.onMIDIMessage((data: MIDICallbackData) => {
+      if (data.type !== "noteOn") return;
+      const idx = mapNoteToBox(data.note);
+      if (idx === -1) return;
+      setActiveBox(idx);
+      setFlashBox(idx);
+      window.setTimeout(() => setFlashBox(-1), 120);
+
+      if (isRecRef.current) {
+        seqRef.current.push({
+          type: "noteOn",
+          note: data.note,
+          velocity: data.velocity,
+          time: Date.now() - startedAtRef.current,
+          box: idx + 1,
+        });
+        setBoxes((prev) => {
+          const next = prev.slice();
+          next[idx] = {
+            ...next[idx],
+            recordedCount: next[idx].recordedCount + 1,
+            midiNotes: [...next[idx].midiNotes, data.note],
+          };
+          return next;
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const requestMidi = async () => {
+    const ok = await midi.requestMIDIAccess();
+    setMidiStatus(ok ? "✅ MIDI Connected" : "❌ MIDI Failed");
+  };
+
+  const requestMic = async () => {
+    const ok = await audio.requestMicrophoneAccess();
+    setMicStatus(ok ? "✅ Mic Connected" : "❌ Mic Failed");
+  };
+
+  const handleVolume = (v: number) => {
+    setMicVolumeState(v);
+    audio.setMicVolume(v);
+  };
+
+  const startRec = () => {
+    if (isRecording) return;
+    if (!midi.isConnected) {
+      alert("Please connect MIDI first.");
+      return;
+    }
+    seqRef.current = [];
+    startedAtRef.current = Date.now();
+    isRecRef.current = true;
+    setIsRecording(true);
+    if (audio.micPermissionGranted) audio.startRecording();
+
+    let secs = 0;
+    timerIdRef.current = window.setInterval(() => {
+      secs++;
+      const m = String(Math.floor(secs / 60)).padStart(2, "0");
+      const s = String(secs % 60).padStart(2, "0");
+      setTimer(`${m}:${s}`);
+    }, 1000);
+  };
+
+  const stopRec = async () => {
+    if (!isRecording) return;
+    isRecRef.current = false;
+    setIsRecording(false);
+    if (timerIdRef.current !== null) {
+      clearInterval(timerIdRef.current);
+      timerIdRef.current = null;
+    }
+    let blob: Blob | null = null;
+    if (audio.micPermissionGranted) blob = await audio.stopRecording();
+    const duration = (Date.now() - startedAtRef.current) / 1000;
+    const title = `Recording_${new Date().toISOString().replace(/[:.]/g, "-")}`;
+    setDownloads((prev) => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        title,
+        ts: new Date().toISOString(),
+        duration,
+        audio: blob,
+        midi: seqRef.current.slice(),
+      },
+    ]);
+    setTimer("00:00");
+  };
+
+  const triggerBox = (i: number) => {
+    setActiveBox(i);
+    setFlashBox(i);
+    window.setTimeout(() => setFlashBox(-1), 120);
+    const note = boxes[i].midiNotes[0];
+    if (note != null && midi.isConnected) {
+      midi.sendNoteOn(note, 100);
+      setTimeout(() => midi.sendNoteOff(note), 200);
+    }
+    if (isRecRef.current && note != null) {
+      seqRef.current.push({
+        type: "noteOn",
+        note,
+        velocity: 100,
+        time: Date.now() - startedAtRef.current,
+        box: i + 1,
+      });
+    }
+  };
+
+  const uploadMidi = async () => {
+    if (!selectedFile) {
+      alert("Please select a MIDI file.");
+      return;
+    }
+    const buf = await selectedFile.arrayBuffer();
+    const notes = await midi.parseMIDIFile(buf);
+    setBoxes((prev) => {
+      const next = prev.slice();
+      next[uploadBox] = {
+        customMIDI: buf,
+        midiNotes: notes.map((n) => n.note),
+        recordedCount: next[uploadBox].recordedCount,
+        customMIDIName: `MIDI (${notes.length} notes)`,
+      };
+      return next;
+    });
+    alert(`Uploaded to Box ${uploadBox + 1} (${notes.length} notes)`);
+  };
+
+  const downloadOne = (id: number) => {
+    const r = downloads.find((d) => d.id === id);
+    if (!r) return;
+    if (r.audio) audio.downloadBlob(r.audio, `${r.title}_audio.webm`);
+    const midiBlob = new Blob([JSON.stringify(r.midi, null, 2)], { type: "application/json" });
+    audio.downloadBlob(midiBlob, `${r.title}_midi.json`);
+  };
+
+  return (
+    <>
+      <style>{`
+        .mhr { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 6px; margin-top: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
+        .mhr-inner { background: white; border-radius: 12px; padding: 32px; color: #333; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .mhr header { text-align: center; margin-bottom: 28px; border-bottom: 3px solid #667eea; padding-bottom: 16px; }
+        .mhr header h2 { font-size: 1.8em; color: #667eea; margin: 0 0 6px; font-weight: 700; }
+        .mhr header p { font-size: 1em; color: #666; margin: 0; }
+        .mhr .controls-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .mhr .midi-controls, .mhr .audio-controls { background: #f5f5f5; padding: 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; }
+        .mhr .volume-control { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+        .mhr .volume-control label { font-weight: 600; min-width: 90px; font-size: 0.9em; }
+        .mhr .volume-control input { flex: 1; height: 6px; cursor: pointer; }
+        .mhr .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 0.95em; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: white; }
+        .mhr .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .mhr .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .mhr .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .mhr .btn-secondary { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .mhr .btn-record { background: linear-gradient(135deg, #ff4757 0%, #ee5a6f 100%); font-size: 1em; padding: 12px 24px; }
+        .mhr .btn-record.recording { animation: mhr-pulse 1s infinite; }
+        @keyframes mhr-pulse { 0%,100%{ opacity:1 } 50%{ opacity:0.7 } }
+        .mhr .btn-stop { background: linear-gradient(135deg, #2f3542 0%, #57606f 100%); }
+        .mhr .btn-success { background: linear-gradient(135deg, #26de81 0%, #20c997 100%); }
+        .mhr .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 600; background: #e0e0e0; color: #666; }
+        .mhr .status-badge.connected { background: #26de81; color: white; }
+        .mhr .status-badge.recording { background: #ff4757; color: white; }
+        .mhr .timer { font-weight: 600; font-size: 1.2em; color: #667eea; font-family: 'Courier New', monospace; }
+        .mhr .midi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: #f9f9f9; padding: 16px; border-radius: 12px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .mhr .grid-box { aspect-ratio: 1; border: 3px solid #ddd; border-radius: 12px; background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%); cursor: pointer; transition: all 0.15s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-weight: 600; user-select: none; }
+        .mhr .grid-box:hover { border-color: #667eea; background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%); }
+        .mhr .grid-box.active { border-color: #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .mhr .grid-box.active .box-number { color: white; }
+        .mhr .grid-box.flash { transform: scale(0.95); }
+        .mhr .grid-box.has-midi { border-color: #26de81; }
+        .mhr .box-number { font-size: 2em; color: #667eea; }
+        .mhr .box-info { font-size: 0.7em; opacity: 0.85; }
+        .mhr .recording-section { display: flex; align-items: center; gap: 16px; background: #f0f0f0; padding: 16px; border-radius: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+        .mhr .recording-controls { display: flex; gap: 12px; flex: 1; align-items: center; flex-wrap: wrap; }
+        .mhr .file-section, .mhr .export-section { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+        .mhr .upload-area { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; }
+        .mhr .upload-area label { font-weight: 600; font-size: 0.9em; }
+        .mhr .upload-area input[type="file"], .mhr .upload-area select { padding: 7px 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 0.9em; background: white; }
+        .mhr .recording-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px;
