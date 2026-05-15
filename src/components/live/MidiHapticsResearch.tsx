@@ -493,7 +493,7 @@ export default function MidiHapticsResearch() {
         <div className="mhr-inner">
           <header>
             <h2>🎛️ MIDI Haptics Research</h2>
-            <p>3×3 Touch MIDI Grid Recorder</p>
+            <p>Your voice is your MIDI</p>
           </header>
 
           <div className="controls-section">
