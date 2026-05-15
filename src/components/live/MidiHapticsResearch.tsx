@@ -381,15 +381,42 @@ export default function MidiHapticsResearch() {
 
   const startRec = () => {
     if (isRecording) return;
-    if (!midi.isConnected) {
-      alert("Please connect MIDI first.");
-      return;
-    }
     seqRef.current = [];
     startedAtRef.current = Date.now();
     isRecRef.current = true;
     setIsRecording(true);
-    if (audio.micPermissionGranted) audio.startRecording();
+
+    // Build a combined stream: master synth/audio bus + mic (if granted), isolated channels mixed at output.
+    try {
+      const ctx = getCtx();
+      if (ctx.state === "suspended") ctx.resume();
+      const dest = getMasterDest();
+      const tracks: MediaStreamTrack[] = [...dest.stream.getAudioTracks()];
+      if (audio.micPermissionGranted && audio.mediaStream) {
+        // Route mic through its own gain node into the master bus so both are mixed in one track.
+        const micSource = ctx.createMediaStreamSource(audio.mediaStream);
+        const micGain = ctx.createGain();
+        micGain.gain.value = audio.micVolume;
+        micSource.connect(micGain).connect(dest);
+      }
+      const combined = new MediaStream(tracks);
+      let mime = "audio/webm;codecs=opus";
+      if (!MediaRecorder.isTypeSupported(mime)) mime = "audio/webm";
+      if (!MediaRecorder.isTypeSupported(mime)) mime = "";
+      const mr = mime ? new MediaRecorder(combined, { mimeType: mime }) : new MediaRecorder(combined);
+      masterChunksRef.current = [];
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) masterChunksRef.current.push(e.data);
+      };
+      mr.start();
+      masterRecorderRef.current = mr;
+    } catch (err) {
+      console.error("Master record failed", err);
+      alert("Could not start master recording.");
+      isRecRef.current = false;
+      setIsRecording(false);
+      return;
+    }
 
     let secs = 0;
     timerIdRef.current = window.setInterval(() => {
@@ -409,7 +436,20 @@ export default function MidiHapticsResearch() {
       timerIdRef.current = null;
     }
     let blob: Blob | null = null;
-    if (audio.micPermissionGranted) blob = await audio.stopRecording();
+    const mr = masterRecorderRef.current;
+    if (mr) {
+      blob = await new Promise<Blob | null>((resolve) => {
+        mr.onstop = () => {
+          resolve(new Blob(masterChunksRef.current, { type: mr.mimeType }));
+        };
+        try {
+          mr.stop();
+        } catch {
+          resolve(null);
+        }
+      });
+      masterRecorderRef.current = null;
+    }
     const duration = (Date.now() - startedAtRef.current) / 1000;
     const title = `Recording_${new Date().toISOString().replace(/[:.]/g, "-")}`;
     setDownloads((prev) => [
