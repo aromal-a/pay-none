@@ -408,7 +408,7 @@ export default function MidiHapticsResearch() {
       mr.ondataavailable = (e) => {
         if (e.data.size > 0) masterChunksRef.current.push(e.data);
       };
-      mr.start();
+      mr.start(250);
       masterRecorderRef.current = mr;
     } catch (err) {
       console.error("Master record failed", err);
