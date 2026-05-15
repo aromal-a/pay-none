@@ -440,10 +440,16 @@ export default function MidiHapticsResearch() {
     if (mr) {
       blob = await new Promise<Blob | null>((resolve) => {
         mr.onstop = () => {
-          resolve(new Blob(masterChunksRef.current, { type: mr.mimeType }));
+          const type = mr.mimeType || "audio/webm";
+          resolve(new Blob(masterChunksRef.current, { type }));
         };
         try {
-          mr.stop();
+          if (mr.state === "recording") {
+            try { mr.requestData(); } catch { /* ignore */ }
+            mr.stop();
+          } else {
+            resolve(null);
+          }
         } catch {
           resolve(null);
         }
