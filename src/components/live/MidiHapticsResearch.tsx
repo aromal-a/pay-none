@@ -353,6 +353,10 @@ export default function MidiHapticsResearch() {
       stopBoxLoop(i);
       return;
     }
+    if (boxHasAudio.has(i)) {
+      startBoxAudio(i);
+      return;
+    }
     if (boxes[i].midiNotes.length > 0) {
       startBoxLoop(i);
       if (isRecRef.current) {
@@ -369,6 +373,19 @@ export default function MidiHapticsResearch() {
       window.setTimeout(() => setFlashBox(-1), 120);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      boxAudioSourcesRef.current.forEach((s) => {
+        try {
+          s.stop();
+        } catch {
+          // ignore
+        }
+      });
+      boxAudioSourcesRef.current.clear();
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
