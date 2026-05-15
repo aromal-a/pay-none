@@ -697,12 +697,19 @@ export default function MidiHapticsResearch() {
             <div className="recordings-list">
               {downloads.map((r) => (
                 <div className="recording-item" key={r.id}>
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <strong>{r.title}</strong>
                     <br />
                     <small>
-                      {r.ts} • {r.duration.toFixed(1)}s
+                      {r.ts} • {r.duration.toFixed(1)}s • {r.audio ? `${(r.audio.size / 1024).toFixed(1)} KB` : "no audio"}
                     </small>
+                    {r.audio && (
+                      <audio
+                        controls
+                        src={URL.createObjectURL(r.audio)}
+                        style={{ display: "block", marginTop: 6, width: "100%" }}
+                      />
+                    )}
                   </div>
                   <button className="btn btn-primary" onClick={() => downloadOne(r.id)}>
                     Download
