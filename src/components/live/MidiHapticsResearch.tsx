@@ -241,6 +241,11 @@ export default function MidiHapticsResearch() {
             trimmed.copyToChannel(decoded.getChannelData(ch).slice(0, frames), ch);
           }
           boxAudioBuffersRef.current.set(i, trimmed);
+          setBoxPeaks((prev) => {
+            const next = new Map(prev);
+            next.set(i, computePeaks(trimmed));
+            return next;
+          });
           setBoxHasAudio((prev) => new Set(prev).add(i));
         } catch (err) {
           console.error("Decode failed", err);
