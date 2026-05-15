@@ -52,6 +52,12 @@ const STYLES = `
 .mhr .grid-box.has-midi { border-color: #26de81; }
 .mhr .box-number { font-size: 2em; color: #667eea; }
 .mhr .box-info { font-size: 0.7em; opacity: 0.85; }
+.mhr .grid-box { position: relative; }
+.mhr .box-mic-btn { position: absolute; top: 6px; right: 6px; background: rgba(255,71,87,0.9); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.mhr .box-mic-btn:hover { transform: scale(1.1); }
+.mhr .box-mic-btn.recording { animation: mhr-pulse 0.8s infinite; background: #ff4757; }
+.mhr .box-mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.mhr .grid-box.has-audio { border-color: #f5576c; }
 .mhr .recording-section { display: flex; align-items: center; gap: 16px; background: #f0f0f0; padding: 16px; border-radius: 8px; margin-bottom: 24px; flex-wrap: wrap; }
 .mhr .recording-controls { display: flex; gap: 12px; flex: 1; align-items: center; flex-wrap: wrap; }
 .mhr .file-section, .mhr .export-section { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
