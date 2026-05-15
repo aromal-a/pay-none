@@ -535,7 +535,11 @@ export default function MidiHapticsResearch() {
   const downloadOne = (id: number) => {
     const r = downloads.find((d) => d.id === id);
     if (!r) return;
-    if (r.audio) audio.downloadBlob(r.audio, `${r.title}_audio.webm`);
+    if (r.audio) {
+      const t = r.audio.type || "audio/webm";
+      const ext = t.includes("mp4") ? "mp4" : t.includes("ogg") ? "ogg" : t.includes("wav") ? "wav" : "webm";
+      audio.downloadBlob(r.audio, `${r.title}_audio.${ext}`);
+    }
     const midiBlob = new Blob([JSON.stringify(r.midi, null, 2)], { type: "application/json" });
     audio.downloadBlob(midiBlob, `${r.title}_midi.json`);
   };
