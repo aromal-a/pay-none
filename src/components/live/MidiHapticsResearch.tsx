@@ -133,10 +133,95 @@ export default function MidiHapticsResearch() {
   const loopTimersRef = useRef<Map<number, number[]>>(new Map());
   const [playingBoxes, setPlayingBoxes] = useState<Set<number>>(new Set());
 
+  // Per-box recorded audio (1.5s cap, looped via AudioBufferSourceNode)
+  const BOX_RECORD_MS = 1500;
+  const boxAudioBuffersRef = useRef<Map<number, AudioBuffer>>(new Map());
+  const boxAudioSourcesRef = useRef<Map<number, AudioBufferSourceNode>>(new Map());
+  const [recordingMicBox, setRecordingMicBox] = useState<number>(-1);
+  const [boxHasAudio, setBoxHasAudio] = useState<Set<number>>(new Set());
+
+  const stopBoxAudio = (i: number) => {
+    const src = boxAudioSourcesRef.current.get(i);
+    if (src) {
+      try {
+        src.stop();
+      } catch {
+        // ignore
+      }
+      boxAudioSourcesRef.current.delete(i);
+    }
+  };
+
+  const startBoxAudio = (i: number) => {
+    const buf = boxAudioBuffersRef.current.get(i);
+    if (!buf) return false;
+    const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume();
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(ctx.destination);
+    src.start();
+    boxAudioSourcesRef.current.set(i, src);
+    setPlayingBoxes((prev) => new Set(prev).add(i));
+    return true;
+  };
+
+  const recordBoxMic = async (i: number) => {
+    if (!audio.micPermissionGranted || !audio.mediaStream) {
+      alert("Please request microphone access first.");
+      return;
+    }
+    if (recordingMicBox !== -1) return;
+    setRecordingMicBox(i);
+    try {
+      let mime = "audio/webm;codecs=opus";
+      if (!MediaRecorder.isTypeSupported(mime)) mime = "audio/webm";
+      if (!MediaRecorder.isTypeSupported(mime)) mime = "";
+      const mr = mime
+        ? new MediaRecorder(audio.mediaStream, { mimeType: mime })
+        : new MediaRecorder(audio.mediaStream);
+      const chunks: Blob[] = [];
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      mr.onstop = async () => {
+        try {
+          const blob = new Blob(chunks, { type: mr.mimeType });
+          const arr = await blob.arrayBuffer();
+          const ctx = getCtx();
+          const decoded = await ctx.decodeAudioData(arr.slice(0));
+          // Cap to BOX_RECORD_MS
+          const maxFrames = Math.floor((BOX_RECORD_MS / 1000) * decoded.sampleRate);
+          const frames = Math.min(decoded.length, maxFrames);
+          const trimmed = ctx.createBuffer(decoded.numberOfChannels, frames, decoded.sampleRate);
+          for (let ch = 0; ch < decoded.numberOfChannels; ch++) {
+            trimmed.copyToChannel(decoded.getChannelData(ch).slice(0, frames), ch);
+          }
+          boxAudioBuffersRef.current.set(i, trimmed);
+          setBoxHasAudio((prev) => new Set(prev).add(i));
+        } catch (err) {
+          console.error("Decode failed", err);
+          alert("Could not decode recorded audio.");
+        } finally {
+          setRecordingMicBox(-1);
+        }
+      };
+      mr.start();
+      window.setTimeout(() => {
+        if (mr.state !== "inactive") mr.stop();
+      }, BOX_RECORD_MS);
+    } catch (err) {
+      console.error(err);
+      setRecordingMicBox(-1);
+    }
+  };
+
   const stopBoxLoop = (i: number) => {
     const timers = loopTimersRef.current.get(i);
     if (timers) timers.forEach((t) => clearTimeout(t));
     loopTimersRef.current.delete(i);
+    stopBoxAudio(i);
     setPlayingBoxes((prev) => {
       const next = new Set(prev);
       next.delete(i);
