@@ -408,7 +408,7 @@ export default function MidiHapticsResearch() {
       mr.ondataavailable = (e) => {
         if (e.data.size > 0) masterChunksRef.current.push(e.data);
       };
-      mr.start();
+      mr.start(250);
       masterRecorderRef.current = mr;
     } catch (err) {
       console.error("Master record failed", err);
@@ -440,10 +440,16 @@ export default function MidiHapticsResearch() {
     if (mr) {
       blob = await new Promise<Blob | null>((resolve) => {
         mr.onstop = () => {
-          resolve(new Blob(masterChunksRef.current, { type: mr.mimeType }));
+          const type = mr.mimeType || "audio/webm";
+          resolve(new Blob(masterChunksRef.current, { type }));
         };
         try {
-          mr.stop();
+          if (mr.state === "recording") {
+            try { mr.requestData(); } catch { /* ignore */ }
+            mr.stop();
+          } else {
+            resolve(null);
+          }
         } catch {
           resolve(null);
         }
@@ -529,7 +535,11 @@ export default function MidiHapticsResearch() {
   const downloadOne = (id: number) => {
     const r = downloads.find((d) => d.id === id);
     if (!r) return;
-    if (r.audio) audio.downloadBlob(r.audio, `${r.title}_audio.webm`);
+    if (r.audio) {
+      const t = r.audio.type || "audio/webm";
+      const ext = t.includes("mp4") ? "mp4" : t.includes("ogg") ? "ogg" : t.includes("wav") ? "wav" : "webm";
+      audio.downloadBlob(r.audio, `${r.title}_audio.${ext}`);
+    }
     const midiBlob = new Blob([JSON.stringify(r.midi, null, 2)], { type: "application/json" });
     audio.downloadBlob(midiBlob, `${r.title}_midi.json`);
   };
@@ -687,12 +697,19 @@ export default function MidiHapticsResearch() {
             <div className="recordings-list">
               {downloads.map((r) => (
                 <div className="recording-item" key={r.id}>
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <strong>{r.title}</strong>
                     <br />
                     <small>
-                      {r.ts} • {r.duration.toFixed(1)}s
+                      {r.ts} • {r.duration.toFixed(1)}s • {r.audio ? `${(r.audio.size / 1024).toFixed(1)} KB` : "no audio"}
                     </small>
+                    {r.audio && (
+                      <audio
+                        controls
+                        src={URL.createObjectURL(r.audio)}
+                        style={{ display: "block", marginTop: 6, width: "100%" }}
+                      />
+                    )}
                   </div>
                   <button className="btn btn-primary" onClick={() => downloadOne(r.id)}>
                     Download
