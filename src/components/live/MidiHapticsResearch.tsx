@@ -143,6 +143,44 @@ export default function MidiHapticsResearch() {
   const boxAudioSourcesRef = useRef<Map<number, AudioBufferSourceNode>>(new Map());
   const [recordingMicBox, setRecordingMicBox] = useState<number>(-1);
   const [boxHasAudio, setBoxHasAudio] = useState<Set<number>>(new Set());
+  const [boxPeaks, setBoxPeaks] = useState<Map<number, number[]>>(new Map());
+
+  const computePeaks = (buf: AudioBuffer, bars = 32) => {
+    const data = buf.getChannelData(0);
+    const block = Math.max(1, Math.floor(data.length / bars));
+    const peaks: number[] = [];
+    for (let i = 0; i < bars; i++) {
+      let max = 0;
+      const start = i * block;
+      const end = Math.min(data.length, start + block);
+      for (let j = start; j < end; j++) {
+        const v = Math.abs(data[j]);
+        if (v > max) max = v;
+      }
+      peaks.push(max);
+    }
+    return peaks;
+  };
+
+  const deleteBoxAudio = (i: number) => {
+    stopBoxAudio(i);
+    boxAudioBuffersRef.current.delete(i);
+    setBoxHasAudio((prev) => {
+      const next = new Set(prev);
+      next.delete(i);
+      return next;
+    });
+    setBoxPeaks((prev) => {
+      const next = new Map(prev);
+      next.delete(i);
+      return next;
+    });
+    setPlayingBoxes((prev) => {
+      const next = new Set(prev);
+      next.delete(i);
+      return next;
+    });
+  };
 
   const stopBoxAudio = (i: number) => {
     const src = boxAudioSourcesRef.current.get(i);
