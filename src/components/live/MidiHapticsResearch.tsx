@@ -52,6 +52,12 @@ const STYLES = `
 .mhr .grid-box.has-midi { border-color: #26de81; }
 .mhr .box-number { font-size: 2em; color: #667eea; }
 .mhr .box-info { font-size: 0.7em; opacity: 0.85; }
+.mhr .grid-box { position: relative; }
+.mhr .box-mic-btn { position: absolute; top: 6px; right: 6px; background: rgba(255,71,87,0.9); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.mhr .box-mic-btn:hover { transform: scale(1.1); }
+.mhr .box-mic-btn.recording { animation: mhr-pulse 0.8s infinite; background: #ff4757; }
+.mhr .box-mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.mhr .grid-box.has-audio { border-color: #f5576c; }
 .mhr .recording-section { display: flex; align-items: center; gap: 16px; background: #f0f0f0; padding: 16px; border-radius: 8px; margin-bottom: 24px; flex-wrap: wrap; }
 .mhr .recording-controls { display: flex; gap: 12px; flex: 1; align-items: center; flex-wrap: wrap; }
 .mhr .file-section, .mhr .export-section { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
@@ -127,10 +133,95 @@ export default function MidiHapticsResearch() {
   const loopTimersRef = useRef<Map<number, number[]>>(new Map());
   const [playingBoxes, setPlayingBoxes] = useState<Set<number>>(new Set());
 
+  // Per-box recorded audio (1.5s cap, looped via AudioBufferSourceNode)
+  const BOX_RECORD_MS = 1500;
+  const boxAudioBuffersRef = useRef<Map<number, AudioBuffer>>(new Map());
+  const boxAudioSourcesRef = useRef<Map<number, AudioBufferSourceNode>>(new Map());
+  const [recordingMicBox, setRecordingMicBox] = useState<number>(-1);
+  const [boxHasAudio, setBoxHasAudio] = useState<Set<number>>(new Set());
+
+  const stopBoxAudio = (i: number) => {
+    const src = boxAudioSourcesRef.current.get(i);
+    if (src) {
+      try {
+        src.stop();
+      } catch {
+        // ignore
+      }
+      boxAudioSourcesRef.current.delete(i);
+    }
+  };
+
+  const startBoxAudio = (i: number) => {
+    const buf = boxAudioBuffersRef.current.get(i);
+    if (!buf) return false;
+    const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume();
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(ctx.destination);
+    src.start();
+    boxAudioSourcesRef.current.set(i, src);
+    setPlayingBoxes((prev) => new Set(prev).add(i));
+    return true;
+  };
+
+  const recordBoxMic = async (i: number) => {
+    if (!audio.micPermissionGranted || !audio.mediaStream) {
+      alert("Please request microphone access first.");
+      return;
+    }
+    if (recordingMicBox !== -1) return;
+    setRecordingMicBox(i);
+    try {
+      let mime = "audio/webm;codecs=opus";
+      if (!MediaRecorder.isTypeSupported(mime)) mime = "audio/webm";
+      if (!MediaRecorder.isTypeSupported(mime)) mime = "";
+      const mr = mime
+        ? new MediaRecorder(audio.mediaStream, { mimeType: mime })
+        : new MediaRecorder(audio.mediaStream);
+      const chunks: Blob[] = [];
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      mr.onstop = async () => {
+        try {
+          const blob = new Blob(chunks, { type: mr.mimeType });
+          const arr = await blob.arrayBuffer();
+          const ctx = getCtx();
+          const decoded = await ctx.decodeAudioData(arr.slice(0));
+          // Cap to BOX_RECORD_MS
+          const maxFrames = Math.floor((BOX_RECORD_MS / 1000) * decoded.sampleRate);
+          const frames = Math.min(decoded.length, maxFrames);
+          const trimmed = ctx.createBuffer(decoded.numberOfChannels, frames, decoded.sampleRate);
+          for (let ch = 0; ch < decoded.numberOfChannels; ch++) {
+            trimmed.copyToChannel(decoded.getChannelData(ch).slice(0, frames), ch);
+          }
+          boxAudioBuffersRef.current.set(i, trimmed);
+          setBoxHasAudio((prev) => new Set(prev).add(i));
+        } catch (err) {
+          console.error("Decode failed", err);
+          alert("Could not decode recorded audio.");
+        } finally {
+          setRecordingMicBox(-1);
+        }
+      };
+      mr.start();
+      window.setTimeout(() => {
+        if (mr.state !== "inactive") mr.stop();
+      }, BOX_RECORD_MS);
+    } catch (err) {
+      console.error(err);
+      setRecordingMicBox(-1);
+    }
+  };
+
   const stopBoxLoop = (i: number) => {
     const timers = loopTimersRef.current.get(i);
     if (timers) timers.forEach((t) => clearTimeout(t));
     loopTimersRef.current.delete(i);
+    stopBoxAudio(i);
     setPlayingBoxes((prev) => {
       const next = new Set(prev);
       next.delete(i);
@@ -262,6 +353,10 @@ export default function MidiHapticsResearch() {
       stopBoxLoop(i);
       return;
     }
+    if (boxHasAudio.has(i)) {
+      startBoxAudio(i);
+      return;
+    }
     if (boxes[i].midiNotes.length > 0) {
       startBoxLoop(i);
       if (isRecRef.current) {
@@ -278,6 +373,19 @@ export default function MidiHapticsResearch() {
       window.setTimeout(() => setFlashBox(-1), 120);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      boxAudioSourcesRef.current.forEach((s) => {
+        try {
+          s.stop();
+        } catch {
+          // ignore
+        }
+      });
+      boxAudioSourcesRef.current.clear();
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -357,19 +465,24 @@ export default function MidiHapticsResearch() {
 
           <div className="midi-grid">
             {boxes.map((b, i) => {
+              const hasAudio = boxHasAudio.has(i);
+              const isMicRec = recordingMicBox === i;
               const cls = [
                 "grid-box",
                 activeBox === i ? "active" : "",
                 flashBox === i ? "flash" : "",
                 b.midiNotes.length > 0 || b.customMIDI ? "has-midi" : "",
+                hasAudio ? "has-audio" : "",
               ]
                 .filter(Boolean)
                 .join(" ");
-              const info = b.customMIDI
-                ? `📁 ${b.customMIDIName}`
-                : b.recordedCount > 0
-                  ? `🎹 ${b.recordedCount} notes`
-                  : "empty";
+              const info = hasAudio
+                ? "🎤 audio loop"
+                : b.customMIDI
+                  ? `📁 ${b.customMIDIName}`
+                  : b.recordedCount > 0
+                    ? `🎹 ${b.recordedCount} notes`
+                    : "empty";
               return (
                 <div
                   key={i}
@@ -379,6 +492,17 @@ export default function MidiHapticsResearch() {
                   onPointerUp={() => setFlashBox(-1)}
                   onPointerLeave={() => setFlashBox(-1)}
                 >
+                  <button
+                    className={`box-mic-btn${isMicRec ? " recording" : ""}`}
+                    title={isMicRec ? "Recording 1.5s..." : "Record mic (1.5s)"}
+                    disabled={recordingMicBox !== -1 && !isMicRec}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      recordBoxMic(i);
+                    }}
+                  >
+                    {isMicRec ? "●" : "🎤"}
+                  </button>
                   <div className="box-number">{i + 1}</div>
                   <div className="box-info">{info}</div>
                 </div>
