@@ -227,6 +227,7 @@ export default function MidiHapticsResearch() {
     src.buffer = buf;
     src.loop = true;
     src.connect(ctx.destination);
+    src.connect(getMasterDest());
     src.start();
     boxAudioSourcesRef.current.set(i, src);
     setPlayingBoxes((prev) => new Set(prev).add(i));
