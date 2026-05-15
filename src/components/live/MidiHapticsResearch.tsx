@@ -147,7 +147,9 @@ export default function MidiHapticsResearch() {
       gain.gain.setValueAtTime(0, t0);
       gain.gain.linearRampToValueAtTime(peak, t0 + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durationMs / 1000);
-      osc.connect(gain).connect(ctx.destination);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      gain.connect(getMasterDest());
       osc.start(t0);
       osc.stop(t0 + durationMs / 1000 + 0.05);
     } catch (e) {
