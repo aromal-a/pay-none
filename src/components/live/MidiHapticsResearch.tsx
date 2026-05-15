@@ -18,6 +18,20 @@ const emptyBox = (): BoxData => ({
   customMIDIName: "",
 });
 
+const Waveform = ({ peaks }: { peaks: number[] }) => {
+  const w = 80;
+  const h = 28;
+  const bw = w / peaks.length;
+  return (
+    <svg className="box-wave" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+      {peaks.map((p, i) => {
+        const bh = Math.max(1, p * h);
+        return <rect key={i} x={i * bw} y={(h - bh) / 2} width={Math.max(1, bw - 0.5)} height={bh} fill="#f5576c" />;
+      })}
+    </svg>
+  );
+};
+
 const STYLES = `
 .mhr { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 6px; margin-top: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
 .mhr-inner { background: white; border-radius: 12px; padding: 32px; color: #333; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
@@ -58,6 +72,10 @@ const STYLES = `
 .mhr .box-mic-btn.recording { animation: mhr-pulse 0.8s infinite; background: #ff4757; }
 .mhr .box-mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .mhr .grid-box.has-audio { border-color: #f5576c; }
+.mhr .box-wave { width: 80%; height: 28px; background: rgba(255,255,255,0.6); border-radius: 4px; display: block; margin-top: 4px; }
+.mhr .grid-box.active .box-wave { background: rgba(255,255,255,0.25); }
+.mhr .box-del-btn { position: absolute; top: 6px; left: 6px; background: rgba(47,53,66,0.85); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.7em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.mhr .box-del-btn:hover { transform: scale(1.1); background: #ff4757; }
 .mhr .recording-section { display: flex; align-items: center; gap: 16px; background: #f0f0f0; padding: 16px; border-radius: 8px; margin-bottom: 24px; flex-wrap: wrap; }
 .mhr .recording-controls { display: flex; gap: 12px; flex: 1; align-items: center; flex-wrap: wrap; }
 .mhr .file-section, .mhr .export-section { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
@@ -139,6 +157,44 @@ export default function MidiHapticsResearch() {
   const boxAudioSourcesRef = useRef<Map<number, AudioBufferSourceNode>>(new Map());
   const [recordingMicBox, setRecordingMicBox] = useState<number>(-1);
   const [boxHasAudio, setBoxHasAudio] = useState<Set<number>>(new Set());
+  const [boxPeaks, setBoxPeaks] = useState<Map<number, number[]>>(new Map());
+
+  const computePeaks = (buf: AudioBuffer, bars = 32) => {
+    const data = buf.getChannelData(0);
+    const block = Math.max(1, Math.floor(data.length / bars));
+    const peaks: number[] = [];
+    for (let i = 0; i < bars; i++) {
+      let max = 0;
+      const start = i * block;
+      const end = Math.min(data.length, start + block);
+      for (let j = start; j < end; j++) {
+        const v = Math.abs(data[j]);
+        if (v > max) max = v;
+      }
+      peaks.push(max);
+    }
+    return peaks;
+  };
+
+  const deleteBoxAudio = (i: number) => {
+    stopBoxAudio(i);
+    boxAudioBuffersRef.current.delete(i);
+    setBoxHasAudio((prev) => {
+      const next = new Set(prev);
+      next.delete(i);
+      return next;
+    });
+    setBoxPeaks((prev) => {
+      const next = new Map(prev);
+      next.delete(i);
+      return next;
+    });
+    setPlayingBoxes((prev) => {
+      const next = new Set(prev);
+      next.delete(i);
+      return next;
+    });
+  };
 
   const stopBoxAudio = (i: number) => {
     const src = boxAudioSourcesRef.current.get(i);
@@ -199,6 +255,11 @@ export default function MidiHapticsResearch() {
             trimmed.copyToChannel(decoded.getChannelData(ch).slice(0, frames), ch);
           }
           boxAudioBuffersRef.current.set(i, trimmed);
+          setBoxPeaks((prev) => {
+            const next = new Map(prev);
+            next.set(i, computePeaks(trimmed));
+            return next;
+          });
           setBoxHasAudio((prev) => new Set(prev).add(i));
         } catch (err) {
           console.error("Decode failed", err);
@@ -503,8 +564,21 @@ export default function MidiHapticsResearch() {
                   >
                     {isMicRec ? "●" : "🎤"}
                   </button>
+                  {hasAudio && (
+                    <button
+                      className="box-del-btn"
+                      title="Delete recording"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteBoxAudio(i);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
                   <div className="box-number">{i + 1}</div>
                   <div className="box-info">{info}</div>
+                  {hasAudio && boxPeaks.get(i) && <Waveform peaks={boxPeaks.get(i)!} />}
                 </div>
               );
             })}
