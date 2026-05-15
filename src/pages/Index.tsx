@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PromptDialog } from "@/components/PromptDialog";
 
-const tokenPackages = [
+const VocalPackages = [
   { tier: "bronze" as const, tokens: 112, price: 1 },
   { tier: "silver" as const, tokens: 578, price: 15 },
   { tier: "gold" as const, tokens: 957, price: 24 },
@@ -18,8 +18,8 @@ const tokenPackages = [
 const Index = () => {
   const [balance, setBalance] = useState(0);
   const [aiOpen, setAiOpen] = useState(false);
-  const [tcAccepted, setTcAccepted] = useState<boolean>(() =>
-    typeof window !== "undefined" && localStorage.getItem("qt_tc_accepted") === "1"
+  const [tcAccepted, setTcAccepted] = useState<boolean>(
+    () => typeof window !== "undefined" && localStorage.getItem("qt_tc_accepted") === "1",
   );
   const acceptTC = () => {
     localStorage.setItem("qt_tc_accepted", "1");
@@ -52,7 +52,7 @@ const Index = () => {
               <Coins className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="font-display text-base sm:text-xl font-bold text-foreground truncate">
-              TokenStore where parrot leaves and Crow Desks
+              Human Vocord Box
             </span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
@@ -76,9 +76,7 @@ const Index = () => {
                     className="flex items-center gap-2 bg-secondary px-3 sm:px-4 py-2 text-sm hover:bg-secondary/80 transition-colors w-full max-w-[180px] sm:w-64 border border-dotted shadow-sm opacity-100 rounded-md"
                   >
                     <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground truncate">
-                      Share resources to pull leverages
-                    </span>
+                    <span className="text-muted-foreground truncate">Share resources to pull leverages</span>
                   </Link>
                 </div>
                 <Link
@@ -147,25 +145,24 @@ const Index = () => {
               <em> action</em>, <em>cut</em>, and <em>call</em>.
             </li>
             <li>
-              The <strong className="text-foreground">Viewer</strong> is a paid choice, available only to users
-              with a token balance.
+              The <strong className="text-foreground">Viewer</strong> is a paid choice, available only to users with a
+              token balance.
             </li>
             <li>
-              No viewer action is argued over count balances — only the <strong className="text-foreground">spending involved</strong> matters.
+              No viewer action is argued over count balances — only the{" "}
+              <strong className="text-foreground">spending involved</strong> matters.
             </li>
             <li>
               When no spending is involved and access is not cached, the relation is a specific
               <em> self-renouncement</em> by the participant.
             </li>
             <li>
-              Paired actions remain simple; entity animosity is governed by these terms and the same
-              ethics surfaced on this dashboard.
+              Paired actions remain simple; entity animosity is governed by these terms and the same ethics surfaced on
+              this dashboard.
             </li>
           </ul>
           <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-xs text-muted-foreground">
-              Click to confirm you have read and agree to these terms.
-            </p>
+            <p className="text-xs text-muted-foreground">Click to confirm you have read and agree to these terms.</p>
             {tcAccepted ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
                 <Check className="h-4 w-4" /> Accepted
@@ -184,7 +181,8 @@ const Index = () => {
 
       <footer className="mx-auto max-w-4xl px-6 pb-10 text-center text-xs text-muted-foreground space-y-2">
         <p>
-          Text_Addendum is based on, recent coverages, coverages based on tax, tax information.codified Emit - Dont's , Remit - FONTS
+          Text_Addendum is based on, recent coverages, coverages based on tax, tax information.codified Emit - Dont's ,
+          Remit - FONTS
         </p>
         <p className="max-w-2xl mx-auto">
           Privacy©: voice notes, photos, and short films (under 1 minute) you record or upload remain user-owned and are
