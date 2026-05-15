@@ -18,6 +18,20 @@ const emptyBox = (): BoxData => ({
   customMIDIName: "",
 });
 
+const Waveform = ({ peaks }: { peaks: number[] }) => {
+  const w = 80;
+  const h = 28;
+  const bw = w / peaks.length;
+  return (
+    <svg className="box-wave" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+      {peaks.map((p, i) => {
+        const bh = Math.max(1, p * h);
+        return <rect key={i} x={i * bw} y={(h - bh) / 2} width={Math.max(1, bw - 0.5)} height={bh} fill="#f5576c" />;
+      })}
+    </svg>
+  );
+};
+
 const STYLES = `
 .mhr { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 6px; margin-top: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
 .mhr-inner { background: white; border-radius: 12px; padding: 32px; color: #333; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
