@@ -117,6 +117,9 @@ export default function MidiHapticsResearch() {
 
   // Built-in Web Audio synth (fallback when no MIDI output device)
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const masterDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const masterRecorderRef = useRef<MediaRecorder | null>(null);
+  const masterChunksRef = useRef<Blob[]>([]);
   const getCtx = () => {
     if (!audioCtxRef.current) {
       const Ctx =
@@ -124,6 +127,11 @@ export default function MidiHapticsResearch() {
       audioCtxRef.current = new Ctx();
     }
     return audioCtxRef.current!;
+  };
+  const getMasterDest = () => {
+    const ctx = getCtx();
+    if (!masterDestRef.current) masterDestRef.current = ctx.createMediaStreamDestination();
+    return masterDestRef.current;
   };
   const noteToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
   const synthPlay = (note: number, durationMs = 220, velocity = 100) => {
