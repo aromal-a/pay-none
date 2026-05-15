@@ -465,19 +465,24 @@ export default function MidiHapticsResearch() {
 
           <div className="midi-grid">
             {boxes.map((b, i) => {
+              const hasAudio = boxHasAudio.has(i);
+              const isMicRec = recordingMicBox === i;
               const cls = [
                 "grid-box",
                 activeBox === i ? "active" : "",
                 flashBox === i ? "flash" : "",
                 b.midiNotes.length > 0 || b.customMIDI ? "has-midi" : "",
+                hasAudio ? "has-audio" : "",
               ]
                 .filter(Boolean)
                 .join(" ");
-              const info = b.customMIDI
-                ? `📁 ${b.customMIDIName}`
-                : b.recordedCount > 0
-                  ? `🎹 ${b.recordedCount} notes`
-                  : "empty";
+              const info = hasAudio
+                ? "🎤 audio loop"
+                : b.customMIDI
+                  ? `📁 ${b.customMIDIName}`
+                  : b.recordedCount > 0
+                    ? `🎹 ${b.recordedCount} notes`
+                    : "empty";
               return (
                 <div
                   key={i}
@@ -487,6 +492,17 @@ export default function MidiHapticsResearch() {
                   onPointerUp={() => setFlashBox(-1)}
                   onPointerLeave={() => setFlashBox(-1)}
                 >
+                  <button
+                    className={`box-mic-btn${isMicRec ? " recording" : ""}`}
+                    title={isMicRec ? "Recording 1.5s..." : "Record mic (1.5s)"}
+                    disabled={recordingMicBox !== -1 && !isMicRec}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      recordBoxMic(i);
+                    }}
+                  >
+                    {isMicRec ? "●" : "🎤"}
+                  </button>
                   <div className="box-number">{i + 1}</div>
                   <div className="box-info">{info}</div>
                 </div>
