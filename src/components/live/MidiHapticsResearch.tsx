@@ -564,8 +564,21 @@ export default function MidiHapticsResearch() {
                   >
                     {isMicRec ? "●" : "🎤"}
                   </button>
+                  {hasAudio && (
+                    <button
+                      className="box-del-btn"
+                      title="Delete recording"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteBoxAudio(i);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
                   <div className="box-number">{i + 1}</div>
                   <div className="box-info">{info}</div>
+                  {hasAudio && boxPeaks.get(i) && <Waveform peaks={boxPeaks.get(i)!} />}
                 </div>
               );
             })}
