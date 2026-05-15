@@ -58,6 +58,10 @@ const STYLES = `
 .mhr .box-mic-btn.recording { animation: mhr-pulse 0.8s infinite; background: #ff4757; }
 .mhr .box-mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .mhr .grid-box.has-audio { border-color: #f5576c; }
+.mhr .box-wave { width: 80%; height: 28px; background: rgba(255,255,255,0.6); border-radius: 4px; display: block; margin-top: 4px; }
+.mhr .grid-box.active .box-wave { background: rgba(255,255,255,0.25); }
+.mhr .box-del-btn { position: absolute; top: 6px; left: 6px; background: rgba(47,53,66,0.85); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.7em; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.mhr .box-del-btn:hover { transform: scale(1.1); background: #ff4757; }
 .mhr .recording-section { display: flex; align-items: center; gap: 16px; background: #f0f0f0; padding: 16px; border-radius: 8px; margin-bottom: 24px; flex-wrap: wrap; }
 .mhr .recording-controls { display: flex; gap: 12px; flex: 1; align-items: center; flex-wrap: wrap; }
 .mhr .file-section, .mhr .export-section { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
