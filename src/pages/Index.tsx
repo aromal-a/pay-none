@@ -112,7 +112,7 @@ const Index = () => {
 
       <section className="mx-auto max-w-4xl px-6 pb-20">
         <div className="grid gap-6 sm:grid-cols-3">
-          {tokenPackages.map((pkg, i) => (
+          {VocalPackages.map((pkg, i) => (
             <motion.div
               key={pkg.tier}
               initial={{ opacity: 0, y: 30 }}
