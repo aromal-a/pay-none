@@ -34,7 +34,9 @@ type LiveChannel = {
   min_tokens?: number | null;
   box_payload?: Record<string, unknown> | null;
   is_open?: boolean | null;
+  per_minute_rate?: number | null;
 };
+
 
 const slugifyLive = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || `ch-${Date.now()}`;
