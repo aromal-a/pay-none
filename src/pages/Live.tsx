@@ -344,6 +344,14 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const [speechNote, setSpeechNote] = useState("");
   const [viewerActivityNote, setViewerActivityNote] = useState("");
 
+  // Previewer transport controls — choose one owned channel, then push selected box data live.
+  const [myChannels, setMyChannels] = useState<LiveChannel[]>([]);
+  const [shareChannelId, setShareChannelId] = useState("");
+  const [sharedBoxes, setSharedBoxes] = useState<string[]>([]);
+  const [shareToAudience, setShareToAudience] = useState(false);
+  const [multiWindow, setMultiWindow] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+
   useEffect(() => {
     if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
       setSessionHeld(true);
