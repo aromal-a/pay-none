@@ -668,6 +668,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const buildSharePayload = () => ({
     board: {
       frame,
+      image: canvasRef.current?.toDataURL("image/png") ?? null,
       status: "Virtual Board is open on the previewer screen.",
     },
     movie: {
