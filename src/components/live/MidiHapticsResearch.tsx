@@ -84,7 +84,33 @@ const STYLES = `
 .mhr .upload-area input[type="file"], .mhr .upload-area select { padding: 7px 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 0.9em; background: white; }
 .mhr .recording-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: white; border: 1px solid #eee; border-radius: 6px; margin-top: 8px; font-size: 0.9em; }
 .mhr footer { text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; color: #999; font-size: 0.85em; }
-@media (max-width: 768px) { .mhr-inner { padding: 20px; } .mhr .controls-section { grid-template-columns: 1fr; } .mhr .recording-section { flex-direction: column; } .mhr .upload-area { grid-template-columns: 1fr; } }
+.mhr { max-width: 100%; overflow: hidden; box-sizing: border-box; }
+.mhr-inner { box-sizing: border-box; max-width: 100%; }
+.mhr *, .mhr *::before, .mhr *::after { box-sizing: border-box; }
+.mhr .controls-section > div { min-width: 0; }
+@media (max-width: 768px) {
+  .mhr { padding: 4px; margin-top: 16px; border-radius: 12px; }
+  .mhr-inner { padding: 16px; }
+  .mhr header h2 { font-size: 1.3em; }
+  .mhr .controls-section { grid-template-columns: 1fr; gap: 12px; }
+  .mhr .midi-controls, .mhr .audio-controls { align-items: center; text-align: center; padding: 14px; }
+  .mhr .btn { width: 100%; max-width: 280px; }
+  .mhr .status-badge { align-self: center; }
+  .mhr .volume-control { width: 100%; flex-wrap: wrap; justify-content: center; }
+  .mhr .volume-control label { min-width: 0; }
+  .mhr .midi-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
+  .mhr .box-number { font-size: 1.4em; }
+  .mhr .box-info { font-size: 0.6em; text-align: center; padding: 0 2px; word-break: break-word; }
+  .mhr .recording-section { flex-direction: column; align-items: stretch; }
+  .mhr .recording-controls { justify-content: center; }
+  .mhr .upload-area { grid-template-columns: 1fr; }
+  .mhr .upload-area input[type="file"], .mhr .upload-area select { width: 100%; }
+}
+@media (max-width: 420px) {
+  .mhr-inner { padding: 12px; }
+  .mhr .box-mic-btn { width: 22px; height: 22px; font-size: 0.65em; top: 4px; right: 4px; }
+  .mhr .box-del-btn { width: 20px; height: 20px; font-size: 0.6em; top: 4px; left: 4px; }
+}
 `;
 
 export default function MidiHapticsResearch() {
