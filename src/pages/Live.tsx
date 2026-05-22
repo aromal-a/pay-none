@@ -177,7 +177,7 @@ export default function Live() {
   }
 
   if (mode === "previewer") {
-    return <Previewer onLeave={() => setMode(null)} />;
+    return <Previewer onLeave={() => setMode(null)} onOpenChannels={() => setMode("channels")} />;
   }
 
   if (mode === "channels") {
@@ -281,7 +281,7 @@ export default function Live() {
   );
 }
 
-function Previewer({ onLeave }: { onLeave: () => void }) {
+function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenChannels: () => void }) {
   const { user } = useAuth();
   const [audioOk, setAudioOk] = useState<null | boolean>(null);
   const [termInput, setTermInput] = useState("");
@@ -760,7 +760,7 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
           {myChannels.length === 0 ? (
             <div className="mt-4 rounded-lg border border-dashed border-border bg-background/50 p-4 text-center text-xs text-muted-foreground">
-              No open previewer channel found. <button type="button" onClick={() => setModeRaw("channels")} className="text-primary hover:underline">Open Channels</button> and create one first.
+              No open previewer channel found. <button type="button" onClick={onOpenChannels} className="text-primary hover:underline">Open Channels</button> and create one first.
             </div>
           ) : (
             <div className="mt-4 space-y-4">
