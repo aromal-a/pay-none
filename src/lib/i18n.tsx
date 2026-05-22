@@ -67,7 +67,7 @@ type TranslationKeys = {
 
 const en: TranslationKeys = {
   buyTokens: "Buy Vocal",
-  heroDescription: "Start tokenising your audio for distinctive attention and pair along with platform to define a vocal authority for yourself that is paid and almost worth the effort sending forward.",
+  heroDescription: "​Start tokenising your audio for distinctive attention and pair along with platform to define a vocal authority for yourself that is paid and almost worth the effort sending forward.\n",
   tokens: "tokens",
   balance: "tokens",
   buyNow: "Buy Now",
