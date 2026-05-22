@@ -742,6 +742,92 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-10 space-y-8">
+        <section className="rounded-2xl border border-primary/40 bg-card p-6 shadow-[0_0_28px_-18px_hsl(var(--primary))]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Radio className="h-4 w-4 text-primary" /> Share my activity to live viewers
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Choose the channel and boxes to transport. Viewers see only the boxes you switch on.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-xs">
+              <span className={shareToAudience ? "text-primary" : "text-muted-foreground"}>{shareToAudience ? "sharing" : "private"}</span>
+              <Switch checked={shareToAudience} onCheckedChange={handleShareSwitch} disabled={shareBusy || !selectedChannel || sharedBoxes.length === 0} />
+            </div>
+          </div>
+
+          {myChannels.length === 0 ? (
+            <div className="mt-4 rounded-lg border border-dashed border-border bg-background/50 p-4 text-center text-xs text-muted-foreground">
+              No open previewer channel found. <button type="button" onClick={() => setModeRaw("channels")} className="text-primary hover:underline">Open Channels</button> and create one first.
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              <label className="block text-xs">
+                <span className="text-muted-foreground">Audience channel</span>
+                <select
+                  value={shareChannelId}
+                  onChange={(e) => {
+                    const next = myChannels.find((c) => c.id === e.target.value);
+                    setShareChannelId(e.target.value);
+                    setSharedBoxes(next?.active_boxes ?? []);
+                    setShareToAudience((next?.active_boxes?.length ?? 0) > 0);
+                    setMultiWindow(!!next?.multi_window);
+                  }}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                >
+                  {myChannels.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name} /{c.slug}</option>
+                  ))}
+                </select>
+              </label>
+
+              <div>
+                <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">Boxes previewer allows viewers to access</div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {BOX_OPTIONS.map((box) => {
+                    const enabled = sharedBoxes.includes(box.key);
+                    return (
+                      <button
+                        type="button"
+                        key={box.key}
+                        onClick={() => toggleSharedBox(box.key)}
+                        className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition ${enabled ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent"}`}
+                      >
+                        <span>
+                          <span className="block text-sm font-medium">{box.label}</span>
+                          <span className="block text-[11px]">{box.hint}</span>
+                        </span>
+                        <span className={`h-2.5 w-2.5 rounded-full ${enabled ? "bg-primary" : "bg-muted-foreground/40"}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 rounded-lg border border-border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={multiWindow} disabled={sharedBoxes.length < 2} onChange={(e) => setMultiWindow(e.target.checked)} />
+                  Multiple windows for selected boxes
+                </label>
+                <button
+                  type="button"
+                  onClick={() => pushShareSettings(true)}
+                  disabled={shareBusy || sharedBoxes.length === 0}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {shareBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  Push selected boxes to audience
+                </button>
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                Entry gate: {(selectedChannel?.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens · viewers access it from Channels.
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* Whiteboard — new_open(.pen, classics) */}
         <section className="rounded-2xl border border-border bg-card p-6 text-center mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
