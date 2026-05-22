@@ -359,6 +359,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const [shareToAudience, setShareToAudience] = useState(false);
   const [multiWindow, setMultiWindow] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
+  const [movieShare, setMovieShare] = useState<{ camOn: boolean; micOn: boolean; image: string | null }>({ camOn: false, micOn: false, image: null });
 
   useEffect(() => {
     if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
@@ -745,6 +746,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       status: "Virtual Board is open on the previewer screen.",
     },
     movie: {
+      camera_on: movieShare.camOn,
+      microphone_on: movieShare.micOn,
+      image: movieShare.image,
       recommendations: [...builtinRecs, ...customRecs.map((r) => r.label)],
       specifications: { map: "console", aspect: "16:9 · 1080p", latency: "best-effort" },
     },
@@ -774,6 +778,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       .eq("id", selectedChannel.id);
     setShareBusy(false);
     if (error) { toast.error(error.message); return; }
+    setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, active_boxes: nextBoxes, multi_window: enabled && multiWindow && nextBoxes.length > 1, box_payload: buildSharePayload() } : c));
     toast.success(enabled ? "Activity shared to live viewers" : "Audience sharing stopped");
   };
   const handleShareSwitch = (enabled: boolean) => {
