@@ -33,7 +33,11 @@ type LiveChannel = {
   multi_window?: boolean | null;
   min_tokens?: number | null;
   box_payload?: Record<string, unknown> | null;
+  is_open?: boolean | null;
 };
+
+const slugifyLive = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || `ch-${Date.now()}`;
 
 const SIGNS = ["✦", "✺", "✹", "✸", "✷", "✶", "✧", "✪", "✫", "✬", "✭", "✮", "✯", "✰", "❂", "✣"];
 
