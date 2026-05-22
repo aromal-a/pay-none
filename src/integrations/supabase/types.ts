@@ -209,6 +209,7 @@ export type Database = {
       live_channels: {
         Row: {
           active_boxes: string[]
+          box_payload: Json
           created_at: string
           description: string | null
           id: string
@@ -221,6 +222,7 @@ export type Database = {
         }
         Insert: {
           active_boxes?: string[]
+          box_payload?: Json
           created_at?: string
           description?: string | null
           id?: string
@@ -233,6 +235,7 @@ export type Database = {
         }
         Update: {
           active_boxes?: string[]
+          box_payload?: Json
           created_at?: string
           description?: string | null
           id?: string
