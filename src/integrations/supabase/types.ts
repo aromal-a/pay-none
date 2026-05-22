@@ -217,6 +217,7 @@ export type Database = {
           min_tokens: number
           multi_window: boolean
           name: string
+          per_minute_rate: number
           previewer_id: string
           slug: string
         }
@@ -230,6 +231,7 @@ export type Database = {
           min_tokens?: number
           multi_window?: boolean
           name: string
+          per_minute_rate?: number
           previewer_id: string
           slug: string
         }
@@ -243,6 +245,7 @@ export type Database = {
           min_tokens?: number
           multi_window?: boolean
           name?: string
+          per_minute_rate?: number
           previewer_id?: string
           slug?: string
         }
@@ -602,6 +605,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      previewer_collect_minute: { Args: { p_acs_id: string }; Returns: Json }
       reject_call_request: {
         Args: { p_request_id: string }
         Returns: undefined

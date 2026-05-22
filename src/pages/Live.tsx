@@ -34,7 +34,9 @@ type LiveChannel = {
   min_tokens?: number | null;
   box_payload?: Record<string, unknown> | null;
   is_open?: boolean | null;
+  per_minute_rate?: number | null;
 };
+
 
 const slugifyLive = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || `ch-${Date.now()}`;
@@ -414,15 +416,17 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   };
 
   // Viewer-activity spy: pending requests from viewers across this previewer's channels.
-  type ViewerPing = { id: string; story_plot: string; suggested_role: string; created_at: string };
+  type ViewerPing = { id: string; story_plot: string; suggested_role: string; created_at: string; viewer_id: string; channel_id: string };
   const [viewerPings, setViewerPings] = useState<ViewerPing[]>([]);
+  const [selectedPingIds, setSelectedPingIds] = useState<Set<string>>(new Set());
+  const [acceptBusy, setAcceptBusy] = useState(false);
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     const load = async () => {
       const { data } = await supabase
         .from("live_call_requests")
-        .select("id,story_plot,suggested_role,created_at")
+        .select("id,story_plot,suggested_role,created_at,viewer_id,channel_id")
         .eq("previewer_id", user.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false })
@@ -437,15 +441,79 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [user]);
 
+  // Active call spaces for this previewer — used to drip per-minute tokens from each viewer.
+  type ActiveCall = { id: string; viewer_id: string; channel_id: string; created_at: string };
+  const [activeCalls, setActiveCalls] = useState<ActiveCall[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase
+        .from("live_active_call_spaces")
+        .select("id,viewer_id,channel_id,created_at,closed_at")
+        .eq("previewer_id", user.id)
+        .is("closed_at", null)
+        .order("created_at", { ascending: false });
+      if (!cancelled && data) setActiveCalls(data as ActiveCall[]);
+    };
+    load();
+    const ch = supabase
+      .channel("previewer-acs")
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_active_call_spaces", filter: `previewer_id=eq.${user.id}` }, load)
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [user]);
+
+  // Every 60s, collect the per-minute reward from each active viewer.
+  useEffect(() => {
+    if (!user || activeCalls.length === 0) return;
+    const tick = async () => {
+      for (const acs of activeCalls) {
+        const { data, error } = await supabase.rpc("previewer_collect_minute", { p_acs_id: acs.id } as never);
+        if (error) continue;
+        const charged = (data as { charged?: number } | null)?.charged ?? 0;
+        if (charged > 0) {
+          setTokenBalance((b) => (b === null ? b : b + charged));
+        }
+      }
+    };
+    const t = window.setInterval(tick, 60000);
+    return () => window.clearInterval(t);
+  }, [user, activeCalls]);
+
+  const toggleSelectedPing = (id: string) => {
+    setSelectedPingIds((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const acceptSelectedPings = async () => {
+    if (selectedPingIds.size === 0) { toast.error("Tick at least one viewer to include"); return; }
+    setAcceptBusy(true);
+    let ok = 0, fail = 0;
+    for (const id of selectedPingIds) {
+      const { error } = await supabase.rpc("accept_call_request", { p_request_id: id } as never);
+      if (error) fail++; else ok++;
+    }
+    setAcceptBusy(false);
+    setSelectedPingIds(new Set());
+    if (ok) toast.success(`${ok} viewer${ok === 1 ? "" : "s"} included · per-minute reward active`);
+    if (fail) toast.error(`${fail} could not be accepted`);
+  };
+
+
+
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     const loadChannels = async () => {
       const { data } = await supabase
         .from("live_channels")
-        .select("id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload,is_open")
+        .select("id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload,is_open,per_minute_rate")
         .eq("previewer_id", user.id)
         .order("created_at", { ascending: false });
+
       if (cancelled) return;
       const rows = (data ?? []) as LiveChannel[];
       setMyChannels(rows);
@@ -1306,25 +1374,113 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-medium"><Eye className="h-4 w-4" /> Viewer activity</div>
-            <span className="text-[10px] font-mono text-muted-foreground">{viewerPings.length} pending</span>
+            <span className="text-[10px] font-mono text-muted-foreground">{viewerPings.length} pending · {activeCalls.length} live</span>
           </div>
           {viewerPings.length === 0 ? (
             <p className="mt-3 text-xs text-muted-foreground">No viewer pings right now. Live requests appear here in real time.</p>
           ) : (
-            <ul className="mt-3 space-y-2">
-              {viewerPings.map((p) => (
-                <li key={p.id} className="rounded-md border border-border bg-background/50 px-3 py-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] text-primary">{p.suggested_role}</span>
-                    <span className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleTimeString()}</span>
-                  </div>
-                  <div className="mt-1 text-foreground line-clamp-2">{p.story_plot}</div>
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className="mt-3 text-[11px] text-muted-foreground">
+                Tick the audiences you want to include, then start sharing. While their call is live, the channel's per-minute rate is auto-transferred from each viewer's wallet to yours every 60 seconds.
+              </p>
+              <ul className="mt-3 space-y-2">
+                {viewerPings.map((p) => {
+                  const checked = selectedPingIds.has(p.id);
+                  const ch = myChannels.find((c) => c.id === p.channel_id);
+                  return (
+                    <li key={p.id} className={`rounded-md border px-3 py-2 text-xs transition ${checked ? "border-primary bg-primary/5" : "border-border bg-background/50"}`}>
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSelectedPing(p.id)}
+                          className="mt-1 h-4 w-4 accent-primary"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-[10px] text-primary">{p.suggested_role}</span>
+                            <span className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleTimeString()}</span>
+                          </div>
+                          <div className="mt-1 text-foreground line-clamp-2">{p.story_plot}</div>
+                          {ch && (
+                            <div className="mt-1 text-[10px] text-muted-foreground">
+                              channel: <span className="font-mono">{ch.name}</span> · rate: {ch.per_minute_rate ?? 50} tokens/min
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPingIds(new Set(viewerPings.map((p) => p.id)))}
+                  className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  onClick={acceptSelectedPings}
+                  disabled={acceptBusy || selectedPingIds.size === 0}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {acceptBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                  Include {selectedPingIds.size || ""} & start sharing
+                </button>
+              </div>
+            </>
           )}
-          <p className="mt-3 text-[10px] text-muted-foreground">Open Channels to accept or reject.</p>
+
+          {/* Per-minute rate setter for the currently selected sharing channel */}
+          {selectedChannel && (
+            <div className="mt-4 flex flex-col gap-2 rounded-lg border border-dashed border-border bg-background/40 p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="font-medium">Per-minute reward · {selectedChannel.name}</div>
+                <div className="text-[10px] text-muted-foreground">Charged to each accepted viewer every minute, credited to you.</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  step={10}
+                  value={selectedChannel.per_minute_rate ?? 50}
+                  onChange={async (e) => {
+                    const v = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                    setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, per_minute_rate: v } : c));
+                    const { error } = await supabase
+                      .from("live_channels")
+                      .update({ per_minute_rate: v } as never)
+                      .eq("id", selectedChannel.id);
+                    if (error) toast.error(error.message);
+                  }}
+                  className="w-24 rounded-md border border-input bg-background px-2 py-1 text-right font-mono"
+                />
+                <span className="text-muted-foreground">tokens / min</span>
+              </div>
+            </div>
+          )}
+
+          {activeCalls.length > 0 && (
+            <div className="mt-4">
+              <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">Live calls earning per minute</div>
+              <ul className="space-y-1">
+                {activeCalls.map((a) => {
+                  const ch = myChannels.find((c) => c.id === a.channel_id);
+                  return (
+                    <li key={a.id} className="flex items-center justify-between rounded-md border border-border bg-background/50 px-3 py-2 text-[11px]">
+                      <span className="font-mono text-muted-foreground truncate">viewer · {a.viewer_id.slice(0, 8)}…</span>
+                      <span className="text-primary">+{ch?.per_minute_rate ?? 50} / min</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </section>
+
 
         {/* FAQ / Q&A */}
         <section className={`rounded-2xl border border-border bg-card p-6 relative ${sessionHeld ? "opacity-40 pointer-events-none" : ""}`}>
