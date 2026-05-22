@@ -913,9 +913,13 @@ function BoxView({ k, payload }: { k: string; payload: Record<string, any> }) {
       )}
       {k === "movie" && (
         <div className="space-y-2">
-          <div className="rounded-md border border-border bg-black/80 p-4 text-center text-[11px] text-muted-foreground">
-            🎥 Movie-call stage · audio + video relayed by previewer
-          </div>
+          {data.image ? (
+            <img src={data.image} alt="Previewer camera snapshot" className="w-full rounded-md border border-border" />
+          ) : (
+            <div className="rounded-md border border-border bg-muted p-4 text-center text-[11px] text-muted-foreground">
+              🎥 Movie-call stage · camera {data.camera_on ? "on" : "off"} · mic {data.microphone_on ? "on" : "off"}
+            </div>
+          )}
           {Array.isArray(data.recommendations) && data.recommendations.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {data.recommendations.slice(0, 8).map((r: string, i: number) => (
@@ -940,8 +944,8 @@ function BoxView({ k, payload }: { k: string; payload: Record<string, any> }) {
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {Array.isArray(data.built_in) && data.built_in.slice(0, 4).map((l: any, i: number) => (
             <div key={`b-${i}`} className="rounded-md border border-border bg-background p-2">
-              <div className="text-xs font-semibold">{l?.title ?? l?.name ?? "Lyric"}</div>
-              <pre className="mt-1 whitespace-pre-wrap font-sans text-[11px] text-muted-foreground">{l?.body ?? ""}</pre>
+              <div className="text-xs font-semibold">{typeof l === "string" ? `Built-in ${i + 1}` : l?.title ?? l?.name ?? "Lyric"}</div>
+              <pre className="mt-1 whitespace-pre-wrap font-sans text-[11px] text-muted-foreground">{typeof l === "string" ? l : l?.body ?? ""}</pre>
             </div>
           ))}
           {Array.isArray(data.saved) && data.saved.slice(0, 4).map((l: any, i: number) => (
