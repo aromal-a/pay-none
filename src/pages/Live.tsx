@@ -33,7 +33,11 @@ type LiveChannel = {
   multi_window?: boolean | null;
   min_tokens?: number | null;
   box_payload?: Record<string, unknown> | null;
+  is_open?: boolean | null;
 };
+
+const slugifyLive = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || `ch-${Date.now()}`;
 
 const SIGNS = ["✦", "✺", "✹", "✸", "✷", "✶", "✧", "✪", "✫", "✬", "✭", "✮", "✯", "✰", "❂", "✣"];
 
@@ -439,9 +443,8 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     const loadChannels = async () => {
       const { data } = await supabase
         .from("live_channels")
-        .select("id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload")
+        .select("id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload,is_open")
         .eq("previewer_id", user.id)
-        .eq("is_open", true)
         .order("created_at", { ascending: false });
       if (cancelled) return;
       const rows = (data ?? []) as LiveChannel[];
@@ -760,9 +763,15 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
           </div>
 
           {myChannels.length === 0 ? (
-            <div className="mt-4 rounded-lg border border-dashed border-border bg-background/50 p-4 text-center text-xs text-muted-foreground">
-              No open previewer channel found. <button type="button" onClick={onOpenChannels} className="text-primary hover:underline">Open Channels</button> and create one first.
-            </div>
+            <InlineCreateChannel
+              userId={user?.id ?? null}
+              onCreated={(c) => {
+                setMyChannels((arr) => [c, ...arr]);
+                setShareChannelId(c.id);
+                setSharedBoxes(c.active_boxes ?? []);
+                setMultiWindow(!!c.multi_window);
+              }}
+            />
           ) : (
             <div className="mt-4 space-y-4">
               <label className="block text-xs">
@@ -779,10 +788,40 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                   className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 >
                   {myChannels.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name} /{c.slug}</option>
+                    <option key={c.id} value={c.id}>{c.name} /{c.slug} {c.is_open === false ? "· private" : "· public"}</option>
                   ))}
                 </select>
               </label>
+
+              {selectedChannel && (
+                <div className="flex flex-col gap-2 rounded-lg border border-border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-xs">
+                    <div className="font-medium">Channel visibility</div>
+                    <div className="text-muted-foreground">
+                      {selectedChannel.is_open === false
+                        ? "Private — hidden from the Audience tab."
+                        : "Public — listed for viewers with enough tokens."}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={selectedChannel.is_open === false ? "text-muted-foreground" : "text-primary"}>
+                      {selectedChannel.is_open === false ? "private" : "public"}
+                    </span>
+                    <Switch
+                      checked={selectedChannel.is_open !== false}
+                      onCheckedChange={async (next) => {
+                        const { error } = await supabase
+                          .from("live_channels")
+                          .update({ is_open: next } as never)
+                          .eq("id", selectedChannel.id);
+                        if (error) { toast.error(error.message); return; }
+                        setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, is_open: next } : c));
+                        toast.success(next ? "Channel is now public" : "Channel set to private");
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">Boxes previewer allows viewers to access</div>
@@ -823,8 +862,23 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                 </button>
               </div>
               <div className="text-[10px] text-muted-foreground">
-                Entry gate: {(selectedChannel?.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens · viewers access it from Channels.
+                Entry gate: {(selectedChannel?.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens · viewers access it from the Audience tab when public.
               </div>
+
+              <details className="rounded-lg border border-dashed border-border bg-background/50 p-3 text-xs">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">+ Create another channel</summary>
+                <div className="mt-3">
+                  <InlineCreateChannel
+                    userId={user?.id ?? null}
+                    onCreated={(c) => {
+                      setMyChannels((arr) => [c, ...arr]);
+                      setShareChannelId(c.id);
+                      setSharedBoxes(c.active_boxes ?? []);
+                      setMultiWindow(!!c.multi_window);
+                    }}
+                  />
+                </div>
+              </details>
             </div>
           )}
         </section>
@@ -1875,6 +1929,105 @@ function MovieCall({ userId }: { userId: string | null }) {
 }`}
         </pre>
       </div>
+    </div>
+  );
+}
+
+function InlineCreateChannel({ userId, onCreated }: { userId: string | null; onCreated: (c: LiveChannel) => void }) {
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [minTokens, setMinTokens] = useState<number>(MIN_ENTRY_TOKENS_DEFAULT);
+  const [boxes, setBoxes] = useState<string[]>([]);
+  const [isPublic, setIsPublic] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const toggleBox = (k: string) => setBoxes((b) => (b.includes(k) ? b.filter((x) => x !== k) : [...b, k]));
+
+  const create = async () => {
+    if (!userId) { toast.error("Sign in first"); return; }
+    if (!name.trim()) { toast.error("Channel name required"); return; }
+    setBusy(true);
+    const { data, error } = await supabase
+      .from("live_channels")
+      .insert({
+        previewer_id: userId,
+        name: name.trim(),
+        slug: slugifyLive(name),
+        description: desc.trim() || null,
+        active_boxes: boxes,
+        multi_window: boxes.length > 1,
+        min_tokens: Math.max(0, Math.floor(minTokens) || MIN_ENTRY_TOKENS_DEFAULT),
+        is_open: isPublic,
+      } as never)
+      .select()
+      .single();
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Channel created (${isPublic ? "public" : "private"})`);
+    onCreated(data as LiveChannel);
+    setName(""); setDesc(""); setBoxes([]); setMinTokens(MIN_ENTRY_TOKENS_DEFAULT); setIsPublic(true);
+  };
+
+  return (
+    <div className="mt-4 space-y-3 rounded-xl border border-dashed border-primary/40 bg-background/40 p-4">
+      <div className="text-xs text-muted-foreground">
+        Create a channel to transport boxes. Toggle to public to list it in the Audience tab.
+      </div>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Channel name"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+      <textarea
+        value={desc}
+        onChange={(e) => setDesc(e.target.value)}
+        placeholder="Short description for viewers"
+        rows={2}
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+      <div>
+        <div className="mb-1 text-[11px] uppercase tracking-widest text-muted-foreground">Boxes shared at open (optional)</div>
+        <div className="flex flex-wrap gap-2">
+          {BOX_OPTIONS.map((b) => (
+            <button
+              type="button"
+              key={b.key}
+              onClick={() => toggleBox(b.key)}
+              className={`rounded-full border px-3 py-1 text-xs ${boxes.includes(b.key) ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent"}`}
+            >
+              {b.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-xs">
+          <span className="text-muted-foreground">Minimum tokens to enter</span>
+          <input
+            type="number"
+            min={0}
+            value={minTokens}
+            onChange={(e) => setMinTokens(Number(e.target.value))}
+            className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+          />
+        </label>
+        <div className="flex items-end justify-between gap-3 rounded-md border border-border bg-background/60 px-3 py-2 text-xs">
+          <div>
+            <div className="font-medium">{isPublic ? "Public" : "Private"}</div>
+            <div className="text-muted-foreground">{isPublic ? "Listed in Audience tab" : "Hidden — share by link/role later"}</div>
+          </div>
+          <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={create}
+        disabled={busy || !name.trim()}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+      >
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+        Create channel
+      </button>
     </div>
   );
 }
