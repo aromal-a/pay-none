@@ -1961,7 +1961,7 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
   );
 }
 
-function MovieCall({ userId }: { userId: string | null }) {
+function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFrame?: (frame: { camOn: boolean; micOn: boolean; image: string | null }) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
@@ -1973,6 +1973,18 @@ function MovieCall({ userId }: { userId: string | null }) {
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [shieldRaised, setShieldRaised] = useState(true);
+  const pushFrame = (cam: boolean, mic: boolean) => {
+    let image: string | null = null;
+    const video = videoRef.current;
+    if (cam && video?.videoWidth && video?.videoHeight) {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      image = canvas.toDataURL("image/jpeg", 0.65);
+    }
+    onShareFrame?.({ camOn: cam, micOn: mic, image });
+  };
 
   const stopAll = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -1998,6 +2010,12 @@ function MovieCall({ userId }: { userId: string | null }) {
   };
 
   useEffect(() => () => { stopAll(); recRef.current?.stop(); }, []);
+  useEffect(() => {
+    pushFrame(camOn, micOn);
+    if (!camOn) return;
+    const t = window.setInterval(() => pushFrame(camOn, micOn), 3000);
+    return () => window.clearInterval(t);
+  }, [camOn, micOn]);
 
   const toggleCam = async () => { const v = !camOn; setCamOn(v); await refreshStream(v, micOn); };
   const toggleMic = async () => { const v = !micOn; setMicOn(v); await refreshStream(camOn, v); };
