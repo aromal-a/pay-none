@@ -138,20 +138,35 @@ function CreateChannel({ onCreated }: { onCreated: (c: Channel) => void }) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [busy, setBusy] = useState(false);
+  const [boxes, setBoxes] = useState<string[]>([]);
+  const [multi, setMulti] = useState(false);
+  const [minTokens, setMinTokens] = useState<number>(MIN_ENTRY_TOKENS_DEFAULT);
+
+  const toggleBox = (k: string) =>
+    setBoxes((b) => (b.includes(k) ? b.filter((x) => x !== k) : [...b, k]));
 
   const create = async () => {
     if (!user || !name.trim()) return;
     setBusy(true);
+    const insertPayload: Record<string, unknown> = {
+      previewer_id: user.id,
+      name: name.trim(),
+      slug: slugify(name),
+      description: desc.trim() || null,
+      active_boxes: boxes,
+      multi_window: multi && boxes.length > 1,
+      min_tokens: Math.max(0, Math.floor(minTokens) || MIN_ENTRY_TOKENS_DEFAULT),
+    };
     const { data, error } = await supabase
       .from("live_channels")
-      .insert({ previewer_id: user.id, name: name.trim(), slug: slugify(name), description: desc.trim() || null })
+      .insert(insertPayload as never)
       .select()
       .single();
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Channel created");
     onCreated(data as Channel);
-    setName(""); setDesc(""); setOpen(false);
+    setName(""); setDesc(""); setBoxes([]); setMulti(false); setMinTokens(MIN_ENTRY_TOKENS_DEFAULT); setOpen(false);
   };
 
   if (!open) {
@@ -162,10 +177,39 @@ function CreateChannel({ onCreated }: { onCreated: (c: Channel) => void }) {
     );
   }
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Channel name" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-      <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What's this channel about?" rows={2} className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-      <div className="mt-3 flex gap-2">
+      <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What's this channel about?" rows={2} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+
+      <div>
+        <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Boxes shared at open</div>
+        <div className="flex flex-wrap gap-2">
+          {BOX_OPTIONS.map((b) => (
+            <button
+              type="button"
+              key={b.key}
+              onClick={() => toggleBox(b.key)}
+              className={`rounded-full border px-3 py-1 text-xs ${boxes.includes(b.key) ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent"}`}
+            >
+              {b.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-[10px] text-muted-foreground">You can toggle these live later. Pick none to keep the channel quiet at first.</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="text-xs">
+          <span className="text-muted-foreground">Minimum tokens to enter</span>
+          <input type="number" min={0} value={minTokens} onChange={(e) => setMinTokens(Number(e.target.value))} className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm" />
+        </label>
+        <label className="flex items-end gap-2 text-xs">
+          <input type="checkbox" checked={multi} onChange={(e) => setMulti(e.target.checked)} />
+          <span>Multi-window (show several boxes at once · camera minimised)</span>
+        </label>
+      </div>
+
+      <div className="flex gap-2">
         <button onClick={create} disabled={busy || !name.trim()} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Create
         </button>
