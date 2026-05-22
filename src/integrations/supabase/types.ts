@@ -208,28 +208,37 @@ export type Database = {
       }
       live_channels: {
         Row: {
+          active_boxes: string[]
           created_at: string
           description: string | null
           id: string
           is_open: boolean
+          min_tokens: number
+          multi_window: boolean
           name: string
           previewer_id: string
           slug: string
         }
         Insert: {
+          active_boxes?: string[]
           created_at?: string
           description?: string | null
           id?: string
           is_open?: boolean
+          min_tokens?: number
+          multi_window?: boolean
           name: string
           previewer_id: string
           slug: string
         }
         Update: {
+          active_boxes?: string[]
           created_at?: string
           description?: string | null
           id?: string
           is_open?: boolean
+          min_tokens?: number
+          multi_window?: boolean
           name?: string
           previewer_id?: string
           slug?: string
