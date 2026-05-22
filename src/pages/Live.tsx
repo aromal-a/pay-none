@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2, Link2, Copy, RefreshCw, MessageSquare, Wallet, Coins } from "lucide-react";
-import Channels from "@/components/live/Channels";
+import Channels, { BOX_OPTIONS, MIN_ENTRY_TOKENS_DEFAULT } from "@/components/live/Channels";
 import MidiHapticsResearch from "@/components/live/MidiHapticsResearch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 type Mode = "viewer" | "previewer" | "channels";
 type Role = "broadcaster" | "viewer";
@@ -20,6 +21,18 @@ type Peer = {
   user_id: string;
   role: Role;
   credits: number;
+};
+
+type LiveChannel = {
+  id: string;
+  previewer_id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  active_boxes?: string[] | null;
+  multi_window?: boolean | null;
+  min_tokens?: number | null;
+  box_payload?: Record<string, unknown> | null;
 };
 
 const SIGNS = ["✦", "✺", "✹", "✸", "✷", "✶", "✧", "✪", "✫", "✬", "✭", "✮", "✯", "✰", "❂", "✣"];
@@ -164,7 +177,7 @@ export default function Live() {
   }
 
   if (mode === "previewer") {
-    return <Previewer onLeave={() => setMode(null)} />;
+    return <Previewer onLeave={() => setMode(null)} onOpenChannels={() => setMode("channels")} />;
   }
 
   if (mode === "channels") {
@@ -268,7 +281,7 @@ export default function Live() {
   );
 }
 
-function Previewer({ onLeave }: { onLeave: () => void }) {
+function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenChannels: () => void }) {
   const { user } = useAuth();
   const [audioOk, setAudioOk] = useState<null | boolean>(null);
   const [termInput, setTermInput] = useState("");
@@ -330,6 +343,14 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
   const [utilityNote, setUtilityNote] = useState("");
   const [speechNote, setSpeechNote] = useState("");
   const [viewerActivityNote, setViewerActivityNote] = useState("");
+
+  // Previewer transport controls — choose one owned channel, then push selected box data live.
+  const [myChannels, setMyChannels] = useState<LiveChannel[]>([]);
+  const [shareChannelId, setShareChannelId] = useState("");
+  const [sharedBoxes, setSharedBoxes] = useState<string[]>([]);
+  const [shareToAudience, setShareToAudience] = useState(false);
+  const [multiWindow, setMultiWindow] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
 
   useEffect(() => {
     if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
@@ -411,6 +432,35 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const loadChannels = async () => {
+      const { data } = await supabase
+        .from("live_channels")
+        .select("id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload")
+        .eq("previewer_id", user.id)
+        .eq("is_open", true)
+        .order("created_at", { ascending: false });
+      if (cancelled) return;
+      const rows = (data ?? []) as LiveChannel[];
+      setMyChannels(rows);
+      if (!shareChannelId && rows[0]) {
+        setShareChannelId(rows[0].id);
+        const active = rows[0].active_boxes ?? [];
+        setSharedBoxes(active);
+        setShareToAudience(active.length > 0);
+        setMultiWindow(!!rows[0].multi_window);
+      }
+    };
+    loadChannels();
+    const ch = supabase
+      .channel(`previewer_owned_channels_${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_channels", filter: `previewer_id=eq.${user.id}` }, loadChannels)
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [user, shareChannelId]);
 
   // API formatter — brand({name, name_appeal, self-services}) → preview-side generator link
   const irand = (lo: number, hi: number) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
@@ -611,6 +661,53 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
   const leave = () => { wipe(); onLeave(); };
 
+  const selectedChannel = myChannels.find((c) => c.id === shareChannelId) ?? null;
+  const toggleSharedBox = (key: string) => {
+    setSharedBoxes((items) => (items.includes(key) ? items.filter((item) => item !== key) : [...items, key]));
+  };
+  const buildSharePayload = () => ({
+    board: {
+      frame,
+      image: canvasRef.current?.toDataURL("image/png") ?? null,
+      status: "Virtual Board is open on the previewer screen.",
+    },
+    movie: {
+      recommendations: [...builtinRecs, ...customRecs.map((r) => r.label)],
+      specifications: { map: "console", aspect: "16:9 · 1080p", latency: "best-effort" },
+    },
+    midi: {
+      status: audioOk === true ? "mic tone verified" : audioOk === false ? "tone blocked" : "MIDI-Haptics ready",
+      instruction: "MIDI grid, microphone research, and haptics are staged by the previewer.",
+    },
+    lyrics: {
+      built_in: lyrics,
+      saved: customLyrics.map((l) => ({ name: l.name, title: l.title, body: l.body })),
+    },
+  });
+  const pushShareSettings = async (enabled = shareToAudience) => {
+    if (!selectedChannel) {
+      toast.error("Create a channel first from Channels, then return here to share boxes.");
+      return;
+    }
+    const nextBoxes = enabled ? sharedBoxes : [];
+    setShareBusy(true);
+    const { error } = await supabase
+      .from("live_channels")
+      .update({
+        active_boxes: nextBoxes,
+        multi_window: enabled && multiWindow && nextBoxes.length > 1,
+        box_payload: buildSharePayload(),
+      } as never)
+      .eq("id", selectedChannel.id);
+    setShareBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(enabled ? "Activity shared to live viewers" : "Audience sharing stopped");
+  };
+  const handleShareSwitch = (enabled: boolean) => {
+    setShareToAudience(enabled);
+    pushShareSettings(enabled);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
@@ -646,6 +743,92 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-10 space-y-8">
+        <section className="rounded-2xl border border-primary/40 bg-card p-6 shadow-[0_0_28px_-18px_hsl(var(--primary))]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Radio className="h-4 w-4 text-primary" /> Share my activity to live viewers
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Choose the channel and boxes to transport. Viewers see only the boxes you switch on.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-xs">
+              <span className={shareToAudience ? "text-primary" : "text-muted-foreground"}>{shareToAudience ? "sharing" : "private"}</span>
+              <Switch checked={shareToAudience} onCheckedChange={handleShareSwitch} disabled={shareBusy || !selectedChannel || sharedBoxes.length === 0} />
+            </div>
+          </div>
+
+          {myChannels.length === 0 ? (
+            <div className="mt-4 rounded-lg border border-dashed border-border bg-background/50 p-4 text-center text-xs text-muted-foreground">
+              No open previewer channel found. <button type="button" onClick={onOpenChannels} className="text-primary hover:underline">Open Channels</button> and create one first.
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              <label className="block text-xs">
+                <span className="text-muted-foreground">Audience channel</span>
+                <select
+                  value={shareChannelId}
+                  onChange={(e) => {
+                    const next = myChannels.find((c) => c.id === e.target.value);
+                    setShareChannelId(e.target.value);
+                    setSharedBoxes(next?.active_boxes ?? []);
+                    setShareToAudience((next?.active_boxes?.length ?? 0) > 0);
+                    setMultiWindow(!!next?.multi_window);
+                  }}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                >
+                  {myChannels.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name} /{c.slug}</option>
+                  ))}
+                </select>
+              </label>
+
+              <div>
+                <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">Boxes previewer allows viewers to access</div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {BOX_OPTIONS.map((box) => {
+                    const enabled = sharedBoxes.includes(box.key);
+                    return (
+                      <button
+                        type="button"
+                        key={box.key}
+                        onClick={() => toggleSharedBox(box.key)}
+                        className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition ${enabled ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent"}`}
+                      >
+                        <span>
+                          <span className="block text-sm font-medium">{box.label}</span>
+                          <span className="block text-[11px]">{box.hint}</span>
+                        </span>
+                        <span className={`h-2.5 w-2.5 rounded-full ${enabled ? "bg-primary" : "bg-muted-foreground/40"}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 rounded-lg border border-border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={multiWindow} disabled={sharedBoxes.length < 2} onChange={(e) => setMultiWindow(e.target.checked)} />
+                  Multiple windows for selected boxes
+                </label>
+                <button
+                  type="button"
+                  onClick={() => pushShareSettings(true)}
+                  disabled={shareBusy || sharedBoxes.length === 0}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {shareBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  Push selected boxes to audience
+                </button>
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                Entry gate: {(selectedChannel?.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens · viewers access it from Channels.
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* Whiteboard — new_open(.pen, classics) */}
         <section className="rounded-2xl border border-border bg-card p-6 text-center mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
