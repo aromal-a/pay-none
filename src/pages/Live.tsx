@@ -495,13 +495,24 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     if (selectedPingIds.size === 0) { toast.error("Tick at least one viewer to include"); return; }
     setAcceptBusy(true);
     let ok = 0, fail = 0;
+    const selectedIds = Array.from(selectedPingIds);
+    const channelIds = Array.from(new Set(viewerPings.filter((p) => selectedIds.includes(p.id)).map((p) => p.channel_id)));
     for (const id of selectedPingIds) {
       const { error } = await supabase.rpc("accept_call_request", { p_request_id: id } as never);
       if (error) fail++; else ok++;
     }
+    if (ok > 0 && sharedBoxes.length > 0) {
+      const payload = buildSharePayload();
+      await Promise.all(channelIds.map((channelId) => supabase
+        .from("live_channels")
+        .update({ active_boxes: sharedBoxes, multi_window: multiWindow && sharedBoxes.length > 1, box_payload: payload } as never)
+        .eq("id", channelId)));
+      setShareToAudience(true);
+      setMyChannels((arr) => arr.map((c) => channelIds.includes(c.id) ? { ...c, active_boxes: sharedBoxes, multi_window: multiWindow && sharedBoxes.length > 1, box_payload: payload } : c));
+    }
     setAcceptBusy(false);
     setSelectedPingIds(new Set());
-    if (ok) toast.success(`${ok} viewer${ok === 1 ? "" : "s"} included · per-minute reward active`);
+    if (ok) toast.success(`${ok} viewer${ok === 1 ? "" : "s"} included · shared boxes are live`);
     if (fail) toast.error(`${fail} could not be accepted`);
   };
 
