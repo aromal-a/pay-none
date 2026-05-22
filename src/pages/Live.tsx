@@ -416,15 +416,17 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   };
 
   // Viewer-activity spy: pending requests from viewers across this previewer's channels.
-  type ViewerPing = { id: string; story_plot: string; suggested_role: string; created_at: string };
+  type ViewerPing = { id: string; story_plot: string; suggested_role: string; created_at: string; viewer_id: string; channel_id: string };
   const [viewerPings, setViewerPings] = useState<ViewerPing[]>([]);
+  const [selectedPingIds, setSelectedPingIds] = useState<Set<string>>(new Set());
+  const [acceptBusy, setAcceptBusy] = useState(false);
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     const load = async () => {
       const { data } = await supabase
         .from("live_call_requests")
-        .select("id,story_plot,suggested_role,created_at")
+        .select("id,story_plot,suggested_role,created_at,viewer_id,channel_id")
         .eq("previewer_id", user.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false })
@@ -438,6 +440,69 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [user]);
+
+  // Active call spaces for this previewer — used to drip per-minute tokens from each viewer.
+  type ActiveCall = { id: string; viewer_id: string; channel_id: string; created_at: string };
+  const [activeCalls, setActiveCalls] = useState<ActiveCall[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase
+        .from("live_active_call_spaces")
+        .select("id,viewer_id,channel_id,created_at,closed_at")
+        .eq("previewer_id", user.id)
+        .is("closed_at", null)
+        .order("created_at", { ascending: false });
+      if (!cancelled && data) setActiveCalls(data as ActiveCall[]);
+    };
+    load();
+    const ch = supabase
+      .channel("previewer-acs")
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_active_call_spaces", filter: `previewer_id=eq.${user.id}` }, load)
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [user]);
+
+  // Every 60s, collect the per-minute reward from each active viewer.
+  useEffect(() => {
+    if (!user || activeCalls.length === 0) return;
+    const tick = async () => {
+      for (const acs of activeCalls) {
+        const { data, error } = await supabase.rpc("previewer_collect_minute", { p_acs_id: acs.id } as never);
+        if (error) continue;
+        const charged = (data as { charged?: number } | null)?.charged ?? 0;
+        if (charged > 0) {
+          setTokenBalance((b) => (b === null ? b : b + charged));
+        }
+      }
+    };
+    const t = window.setInterval(tick, 60000);
+    return () => window.clearInterval(t);
+  }, [user, activeCalls]);
+
+  const toggleSelectedPing = (id: string) => {
+    setSelectedPingIds((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const acceptSelectedPings = async () => {
+    if (selectedPingIds.size === 0) { toast.error("Tick at least one viewer to include"); return; }
+    setAcceptBusy(true);
+    let ok = 0, fail = 0;
+    for (const id of selectedPingIds) {
+      const { error } = await supabase.rpc("accept_call_request", { p_request_id: id } as never);
+      if (error) fail++; else ok++;
+    }
+    setAcceptBusy(false);
+    setSelectedPingIds(new Set());
+    if (ok) toast.success(`${ok} viewer${ok === 1 ? "" : "s"} included · per-minute reward active`);
+    if (fail) toast.error(`${fail} could not be accepted`);
+  };
+
+
 
   useEffect(() => {
     if (!user) return;
