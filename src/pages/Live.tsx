@@ -736,6 +736,16 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const leave = () => { wipe(); onLeave(); };
 
   const selectedChannel = myChannels.find((c) => c.id === shareChannelId) ?? null;
+  const copyPrivateShareLink = async () => {
+    if (!selectedChannel) return;
+    const link = `${window.location.origin}/live?channel=${selectedChannel.id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Private channel link copied", { description: "Send it only to the viewers you want to invite." });
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
   const toggleSharedBox = (key: string) => {
     setSharedBoxes((items) => (items.includes(key) ? items.filter((item) => item !== key) : [...items, key]));
   };
@@ -879,7 +889,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
               </label>
 
               {selectedChannel && (
-                <div className="flex flex-col gap-2 rounded-lg border border-border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-lg border border-border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-xs">
                     <div className="font-medium">Channel visibility</div>
                     <div className="text-muted-foreground">
@@ -888,22 +898,31 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                         : "Public — listed for viewers with enough tokens."}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={selectedChannel.is_open === false ? "text-muted-foreground" : "text-primary"}>
-                      {selectedChannel.is_open === false ? "private" : "public"}
-                    </span>
-                    <Switch
-                      checked={selectedChannel.is_open !== false}
-                      onCheckedChange={async (next) => {
-                        const { error } = await supabase
-                          .from("live_channels")
-                          .update({ is_open: next } as never)
-                          .eq("id", selectedChannel.id);
-                        if (error) { toast.error(error.message); return; }
-                        setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, is_open: next } : c));
-                        toast.success(next ? "Channel is now public" : "Channel set to private");
-                      }}
-                    />
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={copyPrivateShareLink}
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 hover:bg-accent"
+                    >
+                      <Copy className="h-3 w-3" /> Copy share link
+                    </button>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
+                      <span className={selectedChannel.is_open === false ? "text-muted-foreground" : "text-primary"}>
+                        {selectedChannel.is_open === false ? "private" : "public"}
+                      </span>
+                      <Switch
+                        checked={selectedChannel.is_open !== false}
+                        onCheckedChange={async (next) => {
+                          const { error } = await supabase
+                            .from("live_channels")
+                            .update({ is_open: next } as never)
+                            .eq("id", selectedChannel.id);
+                          if (error) { toast.error(error.message); return; }
+                          setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, is_open: next } : c));
+                          toast.success(next ? "Channel is now public" : "Channel set to private");
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
