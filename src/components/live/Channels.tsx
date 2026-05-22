@@ -724,10 +724,16 @@ function ActiveCallSpace({ acs, onClose }: { acs: ACS; onClose: () => void }) {
         </div>
       </header>
 
-      {bonded && (
+      {bonded ? (
         <div className="border-b border-primary/40 bg-primary/10">
           <div className="mx-auto max-w-6xl px-6 py-2 text-center text-xs font-medium text-primary">
-            <InfinityIcon className="mr-1 inline h-3 w-3" /> Membranes aligned · higher-dimensional workspace established between previewer & viewer
+            <InfinityIcon className="mr-1 inline h-3 w-3" /> Viewership membrane bonded · the previewer's shared boxes are now mirrored live to the viewer below
+          </div>
+        </div>
+      ) : (
+        <div className="border-b border-border bg-muted/40">
+          <div className="mx-auto max-w-6xl px-6 py-2 text-center text-[11px] text-muted-foreground">
+            Viewership membrane = the trust seal that pairs this call space's id with its viewer. Until the previewer pastes the call-space id into the membrane field, the space stays in handshake mode (boxes still sync, just unbonded).
           </div>
         </div>
       )}
