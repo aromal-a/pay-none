@@ -5,10 +5,18 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-type Channel = { id: string; previewer_id: string; name: string; slug: string; description: string | null; is_open: boolean; created_at: string };
+export type Channel = { id: string; previewer_id: string; name: string; slug: string; description: string | null; is_open: boolean; created_at: string; active_boxes?: string[] | null; multi_window?: boolean | null; min_tokens?: number | null };
 type CallRequest = { id: string; channel_id: string; viewer_id: string; previewer_id: string; story_plot: string; suggested_role: string; status: string; created_at: string };
 type ACS = { id: string; request_id: string; channel_id: string; previewer_id: string; viewer_id: string; membrane_id: string | null; scratchpad: string; created_at: string; closed_at: string | null };
 type Msg = { id: string; acs_id: string; author_id: string | null; kind: "text" | "ai" | "system" | "file"; body: string; file_path: string | null; created_at: string };
+
+export const BOX_OPTIONS: { key: string; label: string; hint: string }[] = [
+  { key: "board", label: "Virtual Board", hint: "Whiteboard · pen · classics" },
+  { key: "movie", label: "Movie-call", hint: "Video · audio · live-sharing" },
+  { key: "midi", label: "MIDI-Haptics", hint: "Grid · mic · research" },
+  { key: "lyrics", label: "Lyrical collection", hint: "Lyrics · rhythm notes" },
+];
+export const MIN_ENTRY_TOKENS_DEFAULT = 2000;
 
 const ROLE_PRESETS = [
   "creative-art-forming", "art-in-creation", "translocatory action",
