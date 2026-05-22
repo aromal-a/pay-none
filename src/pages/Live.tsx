@@ -661,6 +661,52 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
 
   const leave = () => { wipe(); onLeave(); };
 
+  const selectedChannel = myChannels.find((c) => c.id === shareChannelId) ?? null;
+  const toggleSharedBox = (key: string) => {
+    setSharedBoxes((items) => (items.includes(key) ? items.filter((item) => item !== key) : [...items, key]));
+  };
+  const buildSharePayload = () => ({
+    board: {
+      frame,
+      status: "Virtual Board is open on the previewer screen.",
+    },
+    movie: {
+      recommendations: [...builtinRecs, ...customRecs.map((r) => r.label)],
+      specifications: { map: "console", aspect: "16:9 · 1080p", latency: "best-effort" },
+    },
+    midi: {
+      status: audioOk === true ? "mic tone verified" : audioOk === false ? "tone blocked" : "MIDI-Haptics ready",
+      instruction: "MIDI grid, microphone research, and haptics are staged by the previewer.",
+    },
+    lyrics: {
+      built_in: lyrics,
+      saved: customLyrics.map((l) => ({ name: l.name, title: l.title, body: l.body })),
+    },
+  });
+  const pushShareSettings = async (enabled = shareToAudience) => {
+    if (!selectedChannel) {
+      toast.error("Create a channel first from Channels, then return here to share boxes.");
+      return;
+    }
+    const nextBoxes = enabled ? sharedBoxes : [];
+    setShareBusy(true);
+    const { error } = await supabase
+      .from("live_channels")
+      .update({
+        active_boxes: nextBoxes,
+        multi_window: enabled && multiWindow && nextBoxes.length > 1,
+        box_payload: buildSharePayload(),
+      } as never)
+      .eq("id", selectedChannel.id);
+    setShareBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(enabled ? "Activity shared to live viewers" : "Audience sharing stopped");
+  };
+  const handleShareSwitch = (enabled: boolean) => {
+    setShareToAudience(enabled);
+    pushShareSettings(enabled);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
