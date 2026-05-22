@@ -433,6 +433,35 @@ function Previewer({ onLeave }: { onLeave: () => void }) {
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const loadChannels = async () => {
+      const { data } = await supabase
+        .from("live_channels")
+        .select("id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload")
+        .eq("previewer_id", user.id)
+        .eq("is_open", true)
+        .order("created_at", { ascending: false });
+      if (cancelled) return;
+      const rows = (data ?? []) as LiveChannel[];
+      setMyChannels(rows);
+      if (!shareChannelId && rows[0]) {
+        setShareChannelId(rows[0].id);
+        const active = rows[0].active_boxes ?? [];
+        setSharedBoxes(active);
+        setShareToAudience(active.length > 0);
+        setMultiWindow(!!rows[0].multi_window);
+      }
+    };
+    loadChannels();
+    const ch = supabase
+      .channel(`previewer_owned_channels_${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_channels", filter: `previewer_id=eq.${user.id}` }, loadChannels)
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
+  }, [user, shareChannelId]);
+
   // API formatter — brand({name, name_appeal, self-services}) → preview-side generator link
   const irand = (lo: number, hi: number) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
   const [brandName, setBrandName] = useState("");
