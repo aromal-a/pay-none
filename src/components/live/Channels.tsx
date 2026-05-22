@@ -27,25 +27,35 @@ const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) ||
   Math.random().toString(36).slice(2, 8);
 
-export default function Channels({ onLeave }: { onLeave: () => void }) {
+export default function Channels({ onLeave, initialChannelId }: { onLeave: () => void; initialChannelId?: string | null }) {
   const { user } = useAuth();
   const [isPreviewer, setIsPreviewer] = useState(false);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const [activeAcs, setActiveAcs] = useState<ACS | null>(null);
+  const openedInitialChannel = useRef(false);
 
   // Load channels + role + reload on realtime
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const [{ data: chs }, { data: roles }] = await Promise.all([
+      const [{ data: chs }, { data: roles }, direct] = await Promise.all([
         supabase.from("live_channels").select("*").eq("is_open", true).order("created_at", { ascending: false }),
         supabase.from("user_roles").select("role").eq("user_id", user.id),
+        initialChannelId
+          ? supabase.from("live_channels").select("*").eq("id", initialChannelId).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
       ]);
       if (cancelled) return;
-      setChannels((chs ?? []) as Channel[]);
+      const publicRows = (chs ?? []) as Channel[];
+      const directRow = direct.data as Channel | null;
+      setChannels(directRow && !publicRows.some((c) => c.id === directRow.id) ? [directRow, ...publicRows] : publicRows);
       setIsPreviewer(!!roles?.some((r) => r.role === "previewer"));
+      if (directRow && !openedInitialChannel.current) {
+        openedInitialChannel.current = true;
+        setActiveChannel(directRow);
+      }
     })();
     const ch = supabase
       .channel("live_channels_feed")
@@ -55,7 +65,7 @@ export default function Channels({ onLeave }: { onLeave: () => void }) {
       })
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
-  }, [user]);
+  }, [user, initialChannelId]);
 
   // Auto-open ACS when a request gets accepted (works for both viewer & previewer)
   useEffect(() => {
@@ -903,9 +913,13 @@ function BoxView({ k, payload }: { k: string; payload: Record<string, any> }) {
       )}
       {k === "movie" && (
         <div className="space-y-2">
-          <div className="rounded-md border border-border bg-black/80 p-4 text-center text-[11px] text-muted-foreground">
-            🎥 Movie-call stage · audio + video relayed by previewer
-          </div>
+          {data.image ? (
+            <img src={data.image} alt="Previewer camera snapshot" className="w-full rounded-md border border-border" />
+          ) : (
+            <div className="rounded-md border border-border bg-muted p-4 text-center text-[11px] text-muted-foreground">
+              🎥 Movie-call stage · camera {data.camera_on ? "on" : "off"} · mic {data.microphone_on ? "on" : "off"}
+            </div>
+          )}
           {Array.isArray(data.recommendations) && data.recommendations.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {data.recommendations.slice(0, 8).map((r: string, i: number) => (
@@ -930,8 +944,8 @@ function BoxView({ k, payload }: { k: string; payload: Record<string, any> }) {
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {Array.isArray(data.built_in) && data.built_in.slice(0, 4).map((l: any, i: number) => (
             <div key={`b-${i}`} className="rounded-md border border-border bg-background p-2">
-              <div className="text-xs font-semibold">{l?.title ?? l?.name ?? "Lyric"}</div>
-              <pre className="mt-1 whitespace-pre-wrap font-sans text-[11px] text-muted-foreground">{l?.body ?? ""}</pre>
+              <div className="text-xs font-semibold">{typeof l === "string" ? `Built-in ${i + 1}` : l?.title ?? l?.name ?? "Lyric"}</div>
+              <pre className="mt-1 whitespace-pre-wrap font-sans text-[11px] text-muted-foreground">{typeof l === "string" ? l : l?.body ?? ""}</pre>
             </div>
           ))}
           {Array.isArray(data.saved) && data.saved.slice(0, 4).map((l: any, i: number) => (

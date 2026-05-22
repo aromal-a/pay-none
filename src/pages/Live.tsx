@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2, Link2, Copy, RefreshCw, MessageSquare, Wallet, Coins } from "lucide-react";
 import Channels, { BOX_OPTIONS, MIN_ENTRY_TOKENS_DEFAULT } from "@/components/live/Channels";
@@ -45,7 +45,9 @@ const SIGNS = ["✦", "✺", "✹", "✸", "✷", "✶", "✧", "✪", "✫", "�
 
 export default function Live() {
   const { user, loading } = useAuth();
-  const [mode, setModeRaw] = useState<Mode | null>(null);
+  const [searchParams] = useSearchParams();
+  const initialChannelId = searchParams.get("channel");
+  const [mode, setModeRaw] = useState<Mode | null>(initialChannelId ? "channels" : null);
 
   // Switching from Viewer → Previewer wipes viewer-side traces (anonymity).
   // Previewer → Viewer keeps records (allows previewers to spy on viewer surface).
@@ -187,7 +189,7 @@ export default function Live() {
   }
 
   if (mode === "channels") {
-    return <Channels onLeave={() => setMode(null)} />;
+    return <Channels onLeave={() => setMode(null)} initialChannelId={initialChannelId} />;
   }
 
   // Viewer / audience session
@@ -357,6 +359,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const [shareToAudience, setShareToAudience] = useState(false);
   const [multiWindow, setMultiWindow] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
+  const [movieShare, setMovieShare] = useState<{ camOn: boolean; micOn: boolean; image: string | null }>({ camOn: false, micOn: false, image: null });
 
   useEffect(() => {
     if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
@@ -492,13 +495,24 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     if (selectedPingIds.size === 0) { toast.error("Tick at least one viewer to include"); return; }
     setAcceptBusy(true);
     let ok = 0, fail = 0;
+    const selectedIds = Array.from(selectedPingIds);
+    const channelIds = Array.from(new Set(viewerPings.filter((p) => selectedIds.includes(p.id)).map((p) => p.channel_id)));
     for (const id of selectedPingIds) {
       const { error } = await supabase.rpc("accept_call_request", { p_request_id: id } as never);
       if (error) fail++; else ok++;
     }
+    if (ok > 0 && sharedBoxes.length > 0) {
+      const payload = buildSharePayload();
+      await Promise.all(channelIds.map((channelId) => supabase
+        .from("live_channels")
+        .update({ active_boxes: sharedBoxes, multi_window: multiWindow && sharedBoxes.length > 1, box_payload: payload } as never)
+        .eq("id", channelId)));
+      setShareToAudience(true);
+      setMyChannels((arr) => arr.map((c) => channelIds.includes(c.id) ? { ...c, active_boxes: sharedBoxes, multi_window: multiWindow && sharedBoxes.length > 1, box_payload: payload } : c));
+    }
     setAcceptBusy(false);
     setSelectedPingIds(new Set());
-    if (ok) toast.success(`${ok} viewer${ok === 1 ? "" : "s"} included · per-minute reward active`);
+    if (ok) toast.success(`${ok} viewer${ok === 1 ? "" : "s"} included · shared boxes are live`);
     if (fail) toast.error(`${fail} could not be accepted`);
   };
 
@@ -733,6 +747,16 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const leave = () => { wipe(); onLeave(); };
 
   const selectedChannel = myChannels.find((c) => c.id === shareChannelId) ?? null;
+  const copyPrivateShareLink = async () => {
+    if (!selectedChannel) return;
+    const link = `${window.location.origin}/live?channel=${selectedChannel.id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Private channel link copied", { description: "Send it only to the viewers you want to invite." });
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
   const toggleSharedBox = (key: string) => {
     setSharedBoxes((items) => (items.includes(key) ? items.filter((item) => item !== key) : [...items, key]));
   };
@@ -743,6 +767,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       status: "Virtual Board is open on the previewer screen.",
     },
     movie: {
+      camera_on: movieShare.camOn,
+      microphone_on: movieShare.micOn,
+      image: movieShare.image,
       recommendations: [...builtinRecs, ...customRecs.map((r) => r.label)],
       specifications: { map: "console", aspect: "16:9 · 1080p", latency: "best-effort" },
     },
@@ -772,6 +799,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       .eq("id", selectedChannel.id);
     setShareBusy(false);
     if (error) { toast.error(error.message); return; }
+    setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, active_boxes: nextBoxes, multi_window: enabled && multiWindow && nextBoxes.length > 1, box_payload: buildSharePayload() } : c));
     toast.success(enabled ? "Activity shared to live viewers" : "Audience sharing stopped");
   };
   const handleShareSwitch = (enabled: boolean) => {
@@ -787,7 +815,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     const t = window.setInterval(() => { pushShareSettings(true); }, 4000);
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shareToAudience, selectedChannel?.id, sharedBoxes.join(",")]);
+  }, [shareToAudience, selectedChannel?.id, sharedBoxes.join(","), multiWindow, frame, audioOk, customLyrics.length, customRecs.length, movieShare]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -872,7 +900,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
               </label>
 
               {selectedChannel && (
-                <div className="flex flex-col gap-2 rounded-lg border border-border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-lg border border-border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-xs">
                     <div className="font-medium">Channel visibility</div>
                     <div className="text-muted-foreground">
@@ -881,22 +909,31 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                         : "Public — listed for viewers with enough tokens."}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={selectedChannel.is_open === false ? "text-muted-foreground" : "text-primary"}>
-                      {selectedChannel.is_open === false ? "private" : "public"}
-                    </span>
-                    <Switch
-                      checked={selectedChannel.is_open !== false}
-                      onCheckedChange={async (next) => {
-                        const { error } = await supabase
-                          .from("live_channels")
-                          .update({ is_open: next } as never)
-                          .eq("id", selectedChannel.id);
-                        if (error) { toast.error(error.message); return; }
-                        setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, is_open: next } : c));
-                        toast.success(next ? "Channel is now public" : "Channel set to private");
-                      }}
-                    />
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={copyPrivateShareLink}
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 hover:bg-accent"
+                    >
+                      <Copy className="h-3 w-3" /> Copy share link
+                    </button>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
+                      <span className={selectedChannel.is_open === false ? "text-muted-foreground" : "text-primary"}>
+                        {selectedChannel.is_open === false ? "private" : "public"}
+                      </span>
+                      <Switch
+                        checked={selectedChannel.is_open !== false}
+                        onCheckedChange={async (next) => {
+                          const { error } = await supabase
+                            .from("live_channels")
+                            .update({ is_open: next } as never)
+                            .eq("id", selectedChannel.id);
+                          if (error) { toast.error(error.message); return; }
+                          setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, is_open: next } : c));
+                          toast.success(next ? "Channel is now public" : "Channel set to private");
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -996,7 +1033,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
         {/* Movie-call + recommendations */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-medium"><Film className="h-4 w-4" /> Movie-call</div>
-          <MovieCall userId={user?.id ?? null} />
+          <MovieCall userId={user?.id ?? null} onShareFrame={setMovieShare} />
 
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -1954,7 +1991,7 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
   );
 }
 
-function MovieCall({ userId }: { userId: string | null }) {
+function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFrame?: (frame: { camOn: boolean; micOn: boolean; image: string | null }) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
@@ -1966,6 +2003,18 @@ function MovieCall({ userId }: { userId: string | null }) {
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [shieldRaised, setShieldRaised] = useState(true);
+  const pushFrame = (cam: boolean, mic: boolean) => {
+    let image: string | null = null;
+    const video = videoRef.current;
+    if (cam && video?.videoWidth && video?.videoHeight) {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      image = canvas.toDataURL("image/jpeg", 0.65);
+    }
+    onShareFrame?.({ camOn: cam, micOn: mic, image });
+  };
 
   const stopAll = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -1991,6 +2040,12 @@ function MovieCall({ userId }: { userId: string | null }) {
   };
 
   useEffect(() => () => { stopAll(); recRef.current?.stop(); }, []);
+  useEffect(() => {
+    pushFrame(camOn, micOn);
+    if (!camOn) return;
+    const t = window.setInterval(() => pushFrame(camOn, micOn), 3000);
+    return () => window.clearInterval(t);
+  }, [camOn, micOn]);
 
   const toggleCam = async () => { const v = !camOn; setCamOn(v); await refreshStream(v, micOn); };
   const toggleMic = async () => { const v = !micOn; setMicOn(v); await refreshStream(camOn, v); };
