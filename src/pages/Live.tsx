@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2, Link2, Copy, RefreshCw, MessageSquare, Wallet, Coins } from "lucide-react";
 import Channels, { BOX_OPTIONS, MIN_ENTRY_TOKENS_DEFAULT } from "@/components/live/Channels";
@@ -45,7 +45,9 @@ const SIGNS = ["✦", "✺", "✹", "✸", "✷", "✶", "✧", "✪", "✫", "�
 
 export default function Live() {
   const { user, loading } = useAuth();
-  const [mode, setModeRaw] = useState<Mode | null>(null);
+  const [searchParams] = useSearchParams();
+  const initialChannelId = searchParams.get("channel");
+  const [mode, setModeRaw] = useState<Mode | null>(initialChannelId ? "channels" : null);
 
   // Switching from Viewer → Previewer wipes viewer-side traces (anonymity).
   // Previewer → Viewer keeps records (allows previewers to spy on viewer surface).
@@ -187,7 +189,7 @@ export default function Live() {
   }
 
   if (mode === "channels") {
-    return <Channels onLeave={() => setMode(null)} />;
+    return <Channels onLeave={() => setMode(null)} initialChannelId={initialChannelId} />;
   }
 
   // Viewer / audience session
