@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-export type Channel = { id: string; previewer_id: string; name: string; slug: string; description: string | null; is_open: boolean; created_at: string; active_boxes?: string[] | null; multi_window?: boolean | null; min_tokens?: number | null };
+export type Channel = { id: string; previewer_id: string; name: string; slug: string; description: string | null; is_open: boolean; created_at: string; active_boxes?: string[] | null; multi_window?: boolean | null; min_tokens?: number | null; box_payload?: Record<string, unknown> | null };
 type CallRequest = { id: string; channel_id: string; viewer_id: string; previewer_id: string; story_plot: string; suggested_role: string; status: string; created_at: string };
 type ACS = { id: string; request_id: string; channel_id: string; previewer_id: string; viewer_id: string; membrane_id: string | null; scratchpad: string; created_at: string; closed_at: string | null };
 type Msg = { id: string; acs_id: string; author_id: string | null; kind: "text" | "ai" | "system" | "file"; body: string; file_path: string | null; created_at: string };
@@ -475,6 +475,8 @@ function BoxStage({ boxes, multi, channel }: { boxes: string[]; multi: boolean; 
 
 function BoxCard({ kind, channel, compact }: { kind: string; channel: Channel; compact: boolean }) {
   const meta = BOX_OPTIONS.find((b) => b.key === kind);
+  const payload = (channel.box_payload ?? {}) as Record<string, unknown>;
+  const boxData = payload[kind] as Record<string, unknown> | undefined;
   if (!meta) return null;
   return (
     <div className={`rounded-xl border border-border bg-card p-4 ${compact ? "" : "min-h-[180px]"}`}>
@@ -489,7 +491,38 @@ function BoxCard({ kind, channel, compact }: { kind: string; channel: Channel; c
         {kind === "midi" && "MIDI-Haptics grid is running on the previewer's side. Tracks export through the call space."}
         {kind === "lyrics" && "The previewer's lyrical collection is on stage. Lines & rhythm notes drop into the call space when you bond."}
       </div>
+      {boxData && <SharedBoxPayload kind={kind} data={boxData} />}
       <div className="mt-2 text-[10px] text-muted-foreground font-mono">channel /{channel.slug}</div>
+    </div>
+  );
+}
+
+function SharedBoxPayload({ kind, data }: { kind: string; data: Record<string, unknown> }) {
+  if (kind === "lyrics") {
+    const builtIn = Array.isArray(data.built_in) ? data.built_in.slice(0, 4) : [];
+    const saved = Array.isArray(data.saved) ? data.saved.slice(0, 3) : [];
+    return (
+      <div className="mt-3 rounded-lg border border-border bg-background p-3 text-xs">
+        <div className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">Shared lyric data</div>
+        {[...builtIn, ...saved.map((item) => (item as { title?: string; body?: string }).title || (item as { body?: string }).body)].filter(Boolean).map((line, i) => (
+          <div key={i} className="truncate font-mono text-foreground/90">· {String(line)}</div>
+        ))}
+      </div>
+    );
+  }
+  if (kind === "movie") {
+    const recommendations = Array.isArray(data.recommendations) ? data.recommendations.slice(0, 5) : [];
+    return (
+      <div className="mt-3 rounded-lg border border-border bg-background p-3 text-xs">
+        <div className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">Shared movie-call data</div>
+        {recommendations.map((line, i) => <div key={i} className="truncate">· {String(line)}</div>)}
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-background p-3 text-xs text-foreground/90">
+      <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">Shared box data</div>
+      {String(data.status ?? data.instruction ?? `frame: ${data.frame ?? "active"}`)}
     </div>
   );
 }
