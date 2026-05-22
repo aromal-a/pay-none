@@ -1932,3 +1932,102 @@ function MovieCall({ userId }: { userId: string | null }) {
     </div>
   );
 }
+
+function InlineCreateChannel({ userId, onCreated }: { userId: string | null; onCreated: (c: LiveChannel) => void }) {
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [minTokens, setMinTokens] = useState<number>(MIN_ENTRY_TOKENS_DEFAULT);
+  const [boxes, setBoxes] = useState<string[]>([]);
+  const [isPublic, setIsPublic] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const toggleBox = (k: string) => setBoxes((b) => (b.includes(k) ? b.filter((x) => x !== k) : [...b, k]));
+
+  const create = async () => {
+    if (!userId) { toast.error("Sign in first"); return; }
+    if (!name.trim()) { toast.error("Channel name required"); return; }
+    setBusy(true);
+    const { data, error } = await supabase
+      .from("live_channels")
+      .insert({
+        previewer_id: userId,
+        name: name.trim(),
+        slug: slugifyLive(name),
+        description: desc.trim() || null,
+        active_boxes: boxes,
+        multi_window: boxes.length > 1,
+        min_tokens: Math.max(0, Math.floor(minTokens) || MIN_ENTRY_TOKENS_DEFAULT),
+        is_open: isPublic,
+      } as never)
+      .select()
+      .single();
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Channel created (${isPublic ? "public" : "private"})`);
+    onCreated(data as LiveChannel);
+    setName(""); setDesc(""); setBoxes([]); setMinTokens(MIN_ENTRY_TOKENS_DEFAULT); setIsPublic(true);
+  };
+
+  return (
+    <div className="mt-4 space-y-3 rounded-xl border border-dashed border-primary/40 bg-background/40 p-4">
+      <div className="text-xs text-muted-foreground">
+        Create a channel to transport boxes. Toggle to public to list it in the Audience tab.
+      </div>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Channel name"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+      <textarea
+        value={desc}
+        onChange={(e) => setDesc(e.target.value)}
+        placeholder="Short description for viewers"
+        rows={2}
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+      <div>
+        <div className="mb-1 text-[11px] uppercase tracking-widest text-muted-foreground">Boxes shared at open (optional)</div>
+        <div className="flex flex-wrap gap-2">
+          {BOX_OPTIONS.map((b) => (
+            <button
+              type="button"
+              key={b.key}
+              onClick={() => toggleBox(b.key)}
+              className={`rounded-full border px-3 py-1 text-xs ${boxes.includes(b.key) ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent"}`}
+            >
+              {b.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-xs">
+          <span className="text-muted-foreground">Minimum tokens to enter</span>
+          <input
+            type="number"
+            min={0}
+            value={minTokens}
+            onChange={(e) => setMinTokens(Number(e.target.value))}
+            className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+          />
+        </label>
+        <div className="flex items-end justify-between gap-3 rounded-md border border-border bg-background/60 px-3 py-2 text-xs">
+          <div>
+            <div className="font-medium">{isPublic ? "Public" : "Private"}</div>
+            <div className="text-muted-foreground">{isPublic ? "Listed in Audience tab" : "Hidden — share by link/role later"}</div>
+          </div>
+          <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={create}
+        disabled={busy || !name.trim()}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+      >
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+        Create channel
+      </button>
+    </div>
+  );
+}
