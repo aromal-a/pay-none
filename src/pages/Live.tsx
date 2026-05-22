@@ -443,9 +443,8 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     const loadChannels = async () => {
       const { data } = await supabase
         .from("live_channels")
-        .select("id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload")
+        .select("id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload,is_open")
         .eq("previewer_id", user.id)
-        .eq("is_open", true)
         .order("created_at", { ascending: false });
       if (cancelled) return;
       const rows = (data ?? []) as LiveChannel[];
