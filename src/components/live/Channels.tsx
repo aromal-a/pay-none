@@ -221,14 +221,37 @@ function CreateChannel({ onCreated }: { onCreated: (c: Channel) => void }) {
   );
 }
 
-function ChannelRoom({ channel, isOwner, onBack, onAcsOpen }:
+function ChannelRoom({ channel: initialChannel, isOwner, onBack, onAcsOpen }:
   { channel: Channel; isOwner: boolean; onBack: () => void; onAcsOpen: (acs: ACS) => void }) {
   const { user } = useAuth();
+  const [channel, setChannel] = useState<Channel>(initialChannel);
   const [showRequest, setShowRequest] = useState(false);
   const [story, setStory] = useState("");
   const [role, setRole] = useState(ROLE_PRESETS[0]);
   const [busy, setBusy] = useState(false);
   const [myRequests, setMyRequests] = useState<CallRequest[]>([]);
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+
+  // Live-subscribe to channel updates (active_boxes / multi_window changes from previewer)
+  useEffect(() => {
+    const ch = supabase
+      .channel(`channel_row_${initialChannel.id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_channels", filter: `id=eq.${initialChannel.id}` },
+        (p) => setChannel(p.new as Channel))
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [initialChannel.id]);
+
+  // Load viewer token balance
+  useEffect(() => {
+    if (!user || isOwner) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("profiles").select("token_balance").eq("user_id", user.id).maybeSingle();
+      if (!cancelled) setTokenBalance(data?.token_balance ?? 0);
+    })();
+    return () => { cancelled = true; };
+  }, [user, isOwner]);
 
   // Subscribe to my requests in this channel and auto-open ACS on accept
   useEffect(() => {
@@ -266,86 +289,198 @@ function ChannelRoom({ channel, isOwner, onBack, onAcsOpen }:
     setStory(""); setShowRequest(false);
   };
 
+  const activeBoxes = channel.active_boxes ?? [];
+  const multi = !!channel.multi_window && activeBoxes.length > 1;
+  const minTokens = channel.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT;
+  const insufficient = !isOwner && tokenBalance !== null && tokenBalance < minTokens;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Channels
           </button>
           <div className="text-center">
             <div className="font-display text-lg font-semibold">{channel.name}</div>
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">/{channel.slug}</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">/{channel.slug} · entry {minTokens.toLocaleString()} tokens</div>
           </div>
-          <div className="text-xs text-muted-foreground">{isOwner ? "you own this" : "viewer"}</div>
+          <div className="text-xs text-muted-foreground">{isOwner ? "you own this" : `viewer · ${tokenBalance ?? "—"}`}</div>
         </div>
       </header>
 
-      <section className="mx-auto max-w-3xl px-6 py-10">
+      <section className="mx-auto max-w-5xl px-6 py-10">
         {channel.description && (
           <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">{channel.description}</p>
         )}
 
-        {!isOwner && (
-          <div className="mt-6">
-            {!showRequest ? (
-              <button onClick={() => setShowRequest(true)} className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                <MessageSquare className="h-4 w-4" /> Request movie-call
-              </button>
-            ) : (
-              <div className="rounded-xl border border-border bg-card p-4">
-                <div className="text-sm font-medium">Suggest a story plot</div>
-                <textarea value={story} onChange={(e) => setStory(e.target.value)} rows={4} placeholder="The plot you want to see acted out..." className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-                <div className="mt-3 text-xs uppercase tracking-widest text-muted-foreground">Suggested role</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {ROLE_PRESETS.map((r) => (
-                    <button key={r} onClick={() => setRole(r)} className={`rounded-full border px-3 py-1 text-xs ${role === r ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent"}`}>
-                      {r}
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <button onClick={submitRequest} disabled={busy || !story.trim()} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send
-                  </button>
-                  <button onClick={() => setShowRequest(false)} className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm hover:bg-accent">
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {myRequests.length > 0 && (
-              <div className="mt-6">
-                <div className="text-xs uppercase tracking-widest text-muted-foreground">Your requests here</div>
-                <ul className="mt-2 space-y-2">
-                  {myRequests.map((r) => (
-                    <li key={r.id} className="rounded-lg border border-border bg-card p-3 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs">{r.suggested_role}</span>
-                        <span className={`text-xs ${r.status === "accepted" ? "text-primary" : r.status === "rejected" ? "text-destructive" : "text-muted-foreground"}`}>{r.status}</span>
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-muted-foreground">{r.story_plot}</p>
-                      {r.status === "accepted" && (
-                        <OpenAcsForRequest requestId={r.id} onOpen={onAcsOpen} />
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+        {isOwner && (
+          <PreviewerBroadcastBar channel={channel} onChange={(c) => setChannel(c)} />
         )}
 
-        {isOwner && (
-          <p className="mt-6 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            You're the previewer here. Pending requests appear in your inbox below the channels list.
-          </p>
+        {!isOwner && (
+          <>
+            {insufficient ? (
+              <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-center">
+                <div className="text-sm font-medium text-destructive">Channel locked</div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  This channel needs at least {minTokens.toLocaleString()} tokens to enter. You have {tokenBalance?.toLocaleString() ?? 0}.
+                </p>
+              </div>
+            ) : activeBoxes.length === 0 ? (
+              <div className="mt-6 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                The previewer isn't sharing any box right now. Request a movie-call to open a private space.
+              </div>
+            ) : (
+              <BoxStage boxes={activeBoxes} multi={multi} channel={channel} />
+            )}
+
+            <div className="mt-6">
+              {!showRequest ? (
+                <button onClick={() => setShowRequest(true)} className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                  <MessageSquare className="h-4 w-4" /> Request movie-call
+                </button>
+              ) : (
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="text-sm font-medium">Suggest a story plot</div>
+                  <textarea value={story} onChange={(e) => setStory(e.target.value)} rows={4} placeholder="The plot you want to see acted out..." className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                  <div className="mt-3 text-xs uppercase tracking-widest text-muted-foreground">Suggested role</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {ROLE_PRESETS.map((r) => (
+                      <button key={r} onClick={() => setRole(r)} className={`rounded-full border px-3 py-1 text-xs ${role === r ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent"}`}>
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <button onClick={submitRequest} disabled={busy || !story.trim()} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send
+                    </button>
+                    <button onClick={() => setShowRequest(false)} className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm hover:bg-accent">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {myRequests.length > 0 && (
+                <div className="mt-6">
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground">Your requests here</div>
+                  <ul className="mt-2 space-y-2">
+                    {myRequests.map((r) => (
+                      <li key={r.id} className="rounded-lg border border-border bg-card p-3 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-xs">{r.suggested_role}</span>
+                          <span className={`text-xs ${r.status === "accepted" ? "text-primary" : r.status === "rejected" ? "text-destructive" : "text-muted-foreground"}`}>{r.status}</span>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-muted-foreground">{r.story_plot}</p>
+                        {r.status === "accepted" && (
+                          <OpenAcsForRequest requestId={r.id} onOpen={onAcsOpen} />
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </section>
     </div>
   );
 }
+
+function PreviewerBroadcastBar({ channel, onChange }: { channel: Channel; onChange: (c: Channel) => void }) {
+  const [busy, setBusy] = useState(false);
+  const active = channel.active_boxes ?? [];
+  const multi = !!channel.multi_window;
+
+  const update = async (patch: Partial<Channel>) => {
+    setBusy(true);
+    const { data, error } = await supabase
+      .from("live_channels")
+      .update(patch as never)
+      .eq("id", channel.id)
+      .select()
+      .single();
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    onChange(data as Channel);
+  };
+
+  const toggle = (k: string) => {
+    const next = active.includes(k) ? active.filter((x) => x !== k) : [...active, k];
+    update({ active_boxes: next, multi_window: multi && next.length > 1 });
+  };
+
+  return (
+    <div className="mt-6 rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium">Broadcast controls</div>
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{busy ? "saving…" : "live"}</div>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">Pick which boxes the audience sees right now. Toggle multi-window to show several at once (camera minimises to save space).</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {BOX_OPTIONS.map((b) => (
+          <button
+            key={b.key}
+            onClick={() => toggle(b.key)}
+            className={`rounded-full border px-3 py-1 text-xs ${active.includes(b.key) ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent"}`}
+            title={b.hint}
+          >
+            {b.label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" disabled={active.length < 2} checked={multi && active.length > 1} onChange={(e) => update({ multi_window: e.target.checked })} />
+          <span>Multi-window {active.length < 2 && <span className="text-muted-foreground">(need 2+ boxes)</span>}</span>
+        </label>
+        <span className="text-muted-foreground">· entry gate: {(channel.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens</span>
+      </div>
+    </div>
+  );
+}
+
+function BoxStage({ boxes, multi, channel }: { boxes: string[]; multi: boolean; channel: Channel }) {
+  const layout = multi ? "grid gap-4 sm:grid-cols-2" : "grid gap-4";
+  return (
+    <div className="mt-6">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-xs uppercase tracking-widest text-muted-foreground">
+          {multi ? "Multi-window · arranged" : "Now showing"}
+        </div>
+        <div className="text-[10px] text-muted-foreground">{boxes.length} box{boxes.length === 1 ? "" : "es"} live</div>
+      </div>
+      <div className={layout}>
+        {boxes.map((k) => <BoxCard key={k} kind={k} channel={channel} compact={multi} />)}
+      </div>
+    </div>
+  );
+}
+
+function BoxCard({ kind, channel, compact }: { kind: string; channel: Channel; compact: boolean }) {
+  const meta = BOX_OPTIONS.find((b) => b.key === kind);
+  if (!meta) return null;
+  return (
+    <div className={`rounded-xl border border-border bg-card p-4 ${compact ? "" : "min-h-[180px]"}`}>
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium">{meta.label}</div>
+        <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">live</span>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{meta.hint}</p>
+      <div className="mt-3 rounded-lg border border-dashed border-border bg-background/40 p-3 text-xs text-muted-foreground">
+        {kind === "board" && "Whiteboard is being drawn live by the previewer. Request a movie-call to draw together."}
+        {kind === "movie" && "Movie-call channel is open. Use Request movie-call below to enter a private call space."}
+        {kind === "midi" && "MIDI-Haptics grid is running on the previewer's side. Tracks export through the call space."}
+        {kind === "lyrics" && "The previewer's lyrical collection is on stage. Lines & rhythm notes drop into the call space when you bond."}
+      </div>
+      <div className="mt-2 text-[10px] text-muted-foreground font-mono">channel /{channel.slug}</div>
+    </div>
+  );
+}
+
 
 function OpenAcsForRequest({ requestId, onOpen }: { requestId: string; onOpen: (acs: ACS) => void }) {
   const [busy, setBusy] = useState(false);
