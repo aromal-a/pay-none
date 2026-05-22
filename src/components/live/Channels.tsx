@@ -116,11 +116,24 @@ export default function Channels({ onLeave }: { onLeave: () => void }) {
                 className="rounded-xl border border-border bg-card p-4 text-left hover:border-primary hover:bg-primary/5 transition"
               >
                 <div className="flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 rounded-full bg-destructive" />
+                  <span className={`inline-block h-2 w-2 rounded-full ${(c.active_boxes?.length ?? 0) > 0 ? "bg-primary animate-pulse" : "bg-muted-foreground/40"}`} />
                   <span className="font-medium">{c.name}</span>
+                  <span className="ml-auto text-[10px] font-mono text-muted-foreground">{(c.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()}t</span>
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground line-clamp-2">{c.description || "—"}</div>
-                <div className="mt-2 text-[10px] uppercase tracking-widest text-muted-foreground">/{c.slug}</div>
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">/{c.slug}</div>
+                  {(c.active_boxes?.length ?? 0) > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {(c.active_boxes ?? []).map((k) => {
+                        const m = BOX_OPTIONS.find((b) => b.key === k);
+                        return m ? (
+                          <span key={k} className="rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary">{m.label}</span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
               </button>
             ))}
           </div>
