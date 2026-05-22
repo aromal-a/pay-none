@@ -804,7 +804,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     const t = window.setInterval(() => { pushShareSettings(true); }, 4000);
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shareToAudience, selectedChannel?.id, sharedBoxes.join(",")]);
+  }, [shareToAudience, selectedChannel?.id, sharedBoxes.join(","), multiWindow, frame, audioOk, customLyrics.length, customRecs.length, movieShare]);
 
   return (
     <div className="min-h-screen bg-background">
