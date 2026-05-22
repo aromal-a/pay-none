@@ -801,9 +801,144 @@ function ActiveCallSpace({ acs, onClose }: { acs: ACS; onClose: () => void }) {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-6 pb-6">
+        <SharedBoxesLive channelId={acs.channel_id} isPreviewer={isPreviewer} />
+      </section>
+
       <section className="mx-auto max-w-6xl px-6 pb-10">
         <InspirationFrame acs={acs} messages={messages} canUpload={isPreviewer} bonded={bonded} />
       </section>
+    </div>
+  );
+}
+
+/**
+ * Live mirror of the boxes the previewer chose to share with this channel.
+ * Reads live_channels.active_boxes + box_payload and re-renders on every UPDATE,
+ * so the viewer literally sees what the previewer is broadcasting inside the ACS.
+ */
+function SharedBoxesLive({ channelId, isPreviewer }: { channelId: string; isPreviewer: boolean }) {
+  const [active, setActive] = useState<string[]>([]);
+  const [payload, setPayload] = useState<Record<string, any>>({});
+  const [updatedAt, setUpdatedAt] = useState<number>(Date.now());
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      const { data } = await supabase
+        .from("live_channels")
+        .select("active_boxes,box_payload")
+        .eq("id", channelId)
+        .maybeSingle();
+      if (!alive || !data) return;
+      setActive(((data as { active_boxes?: string[] | null }).active_boxes) ?? []);
+      setPayload(((data as { box_payload?: Record<string, any> | null }).box_payload) ?? {});
+      setUpdatedAt(Date.now());
+    };
+    load();
+    const ch = supabase
+      .channel(`shared_boxes_${channelId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "live_channels", filter: `id=eq.${channelId}` },
+        (p) => {
+          const next = p.new as { active_boxes?: string[] | null; box_payload?: Record<string, any> | null };
+          setActive(next.active_boxes ?? []);
+          setPayload(next.box_payload ?? {});
+          setUpdatedAt(Date.now());
+        }
+      )
+      .subscribe();
+    return () => { alive = false; supabase.removeChannel(ch); };
+  }, [channelId]);
+
+  if (!active.length) {
+    return (
+      <div className="rounded-xl border border-dashed border-border bg-card/60 p-6 text-center text-xs text-muted-foreground">
+        {isPreviewer
+          ? "No boxes pushed yet. Go to the Previewer screen and toggle 'Share my activity to live viewers' to broadcast Virtual Board, Movie-call, MIDI-Haptics or Lyrics into this call space."
+          : "Waiting for the previewer to push a box (Virtual Board, Movie-call, MIDI-Haptics or Lyrics)…"}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="text-xs uppercase tracking-widest text-muted-foreground">Live shared boxes · from previewer</div>
+        <div className="text-[10px] font-mono text-muted-foreground">synced {new Date(updatedAt).toLocaleTimeString()}</div>
+      </div>
+      <div className={`grid gap-3 ${active.length > 1 ? "md:grid-cols-2" : "grid-cols-1"}`}>
+        {active.map((key) => <BoxView key={key} k={key} payload={payload} />)}
+      </div>
+    </div>
+  );
+}
+
+function BoxView({ k, payload }: { k: string; payload: Record<string, any> }) {
+  const meta = BOX_OPTIONS.find((b) => b.key === k);
+  const data = payload?.[k] ?? {};
+  return (
+    <div className="rounded-lg border border-border bg-background/60 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-sm font-semibold">{meta?.label ?? k}</div>
+        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-primary">live</span>
+      </div>
+      {k === "board" && (
+        <div>
+          {data.image ? (
+            <img src={data.image} alt="Virtual board snapshot" className="w-full rounded-md border border-border" />
+          ) : (
+            <div className="rounded-md border border-dashed border-border bg-muted/30 p-6 text-center text-xs text-muted-foreground">Board open · no snapshot yet</div>
+          )}
+          {data.frame && <div className="mt-2 text-[10px] font-mono text-muted-foreground">frame: {String(data.frame)}</div>}
+          {data.status && <div className="mt-1 text-xs text-muted-foreground">{String(data.status)}</div>}
+        </div>
+      )}
+      {k === "movie" && (
+        <div className="space-y-2">
+          <div className="rounded-md border border-border bg-black/80 p-4 text-center text-[11px] text-muted-foreground">
+            🎥 Movie-call stage · audio + video relayed by previewer
+          </div>
+          {Array.isArray(data.recommendations) && data.recommendations.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {data.recommendations.slice(0, 8).map((r: string, i: number) => (
+                <span key={i} className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px]">{r}</span>
+              ))}
+            </div>
+          )}
+          {data.specifications && (
+            <div className="text-[10px] font-mono text-muted-foreground">
+              {Object.entries(data.specifications).map(([k2, v]) => `${k2}:${String(v)}`).join(" · ")}
+            </div>
+          )}
+        </div>
+      )}
+      {k === "midi" && (
+        <div className="space-y-2">
+          <div className="rounded-md border border-border bg-background p-3 text-xs">{data.status ?? "MIDI-Haptics ready"}</div>
+          {data.instruction && <div className="text-[11px] text-muted-foreground">{String(data.instruction)}</div>}
+        </div>
+      )}
+      {k === "lyrics" && (
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {Array.isArray(data.built_in) && data.built_in.slice(0, 4).map((l: any, i: number) => (
+            <div key={`b-${i}`} className="rounded-md border border-border bg-background p-2">
+              <div className="text-xs font-semibold">{l?.title ?? l?.name ?? "Lyric"}</div>
+              <pre className="mt-1 whitespace-pre-wrap font-sans text-[11px] text-muted-foreground">{l?.body ?? ""}</pre>
+            </div>
+          ))}
+          {Array.isArray(data.saved) && data.saved.slice(0, 4).map((l: any, i: number) => (
+            <div key={`s-${i}`} className="rounded-md border border-primary/30 bg-primary/5 p-2">
+              <div className="text-xs font-semibold">{l?.title ?? l?.name ?? "Lyric"}</div>
+              <pre className="mt-1 whitespace-pre-wrap font-sans text-[11px] text-muted-foreground">{l?.body ?? ""}</pre>
+            </div>
+          ))}
+          {!Array.isArray(data.built_in) && !Array.isArray(data.saved) && (
+            <div className="text-[11px] text-muted-foreground">No lyrics pushed yet.</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
