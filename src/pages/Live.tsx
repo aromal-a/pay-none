@@ -779,6 +779,16 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     pushShareSettings(enabled);
   };
 
+  // Auto re-publish box payload while share is on so viewers inside an
+  // Active Call Space see live updates (board snapshot, mic status, lyrics
+  // edits) without the previewer manually toggling anything.
+  useEffect(() => {
+    if (!shareToAudience || !selectedChannel || sharedBoxes.length === 0) return;
+    const t = window.setInterval(() => { pushShareSettings(true); }, 4000);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shareToAudience, selectedChannel?.id, sharedBoxes.join(",")]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
