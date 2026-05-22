@@ -763,9 +763,15 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
           </div>
 
           {myChannels.length === 0 ? (
-            <div className="mt-4 rounded-lg border border-dashed border-border bg-background/50 p-4 text-center text-xs text-muted-foreground">
-              No open previewer channel found. <button type="button" onClick={onOpenChannels} className="text-primary hover:underline">Open Channels</button> and create one first.
-            </div>
+            <InlineCreateChannel
+              userId={user?.id ?? null}
+              onCreated={(c) => {
+                setMyChannels((arr) => [c, ...arr]);
+                setShareChannelId(c.id);
+                setSharedBoxes(c.active_boxes ?? []);
+                setMultiWindow(!!c.multi_window);
+              }}
+            />
           ) : (
             <div className="mt-4 space-y-4">
               <label className="block text-xs">
@@ -782,10 +788,40 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                   className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 >
                   {myChannels.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name} /{c.slug}</option>
+                    <option key={c.id} value={c.id}>{c.name} /{c.slug} {c.is_open === false ? "· private" : "· public"}</option>
                   ))}
                 </select>
               </label>
+
+              {selectedChannel && (
+                <div className="flex flex-col gap-2 rounded-lg border border-border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-xs">
+                    <div className="font-medium">Channel visibility</div>
+                    <div className="text-muted-foreground">
+                      {selectedChannel.is_open === false
+                        ? "Private — hidden from the Audience tab."
+                        : "Public — listed for viewers with enough tokens."}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={selectedChannel.is_open === false ? "text-muted-foreground" : "text-primary"}>
+                      {selectedChannel.is_open === false ? "private" : "public"}
+                    </span>
+                    <Switch
+                      checked={selectedChannel.is_open !== false}
+                      onCheckedChange={async (next) => {
+                        const { error } = await supabase
+                          .from("live_channels")
+                          .update({ is_open: next } as never)
+                          .eq("id", selectedChannel.id);
+                        if (error) { toast.error(error.message); return; }
+                        setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, is_open: next } : c));
+                        toast.success(next ? "Channel is now public" : "Channel set to private");
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">Boxes previewer allows viewers to access</div>
@@ -826,8 +862,23 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                 </button>
               </div>
               <div className="text-[10px] text-muted-foreground">
-                Entry gate: {(selectedChannel?.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens · viewers access it from Channels.
+                Entry gate: {(selectedChannel?.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens · viewers access it from the Audience tab when public.
               </div>
+
+              <details className="rounded-lg border border-dashed border-border bg-background/50 p-3 text-xs">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">+ Create another channel</summary>
+                <div className="mt-3">
+                  <InlineCreateChannel
+                    userId={user?.id ?? null}
+                    onCreated={(c) => {
+                      setMyChannels((arr) => [c, ...arr]);
+                      setShareChannelId(c.id);
+                      setSharedBoxes(c.active_boxes ?? []);
+                      setMultiWindow(!!c.multi_window);
+                    }}
+                  />
+                </div>
+              </details>
             </div>
           )}
         </section>
