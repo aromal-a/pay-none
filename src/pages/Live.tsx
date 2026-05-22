@@ -1003,7 +1003,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
         {/* Movie-call + recommendations */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-medium"><Film className="h-4 w-4" /> Movie-call</div>
-          <MovieCall userId={user?.id ?? null} />
+          <MovieCall userId={user?.id ?? null} onShareFrame={setMovieShare} />
 
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
