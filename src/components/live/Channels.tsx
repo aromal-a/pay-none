@@ -470,10 +470,26 @@ function PreviewerBroadcastBar({ channel, onChange, onDeleted }: { channel: Chan
           <span>Multi-window {active.length < 2 && <span className="text-muted-foreground">(need 2+ boxes)</span>}</span>
         </label>
         <span className="text-muted-foreground">· entry gate: {(channel.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens</span>
+        <button
+          onClick={async () => {
+            if (!confirm(`Delete channel "${channel.name}"? This also removes all pending viewer requests and cannot be undone.`)) return;
+            setBusy(true);
+            await supabase.from("live_call_requests").delete().eq("channel_id", channel.id);
+            const { error } = await supabase.from("live_channels").delete().eq("id", channel.id);
+            setBusy(false);
+            if (error) { toast.error(error.message); return; }
+            toast.success("Channel deleted");
+            onDeleted?.();
+          }}
+          className="ml-auto inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-destructive hover:bg-destructive/20"
+        >
+          <X className="h-3 w-3" /> Delete channel
+        </button>
       </div>
     </div>
   );
 }
+
 
 function BoxStage({ boxes, multi, channel }: { boxes: string[]; multi: boolean; channel: Channel }) {
   const layout = multi ? "grid gap-4 sm:grid-cols-2" : "grid gap-4";
