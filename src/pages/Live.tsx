@@ -2022,29 +2022,44 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
   );
 }
 
-function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFrame?: (frame: { camOn: boolean; micOn: boolean; image: string | null }) => void }) {
+function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFrame?: (frame: { camOn: boolean; micOn: boolean; image: string | null; resolution: string; audio: { id: string; dataUrl: string } | null }) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef<number>(0);
+  const audioChunkRef = useRef<{ id: string; dataUrl: string } | null>(null);
   const [camOn, setCamOn] = useState(false);
   const [micOn, setMicOn] = useState(false);
   const [spkOn, setSpkOn] = useState(true);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [shieldRaised, setShieldRaised] = useState(true);
+  const [resolution, setResolution] = useState<"240p" | "360p" | "480p" | "720p">("480p");
+
+  // Resolution presets — lower = faster sync over slow viewer internet.
+  const RES_MAP: Record<string, { h: number; q: number }> = {
+    "240p": { h: 240, q: 0.4 },
+    "360p": { h: 360, q: 0.5 },
+    "480p": { h: 480, q: 0.6 },
+    "720p": { h: 720, q: 0.72 },
+  };
+
   const pushFrame = (cam: boolean, mic: boolean) => {
     let image: string | null = null;
     const video = videoRef.current;
     if (cam && video?.videoWidth && video?.videoHeight) {
+      const preset = RES_MAP[resolution];
+      const targetH = Math.min(preset.h, video.videoHeight);
+      const scale = targetH / video.videoHeight;
+      const targetW = Math.round(video.videoWidth * scale);
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
-      image = canvas.toDataURL("image/jpeg", 0.65);
+      canvas.width = targetW;
+      canvas.height = targetH;
+      canvas.getContext("2d")?.drawImage(video, 0, 0, targetW, targetH);
+      image = canvas.toDataURL("image/jpeg", preset.q);
     }
-    onShareFrame?.({ camOn: cam, micOn: mic, image });
+    onShareFrame?.({ camOn: cam, micOn: mic, image, resolution, audio: mic ? audioChunkRef.current : null });
   };
 
   const stopAll = () => {
@@ -2057,7 +2072,9 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
     stopAll();
     if (!cam && !mic) return;
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: cam, audio: mic });
+      const preset = RES_MAP[resolution];
+      const videoConstraints: MediaTrackConstraints = { height: { ideal: preset.h }, width: { ideal: Math.round(preset.h * 16 / 9) }, frameRate: { ideal: 24, max: 30 } };
+      const s = await navigator.mediaDevices.getUserMedia({ video: cam ? videoConstraints : false, audio: mic });
       streamRef.current = s;
       if (videoRef.current && cam) {
         videoRef.current.srcObject = s;
@@ -2071,12 +2088,58 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
   };
 
   useEffect(() => () => { stopAll(); recRef.current?.stop(); }, []);
+
+  // Frame push interval — tighter at lower resolution so viewer sees smoother motion.
   useEffect(() => {
     pushFrame(camOn, micOn);
-    if (!camOn) return;
-    const t = window.setInterval(() => pushFrame(camOn, micOn), 750);
+    if (!camOn && !micOn) return;
+    const interval = resolution === "720p" ? 700 : resolution === "480p" ? 500 : 350;
+    const t = window.setInterval(() => pushFrame(camOn, micOn), interval);
     return () => window.clearInterval(t);
-  }, [camOn, micOn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camOn, micOn, resolution]);
+
+  // Re-acquire stream when previewer changes resolution while a device is on.
+  useEffect(() => {
+    if (camOn || micOn) refreshStream(camOn, micOn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolution]);
+
+  // Audio streaming — slice mic into ~1.2s self-contained webm chunks and pass each
+  // one through onShareFrame so the viewer's ACS plays them back continuously.
+  useEffect(() => {
+    if (!micOn) { audioChunkRef.current = null; return; }
+    let stopped = false;
+    let active: MediaRecorder | null = null;
+
+    const recordOne = () => {
+      if (stopped) return;
+      const s = streamRef.current;
+      if (!s || s.getAudioTracks().length === 0) { setTimeout(recordOne, 500); return; }
+      const audioStream = new MediaStream(s.getAudioTracks());
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
+      try {
+        const ar = new MediaRecorder(audioStream, { mimeType: mime, audioBitsPerSecond: 24000 });
+        const parts: Blob[] = [];
+        ar.ondataavailable = (e) => { if (e.data.size) parts.push(e.data); };
+        ar.onstop = async () => {
+          if (stopped) return;
+          const blob = new Blob(parts, { type: mime });
+          const buf = await blob.arrayBuffer();
+          const u8 = new Uint8Array(buf);
+          let bin = "";
+          for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+          audioChunkRef.current = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, dataUrl: `data:${mime};base64,${btoa(bin)}` };
+          if (!stopped) recordOne();
+        };
+        active = ar;
+        ar.start();
+        setTimeout(() => { try { ar.stop(); } catch { /* ignore */ } }, 1200);
+      } catch { /* mic busy */ }
+    };
+    recordOne();
+    return () => { stopped = true; try { active?.stop(); } catch { /* ignore */ } audioChunkRef.current = null; };
+  }, [micOn]);
 
   const toggleCam = async () => { const v = !camOn; setCamOn(v); await refreshStream(v, micOn); };
   const toggleMic = async () => { const v = !micOn; setMicOn(v); await refreshStream(camOn, v); };
@@ -2131,6 +2194,9 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
             <Circle className="h-2 w-2 fill-current" /> REC
           </div>
         )}
+        <div className="absolute right-3 top-3 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-mono text-foreground/80">
+          {resolution} {micOn ? "· 🎙" : ""}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -2138,11 +2204,25 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
           <Eye className="h-3 w-3" /> Camera {camOn ? "on" : "Camera-On"}
         </button>
         <button onClick={toggleMic} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${micOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
-          <Mic className="h-3 w-3" /> Mic {micOn ? "on" : "off"}
+          <Mic className="h-3 w-3" /> Mic {micOn ? "on · streaming" : "off"}
         </button>
         <button onClick={() => setSpkOn((v) => !v)} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${spkOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
           <Radio className="h-3 w-3" /> Speaker {spkOn ? "on" : "muted"}
         </button>
+
+        <div className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs">
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Res</span>
+          {(["240p", "360p", "480p", "720p"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => setResolution(r)}
+              className={`rounded px-1.5 py-0.5 text-[10px] font-mono ${resolution === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+
         {!recording ? (
           <button onClick={startRec} disabled={busy} className="inline-flex items-center gap-1 rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20 disabled:opacity-50">
             <Circle className="h-3 w-3 fill-current" /> Record
@@ -2154,7 +2234,7 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
         )}
         {busy && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
         <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-          <AlertTriangle className="h-3 w-3" /> session-isolated · no audience link
+          <AlertTriangle className="h-3 w-3" /> compressed · viewer-adaptive
         </span>
       </div>
 
@@ -2166,16 +2246,15 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
           </button>
         </div>
         <ul className="mt-2 space-y-1">
-          <li>· Sessions &amp; session-directive guard every Previewer. Audience are consumers of traffic only — zero handshake, zero wireframe.</li>
-          <li>· Pour-text from Viewers tagged <span className="font-mono">rage · R-sector · keyboard-ratio · disrespect</span> trips the pull-back strap.</li>
-          <li>· Identity vectors (she/he/they/them/binary/non-binary/non-sensual/sensual/romantic/gay/trans) are protected vectors — never audience-facing, never queryable.</li>
-          <li>· Lock-on folders open only via greed-derivative payloads, gated by <span className="font-mono">reason · intent · tact</span>.</li>
-          <li>· Camera/Mic/Speaker streams stay local; clips persist only in your private gallery (RLS-scoped).</li>
+          <li>· Lower resolution = faster sync for viewers on slow internet. 240p / 360p / 480p / 720p adjustable any time.</li>
+          <li>· Mic-on streams compressed 24kbps Opus chunks (~1.2s) directly to the viewer's call space.</li>
+          <li>· Identity vectors and lock-on folders remain audience-shielded; only the boxes you toggle on are visible.</li>
+          <li>· Camera/Mic streams stay local outside an Active Call Space; recordings persist only in your private gallery.</li>
         </ul>
         <pre className="mt-2 whitespace-pre-wrap font-mono text-[10px] text-foreground/80">
 {`policy = protect(previewer) {
-  audience.connection = null
-  on(rage|R-sector|ratio|disrespect) -> pull_back.strap()
+  resolution = ${resolution}
+  audio.stream = ${micOn ? "live" : "off"}
   payload.differentiate({ reason, intent, tact })
   shield.${shieldRaised ? "raised" : "lowered"}
 }`}
