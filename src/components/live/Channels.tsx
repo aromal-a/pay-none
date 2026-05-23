@@ -599,6 +599,16 @@ function PreviewerInbox({ onAcsOpen }: { onAcsOpen: (acs: ACS) => void }) {
     const { error } = await supabase.rpc("reject_call_request", { p_request_id: id });
     if (error) toast.error(error.message);
   };
+  const remove = async (id: string) => {
+    // Previewer-side delete: only viewers own the row by RLS, so we mark it rejected
+    // (clears it from the pending inbox without deducting any tokens).
+    const { error } = await supabase
+      .from("live_call_requests")
+      .update({ status: "rejected", decided_at: new Date().toISOString() } as never)
+      .eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Request removed");
+  };
 
   return (
     <div className="mt-10">
@@ -608,16 +618,19 @@ function PreviewerInbox({ onAcsOpen }: { onAcsOpen: (acs: ACS) => void }) {
           <motion.div key={r.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs uppercase tracking-widest text-muted-foreground">role suggested</div>
+                <div className="text-xs uppercase tracking-widest text-muted-foreground">role suggested · viewer {r.viewer_id.slice(0, 8)}</div>
                 <div className="font-mono text-sm">{r.suggested_role}</div>
                 <p className="mt-2 text-sm">{r.story_plot}</p>
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 flex-col gap-2">
                 <button onClick={() => accept(r.id)} className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                   <Check className="h-3 w-3" /> Accept
                 </button>
                 <button onClick={() => reject(r.id)} className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-xs hover:bg-accent">
                   <X className="h-3 w-3" /> Reject
+                </button>
+                <button onClick={() => remove(r.id)} className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs text-destructive hover:bg-destructive/20">
+                  <X className="h-3 w-3" /> Delete
                 </button>
               </div>
             </div>
@@ -627,6 +640,7 @@ function PreviewerInbox({ onAcsOpen }: { onAcsOpen: (acs: ACS) => void }) {
     </div>
   );
 }
+
 
 function ActiveCallSpace({ acs, onClose }: { acs: ACS; onClose: () => void }) {
   const { user } = useAuth();
