@@ -950,35 +950,8 @@ function BoxView({ k, payload }: { k: string; payload: Record<string, any> }) {
           {data.status && <div className="mt-1 text-xs text-muted-foreground">{String(data.status)}</div>}
         </div>
       )}
-      {k === "movie" && (
-        <div className="space-y-2">
-          {data.image ? (
-            <img src={data.image} alt="Previewer camera snapshot" className="w-full rounded-md border border-border" />
-          ) : (
-            <div className="rounded-md border border-border bg-muted p-4 text-center text-[11px] text-muted-foreground">
-              🎥 Movie-call stage · camera {data.camera_on ? "on" : "off"} · mic {data.microphone_on ? "on" : "off"}
-            </div>
-          )}
-          {Array.isArray(data.recommendations) && data.recommendations.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {data.recommendations.slice(0, 8).map((r: string, i: number) => (
-                <span key={i} className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px]">{r}</span>
-              ))}
-            </div>
-          )}
-          {data.specifications && (
-            <div className="text-[10px] font-mono text-muted-foreground">
-              {Object.entries(data.specifications).map(([k2, v]) => `${k2}:${String(v)}`).join(" · ")}
-            </div>
-          )}
-        </div>
-      )}
-      {k === "midi" && (
-        <div className="space-y-2">
-          <div className="rounded-md border border-border bg-background p-3 text-xs">{data.status ?? "MIDI-Haptics ready"}</div>
-          {data.instruction && <div className="text-[11px] text-muted-foreground">{String(data.instruction)}</div>}
-        </div>
-      )}
+      {k === "movie" && <MovieBoxView data={data} />}
+      {k === "midi" && <MidiBoxView data={data} />}
       {k === "lyrics" && (
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {Array.isArray(data.built_in) && data.built_in.slice(0, 4).map((l: any, i: number) => (
@@ -1167,6 +1140,116 @@ function MessageBubble({ m, acs, meId }: { m: Msg; acs: ACS; meId?: string }) {
           <div className="whitespace-pre-wrap">{m.body}</div>
         )}
       </div>
+    </div>
+  );
+}
+
+function MovieBoxView({ data }: { data: any }) {
+  const [maxRes, setMaxRes] = useState<"auto" | "240p" | "360p" | "480p" | "720p">("auto");
+  const [muted, setMuted] = useState(false);
+  const lastAudioIdRef = useRef<string | null>(null);
+  const playerRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const chunk = data?.audio_chunk as { id: string; dataUrl: string } | null | undefined;
+    if (!chunk || muted) return;
+    if (chunk.id === lastAudioIdRef.current) return;
+    lastAudioIdRef.current = chunk.id;
+    try {
+      const a = new Audio(chunk.dataUrl);
+      playerRef.current = a;
+      a.play().catch(() => {});
+    } catch { /* ignore */ }
+  }, [data?.audio_chunk?.id, muted]);
+
+  const maxPx = maxRes === "auto" ? null : { "240p": 240, "360p": 360, "480p": 480, "720p": 720 }[maxRes];
+
+  return (
+    <div className="space-y-2">
+      {data.image ? (
+        <img
+          src={data.image}
+          alt="Previewer camera"
+          className="w-full rounded-md border border-border"
+          style={maxPx ? { maxHeight: maxPx, objectFit: "contain", width: "auto", marginInline: "auto" } : undefined}
+        />
+      ) : (
+        <div className="rounded-md border border-border bg-muted p-4 text-center text-[11px] text-muted-foreground">
+          🎥 Movie-call stage · camera {data.camera_on ? "on" : "off"} · mic {data.microphone_on ? "on" : "off"}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2 text-[10px]">
+        <span className="rounded-full border border-border bg-background px-2 py-0.5 font-mono">
+          previewer: {data.resolution ?? "?"}
+        </span>
+        {data.microphone_on && (
+          <button
+            onClick={() => setMuted((m) => !m)}
+            className={`rounded-full border border-border px-2 py-0.5 ${muted ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground"}`}
+          >
+            audio {muted ? "muted" : "live"}
+          </button>
+        )}
+        <div className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5">
+          <span className="uppercase tracking-widest text-muted-foreground">cap</span>
+          {(["auto", "240p", "360p", "480p", "720p"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => setMaxRes(r)}
+              className={`rounded px-1.5 font-mono ${maxRes === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {Array.isArray(data.recommendations) && data.recommendations.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {data.recommendations.slice(0, 8).map((r: string, i: number) => (
+            <span key={i} className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px]">{r}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MidiBoxView({ data }: { data: any }) {
+  const recordings = Array.isArray(data?.recordings) ? data.recordings : [];
+  return (
+    <div className="space-y-2">
+      <div className="rounded-md border border-border bg-background p-3 text-xs">{data?.status ?? "MIDI-Haptics ready"}</div>
+      {data?.instruction && <div className="text-[11px] text-muted-foreground">{String(data.instruction)}</div>}
+      {recordings.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            Previewer recordings · {recordings.length} clip{recordings.length === 1 ? "" : "s"} for inspection
+          </div>
+          <div className="max-h-72 space-y-2 overflow-y-auto">
+            {recordings.map((r: any) => (
+              <div key={r.id} className="rounded-md border border-border bg-background p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate text-xs font-semibold">{r.title || r.name}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {r.duration ? `${r.duration}s · ` : ""}{r.mime ?? ""}
+                    </div>
+                  </div>
+                </div>
+                {r.url && (
+                  (r.mime ?? "").startsWith("video/") ? (
+                    <video src={r.url} controls className="mt-1 w-full rounded" />
+                  ) : (
+                    <audio src={r.url} controls className="mt-1 h-8 w-full" />
+                  )
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
