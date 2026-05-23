@@ -299,6 +299,14 @@ function ChannelRoom({ channel: initialChannel, isOwner, onBack, onAcsOpen }:
   const submitRequest = async () => {
     if (!user || !story.trim()) return;
     setBusy(true);
+    // Single-request rule: a viewer can only have ONE active call request at a time
+    // across the whole platform. Delete any prior pending/accepted ones first —
+    // no tokens are deducted because per-minute billing only starts once an ACS is open.
+    await supabase
+      .from("live_call_requests")
+      .delete()
+      .eq("viewer_id", user.id)
+      .in("status", ["pending", "accepted"]);
     const { error } = await supabase.from("live_call_requests").insert({
       channel_id: channel.id,
       viewer_id: user.id,
@@ -308,9 +316,10 @@ function ChannelRoom({ channel: initialChannel, isOwner, onBack, onAcsOpen }:
     });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Movie-call request sent");
+    toast.success("Movie-call request sent · previous requests cleared");
     setStory(""); setShowRequest(false);
   };
+
 
   const activeBoxes = channel.active_boxes ?? [];
   const multi = !!channel.multi_window && activeBoxes.length > 1;
