@@ -819,7 +819,34 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     const t = window.setInterval(() => { pushShareSettings(true); }, 1000);
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shareToAudience, selectedChannel?.id, sharedBoxes.join(","), multiWindow, frame, audioOk, customLyrics.length, customRecs.length, movieShare]);
+  }, [shareToAudience, selectedChannel?.id, sharedBoxes.join(","), multiWindow, frame, audioOk, customLyrics.length, customRecs.length, movieShare, midiRecordings.length]);
+
+  // Fetch previewer recordings (audio + movie clips) so the viewer can inspect
+  // them from the MIDI box inside the Active Call Space. We sign URLs server-side
+  // (private bucket) and refresh periodically before they expire.
+  useEffect(() => {
+    if (!user || !shareToAudience || !sharedBoxes.includes("midi")) return;
+    let alive = true;
+    const load = async () => {
+      const { data } = await supabase
+        .from("previewer_recordings")
+        .select("id,name,title,storage_path,duration_seconds,mime_type")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (!alive || !data) return;
+      const signed = await Promise.all(
+        (data as any[]).map(async (r) => {
+          const { data: s } = await supabase.storage.from("previewer-audio").createSignedUrl(r.storage_path, 3600);
+          return { id: r.id, name: r.name, title: r.title, url: s?.signedUrl ?? "", duration: r.duration_seconds, mime: r.mime_type };
+        })
+      );
+      if (alive) setMidiRecordings(signed.filter((x) => x.url));
+    };
+    load();
+    const t = window.setInterval(load, 60_000 * 30);
+    return () => { alive = false; window.clearInterval(t); };
+  }, [user, shareToAudience, sharedBoxes.join(",")]);
 
   return (
     <div className="min-h-screen bg-background">
