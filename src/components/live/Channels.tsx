@@ -422,7 +422,7 @@ function ChannelRoom({ channel: initialChannel, isOwner, onBack, onAcsOpen }:
   );
 }
 
-function PreviewerBroadcastBar({ channel, onChange }: { channel: Channel; onChange: (c: Channel) => void }) {
+function PreviewerBroadcastBar({ channel, onChange, onDeleted }: { channel: Channel; onChange: (c: Channel) => void; onDeleted?: () => void }) {
   const [busy, setBusy] = useState(false);
   const active = channel.active_boxes ?? [];
   const multi = !!channel.multi_window;
