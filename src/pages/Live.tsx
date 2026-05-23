@@ -1,13 +1,50 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, ArrowLeft, Mic, Eye, Hand, Film, Music, Terminal, HelpCircle, Pencil, AlertTriangle, Eraser, Pause, Square, RotateCcw, Trash2, Save, Circle, Plus, X, Sparkles, Send, Loader2, Link2, Copy, RefreshCw, MessageSquare, Wallet, Coins } from "lucide-react";
+import {
+  Radio,
+  ArrowLeft,
+  Mic,
+  Eye,
+  Hand,
+  Film,
+  Music,
+  Terminal,
+  HelpCircle,
+  Pencil,
+  AlertTriangle,
+  Eraser,
+  Pause,
+  Square,
+  RotateCcw,
+  Trash2,
+  Save,
+  Circle,
+  Plus,
+  X,
+  Sparkles,
+  Send,
+  Loader2,
+  Link2,
+  Copy,
+  RefreshCw,
+  MessageSquare,
+  Wallet,
+  Coins,
+} from "lucide-react";
 import Channels, { BOX_OPTIONS, MIN_ENTRY_TOKENS_DEFAULT } from "@/components/live/Channels";
 import MidiHapticsResearch from "@/components/live/MidiHapticsResearch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -37,9 +74,13 @@ type LiveChannel = {
   per_minute_rate?: number | null;
 };
 
-
 const slugifyLive = (s: string) =>
-  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || `ch-${Date.now()}`;
+  s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48) || `ch-${Date.now()}`;
 
 const SIGNS = ["✦", "✺", "✹", "✸", "✷", "✶", "✧", "✪", "✫", "✬", "✭", "✮", "✯", "✰", "❂", "✣"];
 
@@ -151,9 +192,7 @@ export default function Live() {
             >
               <Eye className="h-5 w-5 text-primary" />
               <div className="mt-3 font-medium">Viewer</div>
-              <div className="mt-1 text-xs text-muted-foreground">
-                Join the audio + audience session in progress.
-              </div>
+              <div className="mt-1 text-xs text-muted-foreground">Join the audio + audience session in progress.</div>
             </button>
             <button
               onClick={() => setMode("previewer")}
@@ -176,7 +215,10 @@ export default function Live() {
               </div>
             </button>
           </div>
-          <Link to="/" className="mt-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <Link
+            to="/"
+            className="mt-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-3 w-3" /> Back home
           </Link>
         </motion.div>
@@ -197,7 +239,10 @@ export default function Live() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <button onClick={() => setMode(null)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <button
+            onClick={() => setMode(null)}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" /> Switch
           </button>
           <div className="flex items-center gap-2">
@@ -210,8 +255,14 @@ export default function Live() {
             <Radio className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Mic className="h-3 w-3" />{broadcasters.length}</span>
-            <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{viewers.length}</span>
+            <span className="flex items-center gap-1">
+              <Mic className="h-3 w-3" />
+              {broadcasters.length}
+            </span>
+            <span className="flex items-center gap-1">
+              <Eye className="h-3 w-3" />
+              {viewers.length}
+            </span>
           </div>
         </div>
       </header>
@@ -220,7 +271,12 @@ export default function Live() {
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card to-muted">
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {featured ? (
-              <motion.div key={featured.user_id} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
+              <motion.div
+                key={featured.user_id}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-center"
+              >
                 <div className="text-7xl">{featured.sign}</div>
                 <div className="mt-3 font-mono text-2xl font-bold">#{featured.number}</div>
                 <div className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">on stage</div>
@@ -241,16 +297,25 @@ export default function Live() {
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           {role === "viewer" ? (
-            <button onClick={() => setRole("broadcaster")} className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <button
+              onClick={() => setRole("broadcaster")}
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
               <Mic className="h-4 w-4" /> Go live
             </button>
           ) : (
-            <button onClick={() => setRole("viewer")} className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2 text-sm font-medium hover:bg-secondary/80">
+            <button
+              onClick={() => setRole("viewer")}
+              className="inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-2 text-sm font-medium hover:bg-secondary/80"
+            >
               <Eye className="h-4 w-4" /> Step down
             </button>
           )}
           {featured && featured.user_id !== user.id && (
-            <button onClick={sendCredit} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2 text-sm font-medium hover:bg-accent">
+            <button
+              onClick={sendCredit}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2 text-sm font-medium hover:bg-accent"
+            >
               <Hand className="h-4 w-4" /> Credit the act
             </button>
           )}
@@ -318,7 +383,15 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const [recDraft, setRecDraft] = useState("");
 
   // Saved brand payloads (persisted)
-  type BrandRow = { id: string; brand_name: string | null; brand_appeal: string | null; brand_self: string | null; api_link: string | null; api_seed: number | null; created_at: string };
+  type BrandRow = {
+    id: string;
+    brand_name: string | null;
+    brand_appeal: string | null;
+    brand_self: string | null;
+    api_link: string | null;
+    api_seed: number | null;
+    created_at: string;
+  };
   const [savedPayloads, setSavedPayloads] = useState<BrandRow[]>([]);
 
   // Brainstorm /chat — same backend (prompt-ai), token-aware, RAG/collection tags
@@ -344,7 +417,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     const { data } = await supabase.from("profiles").select("token_balance").eq("user_id", user.id).maybeSingle();
     setTokenBalance(data?.token_balance ?? 0);
   };
-  useEffect(() => { refreshBalance(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user]);
+  useEffect(() => {
+    refreshBalance(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [user]);
 
   // Hold-release confirmation dialog state
   const [releaseOpen, setReleaseOpen] = useState(false);
@@ -359,14 +434,24 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const [shareToAudience, setShareToAudience] = useState(false);
   const [multiWindow, setMultiWindow] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
-  const [movieShare, setMovieShare] = useState<{ camOn: boolean; micOn: boolean; image: string | null; resolution: string; audio: { id: string; dataUrl: string } | null }>({ camOn: false, micOn: false, image: null, resolution: "480p", audio: null });
-  const [midiRecordings, setMidiRecordings] = useState<{ id: string; name: string; title: string | null; url: string; duration: number | null; mime: string | null }[]>([]);
+  const [movieShare, setMovieShare] = useState<{
+    camOn: boolean;
+    micOn: boolean;
+    image: string | null;
+    resolution: string;
+    audio: { id: string; dataUrl: string } | null;
+  }>({ camOn: false, micOn: false, image: null, resolution: "480p", audio: null });
+  const [midiRecordings, setMidiRecordings] = useState<
+    { id: string; name: string; title: string | null; url: string; duration: number | null; mime: string | null }[]
+  >([]);
 
   useEffect(() => {
     if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
       setSessionHeld(true);
       if (navigator.vibrate) navigator.vibrate([30, 20, 60]);
-      toast("Session hold engaged", { description: `≥ ${HOLD_THRESHOLD} words · spend ${HOLD_RELEASE_COST} tokens to release` });
+      toast("Session hold engaged", {
+        description: `≥ ${HOLD_THRESHOLD} words · spend ${HOLD_RELEASE_COST} tokens to release`,
+      });
     }
   }, [brainWords, sessionHeld]);
 
@@ -407,7 +492,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       if (navigator.vibrate) navigator.vibrate(20);
       setSessionHeld(false);
       setReleaseOpen(false);
-      setUtilityNote(""); setSpeechNote(""); setViewerActivityNote("");
+      setUtilityNote("");
+      setSpeechNote("");
+      setViewerActivityNote("");
       await refreshBalance();
       toast.success("Hold released · work credited", {
         description: `${HOLD_RELEASE_COST} spent · ${HOLD_RELEASE_COST} returned to your wallet`,
@@ -420,7 +507,14 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   };
 
   // Viewer-activity spy: pending requests from viewers across this previewer's channels.
-  type ViewerPing = { id: string; story_plot: string; suggested_role: string; created_at: string; viewer_id: string; channel_id: string };
+  type ViewerPing = {
+    id: string;
+    story_plot: string;
+    suggested_role: string;
+    created_at: string;
+    viewer_id: string;
+    channel_id: string;
+  };
   const [viewerPings, setViewerPings] = useState<ViewerPing[]>([]);
   const [selectedPingIds, setSelectedPingIds] = useState<Set<string>>(new Set());
   const [acceptBusy, setAcceptBusy] = useState(false);
@@ -440,9 +534,16 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     load();
     const ch = supabase
       .channel("previewer-spy")
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_call_requests", filter: `previewer_id=eq.${user.id}` }, load)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_call_requests", filter: `previewer_id=eq.${user.id}` },
+        load,
+      )
       .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(ch); };
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
   }, [user]);
 
   // Active call spaces for this previewer — used to drip per-minute tokens from each viewer.
@@ -463,9 +564,16 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     load();
     const ch = supabase
       .channel("previewer-acs")
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_active_call_spaces", filter: `previewer_id=eq.${user.id}` }, load)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_active_call_spaces", filter: `previewer_id=eq.${user.id}` },
+        load,
+      )
       .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(ch); };
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
   }, [user]);
 
   // Every 60s, collect the per-minute reward from each active viewer.
@@ -488,28 +596,55 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const toggleSelectedPing = (id: string) => {
     setSelectedPingIds((s) => {
       const next = new Set(s);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
   const acceptSelectedPings = async () => {
-    if (selectedPingIds.size === 0) { toast.error("Tick at least one viewer to include"); return; }
+    if (selectedPingIds.size === 0) {
+      toast.error("Tick at least one viewer to include");
+      return;
+    }
     setAcceptBusy(true);
-    let ok = 0, fail = 0;
+    let ok = 0,
+      fail = 0;
     const selectedIds = Array.from(selectedPingIds);
-    const channelIds = Array.from(new Set(viewerPings.filter((p) => selectedIds.includes(p.id)).map((p) => p.channel_id)));
+    const channelIds = Array.from(
+      new Set(viewerPings.filter((p) => selectedIds.includes(p.id)).map((p) => p.channel_id)),
+    );
     for (const id of selectedPingIds) {
       const { error } = await supabase.rpc("accept_call_request", { p_request_id: id } as never);
-      if (error) fail++; else ok++;
+      if (error) fail++;
+      else ok++;
     }
     if (ok > 0 && sharedBoxes.length > 0) {
       const payload = buildSharePayload();
-      await Promise.all(channelIds.map((channelId) => supabase
-        .from("live_channels")
-        .update({ active_boxes: sharedBoxes, multi_window: multiWindow && sharedBoxes.length > 1, box_payload: payload } as never)
-        .eq("id", channelId)));
+      await Promise.all(
+        channelIds.map((channelId) =>
+          supabase
+            .from("live_channels")
+            .update({
+              active_boxes: sharedBoxes,
+              multi_window: multiWindow && sharedBoxes.length > 1,
+              box_payload: payload,
+            } as never)
+            .eq("id", channelId),
+        ),
+      );
       setShareToAudience(true);
-      setMyChannels((arr) => arr.map((c) => channelIds.includes(c.id) ? { ...c, active_boxes: sharedBoxes, multi_window: multiWindow && sharedBoxes.length > 1, box_payload: payload } : c));
+      setMyChannels((arr) =>
+        arr.map((c) =>
+          channelIds.includes(c.id)
+            ? {
+                ...c,
+                active_boxes: sharedBoxes,
+                multi_window: multiWindow && sharedBoxes.length > 1,
+                box_payload: payload,
+              }
+            : c,
+        ),
+      );
     }
     setAcceptBusy(false);
     setSelectedPingIds(new Set());
@@ -517,15 +652,15 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     if (fail) toast.error(`${fail} could not be accepted`);
   };
 
-
-
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     const loadChannels = async () => {
       const { data } = await supabase
         .from("live_channels")
-        .select("id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload,is_open,per_minute_rate")
+        .select(
+          "id,previewer_id,name,slug,description,active_boxes,multi_window,min_tokens,box_payload,is_open,per_minute_rate",
+        )
         .eq("previewer_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -543,9 +678,16 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     loadChannels();
     const ch = supabase
       .channel(`previewer_owned_channels_${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_channels", filter: `previewer_id=eq.${user.id}` }, loadChannels)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_channels", filter: `previewer_id=eq.${user.id}` },
+        loadChannels,
+      )
       .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(ch); };
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
   }, [user, shareChannelId]);
 
   // API formatter — brand({name, name_appeal, self-services}) → preview-side generator link
@@ -554,7 +696,12 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const [brandAppeal, setBrandAppeal] = useState("");
   const [brandSelf, setBrandSelf] = useState("");
   const [apiSeed, setApiSeed] = useState(() => irand(666, 9999));
-  const apiSlug = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
+  const apiSlug = (s: string) =>
+    s
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "untitled";
   const apiLink = `preview://brand/${apiSlug(brandName)}/${apiSlug(brandAppeal)}/${apiSlug(brandSelf)}?match=live-db,vm-spaces,sessions-active&pct=${apiSeed}`;
   const apiPayload = {
     brand: { name: brandName, name_appeal: brandAppeal, "self-services": brandSelf },
@@ -570,16 +717,24 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     routing: "Viewership-membrane :: admin/security-spaces",
   };
   const copyApi = async () => {
-    try { await navigator.clipboard.writeText(JSON.stringify(apiPayload, null, 2)); toast.success("API payload copied"); }
-    catch { toast.error("Copy failed"); }
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(apiPayload, null, 2));
+      toast.success("API payload copied");
+    } catch {
+      toast.error("Copy failed");
+    }
   };
 
   // Viewership membrane — previewer must paste the call to activate the vm-space
   const [membranePaste, setMembranePaste] = useState("");
   const [membraneActive, setMembraneActive] = useState(false);
   const activateMembrane = () => {
-    const ok = membranePaste.trim().includes(apiSlug(brandName) || "untitled") || membranePaste.includes(String(apiSeed));
-    if (!ok) { toast.error("Paste does not match an active call space"); return; }
+    const ok =
+      membranePaste.trim().includes(apiSlug(brandName) || "untitled") || membranePaste.includes(String(apiSeed));
+    if (!ok) {
+      toast.error("Paste does not match an active call space");
+      return;
+    }
     setMembraneActive(true);
     toast.success("Viewership membrane: call accepted (policy-provisional)");
   };
@@ -597,7 +752,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     if (c) c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
   };
   useEffect(() => {
-    const onVis = () => { if (document.visibilityState === "hidden") wipe(); };
+    const onVis = () => {
+      if (document.visibilityState === "hidden") wipe();
+    };
     document.addEventListener("visibilitychange", onVis);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
@@ -614,7 +771,11 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
         supabase.from("previewer_brain_messages").select("role,content").order("created_at", { ascending: true }),
         supabase.from("previewer_lyrics").select("id,name,title,body").order("created_at", { ascending: false }),
         supabase.from("previewer_recommendations").select("id,label").order("created_at", { ascending: false }),
-        supabase.from("previewer_brand_payloads").select("id,brand_name,brand_appeal,brand_self,api_link,api_seed,created_at").order("created_at", { ascending: false }).limit(20),
+        supabase
+          .from("previewer_brand_payloads")
+          .select("id,brand_name,brand_appeal,brand_self,api_link,api_seed,created_at")
+          .order("created_at", { ascending: false })
+          .limit(20),
       ]);
       if (cancelled) return;
       if (b.data) setBrainMsgs(b.data.map((d) => ({ role: d.role as "user" | "assistant", content: d.content })));
@@ -622,12 +783,15 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       if (r.data) setCustomRecs(r.data as RecRow[]);
       if (p.data) setSavedPayloads(p.data as BrandRow[]);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const testAudio = async () => {
     try {
-      const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+      const Ctx =
+        window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new Ctx();
       const o = ctx.createOscillator();
       const g = ctx.createGain();
@@ -635,7 +799,10 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       o.frequency.value = 440;
       o.connect(g).connect(ctx.destination);
       o.start();
-      setTimeout(() => { o.stop(); ctx.close(); }, 350);
+      setTimeout(() => {
+        o.stop();
+        ctx.close();
+      }, 350);
       setAudioOk(true);
     } catch {
       setAudioOk(false);
@@ -647,8 +814,11 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     const cmd = termInput.trim();
     if (!cmd) return;
     let out = "";
-    if (cmd === "clear") { setTermLog([]); setTermInput(""); return; }
-    else if (cmd === "ping") out = "pong (≈12ms, no SLA)";
+    if (cmd === "clear") {
+      setTermLog([]);
+      setTermInput("");
+      return;
+    } else if (cmd === "ping") out = "pong (≈12ms, no SLA)";
     else if (cmd.startsWith("echo ")) out = cmd.slice(5);
     else if (cmd === "whoami") out = "previewer — temporary registration";
     else out = `command not found: ${cmd}`;
@@ -667,8 +837,10 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   };
   const moveDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!drawing.current || !last.current) return;
-    const c = canvasRef.current; if (!c) return;
-    const ctx = c.getContext("2d"); if (!ctx) return;
+    const c = canvasRef.current;
+    if (!c) return;
+    const ctx = c.getContext("2d");
+    if (!ctx) return;
     const p = pos(e);
     ctx.strokeStyle = frame === "white" ? "#000" : "#fff";
     ctx.lineWidth = 2;
@@ -679,9 +851,13 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     ctx.stroke();
     last.current = p;
   };
-  const endDraw = () => { drawing.current = false; last.current = null; };
+  const endDraw = () => {
+    drawing.current = false;
+    last.current = null;
+  };
   const clearBoard = () => {
-    const c = canvasRef.current; if (!c) return;
+    const c = canvasRef.current;
+    if (!c) return;
     c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
   };
 
@@ -702,7 +878,11 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     setBrainInput("");
     setBrainBusy(true);
     // persist user msg (fire and forget)
-    if (user) supabase.from("previewer_brain_messages").insert({ user_id: user.id, role: "user", content: text }).then(() => {});
+    if (user)
+      supabase
+        .from("previewer_brain_messages")
+        .insert({ user_id: user.id, role: "user", content: text })
+        .then(() => {});
     try {
       const { data, error } = await supabase.functions.invoke("prompt-ai", {
         body: {
@@ -720,7 +900,11 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       const reply = (data as { reply?: string; error?: string })?.reply ?? "";
       if (!reply) throw new Error((data as { error?: string })?.error || "no reply");
       setBrainMsgs((m) => [...m, { role: "assistant", content: reply }]);
-      if (user) supabase.from("previewer_brain_messages").insert({ user_id: user.id, role: "assistant", content: reply }).then(() => {});
+      if (user)
+        supabase
+          .from("previewer_brain_messages")
+          .insert({ user_id: user.id, role: "assistant", content: reply })
+          .then(() => {});
     } catch (err) {
       toast.error("Brainstorm unavailable", {
         description: err instanceof Error ? err.message : "try again shortly",
@@ -732,12 +916,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     }
   };
 
-  const lyrics = [
-    "Frame-pour, letter-references, IOP",
-    "Onset, drive — auto.bahn, creamy layer-call",
-    "New-grand, new-miss, new-miss-drive",
-    "Crowd-source the chorus; the chorus is you",
-  ];
+  const lyrics = [""];
 
   const faq = [
     { q: "Is my preview saved?", a: "No. Terms are temporary — sessions don't persist." },
@@ -745,7 +924,10 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
     { q: "Will I appear in the audience?", a: "Not while previewing. Switch to viewer to join." },
   ];
 
-  const leave = () => { wipe(); onLeave(); };
+  const leave = () => {
+    wipe();
+    onLeave();
+  };
 
   const selectedChannel = myChannels.find((c) => c.id === shareChannelId) ?? null;
   const copyPrivateShareLink = async () => {
@@ -802,8 +984,22 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       } as never)
       .eq("id", selectedChannel.id);
     setShareBusy(false);
-    if (error) { toast.error(error.message); return; }
-    setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, active_boxes: nextBoxes, multi_window: enabled && multiWindow && nextBoxes.length > 1, box_payload: buildSharePayload() } : c));
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setMyChannels((arr) =>
+      arr.map((c) =>
+        c.id === selectedChannel.id
+          ? {
+              ...c,
+              active_boxes: nextBoxes,
+              multi_window: enabled && multiWindow && nextBoxes.length > 1,
+              box_payload: buildSharePayload(),
+            }
+          : c,
+      ),
+    );
     toast.success(enabled ? "Activity shared to live viewers" : "Audience sharing stopped");
   };
   const handleShareSwitch = (enabled: boolean) => {
@@ -816,10 +1012,23 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   // edits) without the previewer manually toggling anything.
   useEffect(() => {
     if (!shareToAudience || !selectedChannel || sharedBoxes.length === 0) return;
-    const t = window.setInterval(() => { pushShareSettings(true); }, 1000);
+    const t = window.setInterval(() => {
+      pushShareSettings(true);
+    }, 1000);
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shareToAudience, selectedChannel?.id, sharedBoxes.join(","), multiWindow, frame, audioOk, customLyrics.length, customRecs.length, movieShare, midiRecordings.length]);
+  }, [
+    shareToAudience,
+    selectedChannel?.id,
+    sharedBoxes.join(","),
+    multiWindow,
+    frame,
+    audioOk,
+    customLyrics.length,
+    customRecs.length,
+    movieShare,
+    midiRecordings.length,
+  ]);
 
   // Fetch previewer recordings (audio + movie clips) so the viewer can inspect
   // them from the MIDI box inside the Active Call Space. We sign URLs server-side
@@ -838,21 +1047,34 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       const signed = await Promise.all(
         (data as any[]).map(async (r) => {
           const { data: s } = await supabase.storage.from("previewer-audio").createSignedUrl(r.storage_path, 3600);
-          return { id: r.id, name: r.name, title: r.title, url: s?.signedUrl ?? "", duration: r.duration_seconds, mime: r.mime_type };
-        })
+          return {
+            id: r.id,
+            name: r.name,
+            title: r.title,
+            url: s?.signedUrl ?? "",
+            duration: r.duration_seconds,
+            mime: r.mime_type,
+          };
+        }),
       );
       if (alive) setMidiRecordings(signed.filter((x) => x.url));
     };
     load();
     const t = window.setInterval(load, 60_000 * 30);
-    return () => { alive = false; window.clearInterval(t); };
+    return () => {
+      alive = false;
+      window.clearInterval(t);
+    };
   }, [user, shareToAudience, sharedBoxes.join(",")]);
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <button onClick={leave} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <button
+            onClick={leave}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" /> Switch
           </button>
           <div className="flex items-center gap-2">
@@ -894,8 +1116,14 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-xs">
-              <span className={shareToAudience ? "text-primary" : "text-muted-foreground"}>{shareToAudience ? "sharing" : "private"}</span>
-              <Switch checked={shareToAudience} onCheckedChange={handleShareSwitch} disabled={shareBusy || !selectedChannel || sharedBoxes.length === 0} />
+              <span className={shareToAudience ? "text-primary" : "text-muted-foreground"}>
+                {shareToAudience ? "sharing" : "private"}
+              </span>
+              <Switch
+                checked={shareToAudience}
+                onCheckedChange={handleShareSwitch}
+                disabled={shareBusy || !selectedChannel || sharedBoxes.length === 0}
+              />
             </div>
           </div>
 
@@ -925,7 +1153,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                   className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 >
                   {myChannels.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name} /{c.slug} {c.is_open === false ? "· private" : "· public"}</option>
+                    <option key={c.id} value={c.id}>
+                      {c.name} /{c.slug} {c.is_open === false ? "· private" : "· public"}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -959,8 +1189,13 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                             .from("live_channels")
                             .update({ is_open: next } as never)
                             .eq("id", selectedChannel.id);
-                          if (error) { toast.error(error.message); return; }
-                          setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, is_open: next } : c));
+                          if (error) {
+                            toast.error(error.message);
+                            return;
+                          }
+                          setMyChannels((arr) =>
+                            arr.map((c) => (c.id === selectedChannel.id ? { ...c, is_open: next } : c)),
+                          );
                           toast.success(next ? "Channel is now public" : "Channel set to private");
                         }}
                       />
@@ -970,7 +1205,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
               )}
 
               <div>
-                <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">Boxes previewer allows viewers to access</div>
+                <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Boxes previewer allows viewers to access
+                </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {BOX_OPTIONS.map((box) => {
                     const enabled = sharedBoxes.includes(box.key);
@@ -985,7 +1222,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                           <span className="block text-sm font-medium">{box.label}</span>
                           <span className="block text-[11px]">{box.hint}</span>
                         </span>
-                        <span className={`h-2.5 w-2.5 rounded-full ${enabled ? "bg-primary" : "bg-muted-foreground/40"}`} />
+                        <span
+                          className={`h-2.5 w-2.5 rounded-full ${enabled ? "bg-primary" : "bg-muted-foreground/40"}`}
+                        />
                       </button>
                     );
                   })}
@@ -994,7 +1233,12 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
 
               <div className="flex flex-col gap-3 rounded-lg border border-border bg-background/50 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input type="checkbox" checked={multiWindow} disabled={sharedBoxes.length < 2} onChange={(e) => setMultiWindow(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={multiWindow}
+                    disabled={sharedBoxes.length < 2}
+                    onChange={(e) => setMultiWindow(e.target.checked)}
+                  />
                   Multiple windows for selected boxes
                 </label>
                 <button
@@ -1008,11 +1252,14 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                 </button>
               </div>
               <div className="text-[10px] text-muted-foreground">
-                Entry gate: {(selectedChannel?.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens · viewers access it from the Audience tab when public.
+                Entry gate: {(selectedChannel?.min_tokens ?? MIN_ENTRY_TOKENS_DEFAULT).toLocaleString()} tokens ·
+                viewers access it from the Audience tab when public.
               </div>
 
               <details className="rounded-lg border border-dashed border-border bg-background/50 p-3 text-xs">
-                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">+ Create another channel</summary>
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                  + Create another channel
+                </summary>
                 <div className="mt-3">
                   <InlineCreateChannel
                     userId={user?.id ?? null}
@@ -1032,7 +1279,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
         {/* Whiteboard — new_open(.pen, classics) */}
         <section className="rounded-2xl border border-border bg-card p-6 text-center mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm font-medium"><Pencil className="h-4 w-4" /> Virtual Board</div>
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Pencil className="h-4 w-4" /> Virtual Board
+            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setFrame(frame === "white" ? "black" : "white")}
@@ -1040,13 +1289,21 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
               >
                 Frame: {frame}
               </button>
-              <button onClick={clearBoard} className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-accent">
+              <button
+                onClick={clearBoard}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
+              >
                 <Eraser className="h-3 w-3" /> Clear
               </button>
             </div>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground text-center">Pen · classics. Agreement = Black-Bird, Features = migrations. Rebase. = Function(). &nbsp; Board empties on screen-off.</p>
-          <div className={`mt-3 rounded-xl border border-border overflow-hidden mx-auto ${frame === "white" ? "bg-white" : "bg-black"}`}>
+          <p className="mt-1 text-[11px] text-muted-foreground text-center">
+            Pen · classics. Agreement = Black-Bird, Features = migrations. Rebase. = Function(). &nbsp; Board empties on
+            screen-off.
+          </p>
+          <div
+            className={`mt-3 rounded-xl border border-border overflow-hidden mx-auto ${frame === "white" ? "bg-white" : "bg-black"}`}
+          >
             <canvas
               ref={canvasRef}
               width={900}
@@ -1063,9 +1320,10 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
 
         {/* Movie-call + recommendations */}
         <section className="rounded-2xl border border-border bg-card p-6">
-          <div className="flex items-center gap-2 text-sm font-medium"><Film className="h-4 w-4" /> Movie-call</div>
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Film className="h-4 w-4" /> Movie-call
+          </div>
           <MovieCall userId={user?.id ?? null} onShareFrame={setMovieShare} />
-
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border bg-background p-3">
@@ -1073,7 +1331,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                 <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Recommendations</div>
               </div>
               <ul className="mt-2 space-y-1 text-xs">
-                {builtinRecs.map((l, i) => <li key={i}>· {l}</li>)}
+                {builtinRecs.map((l, i) => (
+                  <li key={i}>· {l}</li>
+                ))}
                 {customRecs.map((r) => (
                   <li key={r.id} className="flex items-center gap-2 group">
                     <span className="flex-1">· {r.label}</span>
@@ -1100,7 +1360,10 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                     .insert({ user_id: user.id, label: text })
                     .select("id,label")
                     .single();
-                  if (error) { toast.error("Couldn't save"); return; }
+                  if (error) {
+                    toast.error("Couldn't save");
+                    return;
+                  }
                   setCustomRecs((a) => [data as RecRow, ...a]);
                   setRecDraft("");
                 }}
@@ -1112,20 +1375,31 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                   placeholder="add your own…"
                   className="flex-1 rounded-md border border-border bg-card px-2 py-1 text-[11px] focus:outline-none focus:border-primary"
                 />
-                <button className="rounded-md border border-border bg-card px-2 py-1 text-[11px] hover:bg-accent" aria-label="Add recommendation">
+                <button
+                  className="rounded-md border border-border bg-card px-2 py-1 text-[11px] hover:bg-accent"
+                  aria-label="Add recommendation"
+                >
                   <Plus className="h-3 w-3" />
                 </button>
               </form>
             </div>
             <div className="rounded-lg border border-border bg-background p-3">
-              <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Specifications · directions</div>
+              <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                Specifications · directions
+              </div>
               <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-xs font-mono">
-                <dt className="text-muted-foreground">map</dt><dd>console</dd>
-                <dt className="text-muted-foreground">reason</dt><dd>anonymity</dd>
-                <dt className="text-muted-foreground">privacy</dt><dd className="text-destructive">insecure()</dd>
-                <dt className="text-muted-foreground">letter</dt><dd>off · new-Parablox</dd>
-                <dt className="text-muted-foreground">aspect</dt><dd>16:9 · 1080p</dd>
-                <dt className="text-muted-foreground">latency</dt><dd>best-effort</dd>
+                <dt className="text-muted-foreground">map</dt>
+                <dd>console</dd>
+                <dt className="text-muted-foreground">reason</dt>
+                <dd>anonymity</dd>
+                <dt className="text-muted-foreground">privacy</dt>
+                <dd className="text-destructive">insecure()</dd>
+                <dt className="text-muted-foreground">letter</dt>
+                <dd>off · new-Parablox</dd>
+                <dt className="text-muted-foreground">aspect</dt>
+                <dd>16:9 · 1080p</dd>
+                <dt className="text-muted-foreground">latency</dt>
+                <dd>best-effort</dd>
               </dl>
             </div>
           </div>
@@ -1138,21 +1412,32 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
         {/* Audio integration test — mic recorder */}
         <MicTest audioOk={audioOk} onTone={testAudio} userId={user?.id ?? null} />
 
-
         {/* Lyrics */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium"><Music className="h-4 w-4" /> Lyrical collection</div>
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Music className="h-4 w-4" /> Lyrical collection
+            </div>
             <button
               onClick={() => setShowLyricForm((v) => !v)}
               className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
               aria-label="Add lyrics or rhythm annotation"
             >
-              {showLyricForm ? <><X className="h-3 w-3" /> Close</> : <><Plus className="h-3 w-3" /> Add</>}
+              {showLyricForm ? (
+                <>
+                  <X className="h-3 w-3" /> Close
+                </>
+              ) : (
+                <>
+                  <Plus className="h-3 w-3" /> Add
+                </>
+              )}
             </button>
           </div>
           <ul className="mt-3 space-y-1 text-sm text-muted-foreground font-mono">
-            {lyrics.map((l, i) => <li key={i}>· {l}</li>)}
+            {lyrics.map((l, i) => (
+              <li key={i}>· {l}</li>
+            ))}
           </ul>
 
           {customLyrics.length > 0 && (
@@ -1193,9 +1478,14 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                   .insert({ user_id: user.id, name, title, body: lyricBody, kind: "lyric" })
                   .select("id,name,title,body")
                   .single();
-                if (error) { toast.error("Couldn't save lyric"); return; }
+                if (error) {
+                  toast.error("Couldn't save lyric");
+                  return;
+                }
                 setCustomLyrics((arr) => [data as LyricRow, ...arr]);
-                setLyricName(""); setLyricTitle(""); setLyricBody("");
+                setLyricName("");
+                setLyricTitle("");
+                setLyricBody("");
                 setShowLyricForm(false);
               }}
               className="mt-4 space-y-2 rounded-lg border border-dashed border-border bg-background/40 p-3"
@@ -1232,9 +1522,15 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
 
         {/* Terminal */}
         <section className="rounded-2xl border border-border bg-card p-6">
-          <div className="flex items-center gap-2 text-sm font-medium"><Terminal className="h-4 w-4" /> Terminal test</div>
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Terminal className="h-4 w-4" /> Terminal test
+          </div>
           <div className="mt-3 rounded-lg bg-background border border-border p-3 font-mono text-xs h-48 overflow-auto">
-            {termLog.map((line, i) => <div key={i} className="whitespace-pre-wrap">{line}</div>)}
+            {termLog.map((line, i) => (
+              <div key={i} className="whitespace-pre-wrap">
+                {line}
+              </div>
+            ))}
           </div>
           <form onSubmit={runTerm} className="mt-2 flex gap-2">
             <span className="font-mono text-sm text-muted-foreground self-center">$</span>
@@ -1256,14 +1552,18 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
             </div>
             <div className="flex flex-wrap gap-1">
               {brainTags.map((t) => (
-                <span key={t} className="rounded-md border border-border bg-background/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                <span
+                  key={t}
+                  className="rounded-md border border-border bg-background/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
+                >
                   {t}
                 </span>
               ))}
             </div>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Same back-end as DM tokens · retrieval-rag : collection · touch pml/ppl/l-si · CI-clang · CD-Outlet. Session-only, wiped on screen-off.
+            Same back-end as DM tokens · retrieval-rag : collection · touch pml/ppl/l-si · CI-clang · CD-Outlet.
+            Session-only, wiped on screen-off.
           </p>
           <div className="mt-3 rounded-lg bg-background border border-border p-3 h-56 overflow-auto space-y-2 text-sm">
             {brainMsgs.length === 0 ? (
@@ -1332,30 +1632,55 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
             </div>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Payload scope: brand-recruitments · bank-account details · model-set policies · regex.call = <code className="font-mono">/GI|Generative/i</code> · accept.call = <code className="font-mono">policy-provisional</code> · scroll() = public · selection = alternatives. % = irand(666, 9999), session-only.
+            Payload scope: brand-recruitments · bank-account details · model-set policies · regex.call ={" "}
+            <code className="font-mono">/GI|Generative/i</code> · accept.call ={" "}
+            <code className="font-mono">policy-provisional</code> · scroll() = public · selection = alternatives. % =
+            irand(666, 9999), session-only.
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            <input value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="name"
-              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary" />
-            <input value={brandAppeal} onChange={(e) => setBrandAppeal(e.target.value)} placeholder="name_appeal"
-              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary" />
-            <input value={brandSelf} onChange={(e) => setBrandSelf(e.target.value)} placeholder="self-services"
-              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary" />
+            <input
+              value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
+              placeholder="name"
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary"
+            />
+            <input
+              value={brandAppeal}
+              onChange={(e) => setBrandAppeal(e.target.value)}
+              placeholder="name_appeal"
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary"
+            />
+            <input
+              value={brandSelf}
+              onChange={(e) => setBrandSelf(e.target.value)}
+              placeholder="self-services"
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-primary"
+            />
           </div>
           <div className="mt-3 rounded-lg bg-background border border-border p-3">
             <div className="flex items-center justify-between gap-2">
               <code className="text-xs font-mono break-all text-foreground">{apiLink}</code>
-              <span className="shrink-0 rounded-md border border-border bg-background/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">% {apiSeed}</span>
+              <span className="shrink-0 rounded-md border border-border bg-background/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                % {apiSeed}
+              </span>
             </div>
-            <pre className="mt-2 text-[11px] font-mono text-muted-foreground overflow-auto">{JSON.stringify(apiPayload, null, 2)}</pre>
+            <pre className="mt-2 text-[11px] font-mono text-muted-foreground overflow-auto">
+              {JSON.stringify(apiPayload, null, 2)}
+            </pre>
           </div>
           <div className="mt-2 flex gap-2">
-            <button type="button" onClick={() => setApiSeed(irand(666, 9999))}
-              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-accent">
+            <button
+              type="button"
+              onClick={() => setApiSeed(irand(666, 9999))}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-accent"
+            >
               <RefreshCw className="h-3 w-3" /> regenerate %
             </button>
-            <button type="button" onClick={copyApi}
-              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90">
+            <button
+              type="button"
+              onClick={copyApi}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90"
+            >
               <Copy className="h-3 w-3" /> copy payload
             </button>
             <button
@@ -1375,11 +1700,15 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                   })
                   .select("id,brand_name,brand_appeal,brand_self,api_link,api_seed,created_at")
                   .single();
-                if (error) { toast.error("Save failed"); return; }
+                if (error) {
+                  toast.error("Save failed");
+                  return;
+                }
                 setSavedPayloads((a) => [data as BrandRow, ...a]);
                 toast.success("Brand payload saved");
               }}
-              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-accent">
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-accent"
+            >
               <Save className="h-3 w-3" /> save payload
             </button>
           </div>
@@ -1421,7 +1750,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
           <div className="mt-4 rounded-lg border border-border bg-background/40 p-3">
             <div className="flex items-center justify-between">
               <div className="text-xs font-medium">Viewership membrane · active call space</div>
-              <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-mono ${membraneActive ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}>
+              <span
+                className={`rounded-md px-1.5 py-0.5 text-[10px] font-mono ${membraneActive ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
+              >
                 {membraneActive ? "ACCEPTED" : "idle"}
               </span>
             </div>
@@ -1429,10 +1760,17 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
               Previewer-consented vm-space. Activates only when you manually paste the call below — no auto-routing.
             </p>
             <div className="mt-2 flex gap-2">
-              <input value={membranePaste} onChange={(e) => setMembranePaste(e.target.value)} placeholder="paste generator-link or % seed"
-                className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-primary" />
-              <button type="button" onClick={activateMembrane}
-                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90">
+              <input
+                value={membranePaste}
+                onChange={(e) => setMembranePaste(e.target.value)}
+                placeholder="paste generator-link or % seed"
+                className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={activateMembrane}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:opacity-90"
+              >
                 accept call
               </button>
             </div>
@@ -1440,33 +1778,53 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
 
           {/* Admin / safeguards notice */}
           <div className="mt-3 rounded-lg border border-border bg-background/40 p-3 text-[11px] text-muted-foreground space-y-1">
-            <div className="flex items-center gap-1 text-foreground"><AlertTriangle className="h-3 w-3" /> Admin-representative section · restricted</div>
-            <div>Back-end admin/security spaces handle abuse-detection, cyber-fail/faulted-scale checks, deep-morphology probes (pixel-manipulation, IP records).</div>
-            <div>No screen-recording (previewer privacy-protection policy). Clients are coded; codes claim only on on-screen action sequences. Local pixel-frequency deltas feed traffic/input telemetry.</div>
-            <div>Logged-in users pass active model-representation + character-complexity encoding to refactor each session. This pane is not exposed to end users.</div>
+            <div className="flex items-center gap-1 text-foreground">
+              <AlertTriangle className="h-3 w-3" /> Admin-representative section · restricted
+            </div>
+            <div>
+              Back-end admin/security spaces handle abuse-detection, cyber-fail/faulted-scale checks, deep-morphology
+              probes (pixel-manipulation, IP records).
+            </div>
+            <div>
+              No screen-recording (previewer privacy-protection policy). Clients are coded; codes claim only on
+              on-screen action sequences. Local pixel-frequency deltas feed traffic/input telemetry.
+            </div>
+            <div>
+              Logged-in users pass active model-representation + character-complexity encoding to refactor each session.
+              This pane is not exposed to end users.
+            </div>
           </div>
         </section>
-
 
         {/* Viewer activity spy — pings from viewers across this previewer's channels */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium"><Eye className="h-4 w-4" /> Viewer activity</div>
-            <span className="text-[10px] font-mono text-muted-foreground">{viewerPings.length} pending · {activeCalls.length} live</span>
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Eye className="h-4 w-4" /> Viewer activity
+            </div>
+            <span className="text-[10px] font-mono text-muted-foreground">
+              {viewerPings.length} pending · {activeCalls.length} live
+            </span>
           </div>
           {viewerPings.length === 0 ? (
-            <p className="mt-3 text-xs text-muted-foreground">No viewer pings right now. Live requests appear here in real time.</p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              No viewer pings right now. Live requests appear here in real time.
+            </p>
           ) : (
             <>
               <p className="mt-3 text-[11px] text-muted-foreground">
-                Tick the audiences you want to include, then start sharing. While their call is live, the channel's per-minute rate is auto-transferred from each viewer's wallet to yours every 60 seconds.
+                Tick the audiences you want to include, then start sharing. While their call is live, the channel's
+                per-minute rate is auto-transferred from each viewer's wallet to yours every 60 seconds.
               </p>
               <ul className="mt-3 space-y-2">
                 {viewerPings.map((p) => {
                   const checked = selectedPingIds.has(p.id);
                   const ch = myChannels.find((c) => c.id === p.channel_id);
                   return (
-                    <li key={p.id} className={`rounded-md border px-3 py-2 text-xs transition ${checked ? "border-primary bg-primary/5" : "border-border bg-background/50"}`}>
+                    <li
+                      key={p.id}
+                      className={`rounded-md border px-3 py-2 text-xs transition ${checked ? "border-primary bg-primary/5" : "border-border bg-background/50"}`}
+                    >
                       <label className="flex items-start gap-3 cursor-pointer">
                         <input
                           type="checkbox"
@@ -1477,12 +1835,15 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-mono text-[10px] text-primary">{p.suggested_role}</span>
-                            <span className="text-[10px] text-muted-foreground">{new Date(p.created_at).toLocaleTimeString()}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(p.created_at).toLocaleTimeString()}
+                            </span>
                           </div>
                           <div className="mt-1 text-foreground line-clamp-2">{p.story_plot}</div>
                           {ch && (
                             <div className="mt-1 text-[10px] text-muted-foreground">
-                              channel: <span className="font-mono">{ch.name}</span> · rate: {ch.per_minute_rate ?? 50} tokens/min
+                              channel: <span className="font-mono">{ch.name}</span> · rate: {ch.per_minute_rate ?? 50}{" "}
+                              tokens/min
                             </div>
                           )}
                         </div>
@@ -1517,7 +1878,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
             <div className="mt-4 flex flex-col gap-2 rounded-lg border border-dashed border-border bg-background/40 p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="font-medium">Per-minute reward · {selectedChannel.name}</div>
-                <div className="text-[10px] text-muted-foreground">Charged to each accepted viewer every minute, credited to you.</div>
+                <div className="text-[10px] text-muted-foreground">
+                  Charged to each accepted viewer every minute, credited to you.
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -1527,7 +1890,9 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
                   value={selectedChannel.per_minute_rate ?? 50}
                   onChange={async (e) => {
                     const v = Math.max(0, Math.floor(Number(e.target.value) || 0));
-                    setMyChannels((arr) => arr.map((c) => c.id === selectedChannel.id ? { ...c, per_minute_rate: v } : c));
+                    setMyChannels((arr) =>
+                      arr.map((c) => (c.id === selectedChannel.id ? { ...c, per_minute_rate: v } : c)),
+                    );
                     const { error } = await supabase
                       .from("live_channels")
                       .update({ per_minute_rate: v } as never)
@@ -1543,13 +1908,20 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
 
           {activeCalls.length > 0 && (
             <div className="mt-4">
-              <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">Live calls earning per minute</div>
+              <div className="mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">
+                Live calls earning per minute
+              </div>
               <ul className="space-y-1">
                 {activeCalls.map((a) => {
                   const ch = myChannels.find((c) => c.id === a.channel_id);
                   return (
-                    <li key={a.id} className="flex items-center justify-between rounded-md border border-border bg-background/50 px-3 py-2 text-[11px]">
-                      <span className="font-mono text-muted-foreground truncate">viewer · {a.viewer_id.slice(0, 8)}…</span>
+                    <li
+                      key={a.id}
+                      className="flex items-center justify-between rounded-md border border-border bg-background/50 px-3 py-2 text-[11px]"
+                    >
+                      <span className="font-mono text-muted-foreground truncate">
+                        viewer · {a.viewer_id.slice(0, 8)}…
+                      </span>
                       <span className="text-primary">+{ch?.per_minute_rate ?? 50} / min</span>
                     </li>
                   );
@@ -1559,10 +1931,13 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
           )}
         </section>
 
-
         {/* FAQ / Q&A */}
-        <section className={`rounded-2xl border border-border bg-card p-6 relative ${sessionHeld ? "opacity-40 pointer-events-none" : ""}`}>
-          <div className="flex items-center gap-2 text-sm font-medium"><HelpCircle className="h-4 w-4" /> Q&amp;A · FAQ</div>
+        <section
+          className={`rounded-2xl border border-border bg-card p-6 relative ${sessionHeld ? "opacity-40 pointer-events-none" : ""}`}
+        >
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <HelpCircle className="h-4 w-4" /> Q&amp;A · FAQ
+          </div>
           <ul className="mt-3 space-y-3">
             {faq.map((f, i) => (
               <li key={i}>
@@ -1590,20 +1965,24 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
               <Coins className="h-4 w-4 text-primary" /> Release session hold
             </DialogTitle>
             <DialogDescription>
-              You are about to spend <span className="font-mono text-foreground">{HOLD_RELEASE_COST}</span> tokens
-              to lift the 500-word hold + utility-awareness & speech-synthesis review.
-              Describe the work — the same amount is returned to your wallet as a previewer credit.
+              You are about to spend <span className="font-mono text-foreground">{HOLD_RELEASE_COST}</span> tokens to
+              lift the 500-word hold + utility-awareness & speech-synthesis review. Describe the work — the same amount
+              is returned to your wallet as a previewer credit.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-xs font-mono">
-              <span className="flex items-center gap-1 text-muted-foreground"><Wallet className="h-3 w-3" /> wallet</span>
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <Wallet className="h-3 w-3" /> wallet
+              </span>
               <span>{tokenBalance === null ? "—" : tokenBalance.toLocaleString()} tokens</span>
             </div>
             <div className="flex items-center justify-between rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-mono">
               <span className="text-muted-foreground">gate fee → award</span>
-              <span className="text-primary">−{HOLD_RELEASE_COST} · +{HOLD_RELEASE_COST}</span>
+              <span className="text-primary">
+                −{HOLD_RELEASE_COST} · +{HOLD_RELEASE_COST}
+              </span>
             </div>
 
             <div className="space-y-1">
@@ -1658,7 +2037,16 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   );
 }
 
-type Recording = { id?: string; blob?: Blob; url: string; durationMs: number; mime: string; name?: string; title?: string; storage_path?: string };
+type Recording = {
+  id?: string;
+  blob?: Blob;
+  url: string;
+  durationMs: number;
+  mime: string;
+  name?: string;
+  title?: string;
+  storage_path?: string;
+};
 
 function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone: () => void; userId: string | null }) {
   const [supported, setSupported] = useState<boolean>(true);
@@ -1697,13 +2085,14 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
             title: r.title || r.name,
             storage_path: r.storage_path,
           } as Recording;
-        })
+        }),
       );
       setSaved(rows);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
-
 
   const mediaRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -1731,7 +2120,10 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
     }, 100);
   };
   const stopTick = () => {
-    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
+    if (tickRef.current) {
+      clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
   };
 
   const installDriver = async () => {
@@ -1742,7 +2134,9 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
       const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
       const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       chunksRef.current = [];
-      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
       mr.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
         const url = URL.createObjectURL(blob);
@@ -1755,7 +2149,10 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
       mediaRef.current = mr;
       startedAt.current = Date.now();
       setElapsed(0);
-      if (recording) { URL.revokeObjectURL(recording.url); setRecording(null); }
+      if (recording) {
+        URL.revokeObjectURL(recording.url);
+        setRecording(null);
+      }
       mr.start(100);
       setState("recording");
       startTick();
@@ -1768,17 +2165,24 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
   };
 
   const pause = () => {
-    const mr = mediaRef.current; if (!mr) return;
-    if (state === "recording") { mr.pause(); stopTick(); setState("paused"); }
-    else if (state === "paused") {
+    const mr = mediaRef.current;
+    if (!mr) return;
+    if (state === "recording") {
+      mr.pause();
+      stopTick();
+      setState("paused");
+    } else if (state === "paused") {
       // resume — adjust startedAt to preserve elapsed
       startedAt.current = Date.now() - elapsed;
-      mr.resume(); startTick(); setState("recording");
+      mr.resume();
+      startTick();
+      setState("recording");
     }
   };
 
   const stop = () => {
-    const mr = mediaRef.current; if (!mr || mr.state === "inactive") return;
+    const mr = mediaRef.current;
+    if (!mr || mr.state === "inactive") return;
     mr.stop();
   };
 
@@ -1790,14 +2194,16 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
       return;
     }
     try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const Ctx =
+        window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = playCtxRef.current ?? new Ctx();
       playCtxRef.current = ctx;
       const audio = new Audio(recording.url);
       audioRef.current = audio;
       const src = ctx.createMediaElementSource(audio);
       // dry
-      const dry = ctx.createGain(); dry.gain.value = 0.85;
+      const dry = ctx.createGain();
+      dry.gain.value = 0.85;
       // reverb via convolver with synthetic impulse
       const convolver = ctx.createConvolver();
       const sr = ctx.sampleRate;
@@ -1810,7 +2216,8 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
         }
       }
       convolver.buffer = impulse;
-      const wet = ctx.createGain(); wet.gain.value = 0.55;
+      const wet = ctx.createGain();
+      wet.gain.value = 0.55;
       src.connect(dry).connect(ctx.destination);
       src.connect(convolver).connect(wet).connect(ctx.destination);
       audio.onended = () => setPlaying(false);
@@ -1844,7 +2251,10 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
       // fallback: keep locally
       setSaved((s) => [...s, { ...recording, name, title }]);
       toast.success(`Saved "${title}" (local only)`);
-      setShowSave(false); setRecording(null); setState("idle"); setElapsed(0);
+      setShowSave(false);
+      setRecording(null);
+      setState("idle");
+      setElapsed(0);
       return;
     }
     setSavingTake(true);
@@ -1869,9 +2279,15 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
         .single();
       if (insErr) throw insErr;
       const { data: signed } = await supabase.storage.from("previewer-audio").createSignedUrl(path, 60 * 60);
-      setSaved((s) => [{ ...recording, id: row?.id, name, title, storage_path: path, url: signed?.signedUrl || recording.url }, ...s]);
+      setSaved((s) => [
+        { ...recording, id: row?.id, name, title, storage_path: path, url: signed?.signedUrl || recording.url },
+        ...s,
+      ]);
       toast.success(`Saved "${title}"`, { description: `${name} · ${(recording.blob.size / 1024).toFixed(1)} KB` });
-      setShowSave(false); setRecording(null); setState("idle"); setElapsed(0);
+      setShowSave(false);
+      setRecording(null);
+      setState("idle");
+      setElapsed(0);
     } catch (err) {
       toast.error("Save failed", { description: err instanceof Error ? err.message : "unknown" });
     } finally {
@@ -1890,7 +2306,9 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-medium"><Mic className="h-4 w-4" /> Audio integration test</div>
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Mic className="h-4 w-4" /> Audio integration test
+        </div>
         <div className="flex items-center gap-2 text-[11px]">
           {audioOk === true && <span className="text-green-500">tone ok</span>}
           {audioOk === false && <span className="text-destructive">tone blocked</span>}
@@ -1898,7 +2316,8 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
         </div>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Run-test installs the mic driver kit, asks permission, and records. Pause / stop / replay with reverb, then discard or keep.
+        Run-test installs the mic driver kit, asks permission, and records. Pause / stop / replay with reverb, then
+        discard or keep.
       </p>
 
       {!supported && (
@@ -1933,10 +2352,24 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
               />
               <span>{fmt(elapsed)}</span>
             </div>
-            <button onClick={pause} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
-              {state === "recording" ? <><Pause className="h-4 w-4" /> Pause</> : <><Circle className="h-4 w-4" /> Resume</>}
+            <button
+              onClick={pause}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent"
+            >
+              {state === "recording" ? (
+                <>
+                  <Pause className="h-4 w-4" /> Pause
+                </>
+              ) : (
+                <>
+                  <Circle className="h-4 w-4" /> Resume
+                </>
+              )}
             </button>
-            <button onClick={stop} className="inline-flex items-center gap-1 rounded-full bg-destructive px-3 py-1.5 text-sm text-destructive-foreground hover:bg-destructive/90">
+            <button
+              onClick={stop}
+              className="inline-flex items-center gap-1 rounded-full bg-destructive px-3 py-1.5 text-sm text-destructive-foreground hover:bg-destructive/90"
+            >
               <Square className="h-4 w-4" /> Stop
             </button>
           </>
@@ -1948,13 +2381,30 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
               <span className="text-muted-foreground">len</span>
               <span>{fmt(recording.durationMs)}</span>
             </div>
-            <button onClick={replay} className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90">
-              {playing ? <><Pause className="h-4 w-4" /> Pause</> : <><RotateCcw className="h-4 w-4" /> Replay + reverb</>}
+            <button
+              onClick={replay}
+              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+            >
+              {playing ? (
+                <>
+                  <Pause className="h-4 w-4" /> Pause
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4" /> Replay + reverb
+                </>
+              )}
             </button>
-            <button onClick={askKeep} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
+            <button
+              onClick={askKeep}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent"
+            >
               <Save className="h-4 w-4" /> Keep
             </button>
-            <button onClick={discard} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent">
+            <button
+              onClick={discard}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent"
+            >
               <Trash2 className="h-4 w-4" /> Discard
             </button>
           </>
@@ -1992,8 +2442,25 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
             </label>
           </div>
           <div className="mt-3 flex justify-end gap-2">
-            <button onClick={() => setShowSave(false)} className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-accent">Cancel</button>
-            <button onClick={confirmSave} disabled={savingTake} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1">{savingTake ? <><Loader2 className="h-3 w-3 animate-spin" /> Saving</> : "Save"}</button>
+            <button
+              onClick={() => setShowSave(false)}
+              className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-accent"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmSave}
+              disabled={savingTake}
+              className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1"
+            >
+              {savingTake ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" /> Saving
+                </>
+              ) : (
+                "Save"
+              )}
+            </button>
           </div>
         </motion.div>
       )}
@@ -2007,7 +2474,10 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
                 <Mic className="h-3 w-3 text-primary" />
                 <div className="flex-1 min-w-0">
                   <div className="truncate text-sm font-medium">{s.title}</div>
-                  <div className="truncate text-[11px] text-muted-foreground font-mono">{s.name} · {fmt(s.durationMs)}{s.blob ? ` · ${(s.blob.size / 1024).toFixed(1)} KB` : ""}</div>
+                  <div className="truncate text-[11px] text-muted-foreground font-mono">
+                    {s.name} · {fmt(s.durationMs)}
+                    {s.blob ? ` · ${(s.blob.size / 1024).toFixed(1)} KB` : ""}
+                  </div>
                 </div>
                 <audio src={s.url} controls className="h-8" />
               </li>
@@ -2022,7 +2492,19 @@ function MicTest({ audioOk, onTone, userId }: { audioOk: null | boolean; onTone:
   );
 }
 
-function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFrame?: (frame: { camOn: boolean; micOn: boolean; image: string | null; resolution: string; audio: { id: string; dataUrl: string } | null }) => void }) {
+function MovieCall({
+  userId,
+  onShareFrame,
+}: {
+  userId: string | null;
+  onShareFrame?: (frame: {
+    camOn: boolean;
+    micOn: boolean;
+    image: string | null;
+    resolution: string;
+    audio: { id: string; dataUrl: string } | null;
+  }) => void;
+}) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
@@ -2073,7 +2555,11 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
     if (!cam && !mic) return;
     try {
       const preset = RES_MAP[resolution];
-      const videoConstraints: MediaTrackConstraints = { height: { ideal: preset.h }, width: { ideal: Math.round(preset.h * 16 / 9) }, frameRate: { ideal: 24, max: 30 } };
+      const videoConstraints: MediaTrackConstraints = {
+        height: { ideal: preset.h },
+        width: { ideal: Math.round((preset.h * 16) / 9) },
+        frameRate: { ideal: 24, max: 30 },
+      };
       const s = await navigator.mediaDevices.getUserMedia({ video: cam ? videoConstraints : false, audio: mic });
       streamRef.current = s;
       if (videoRef.current && cam) {
@@ -2083,11 +2569,18 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
       }
     } catch (e: any) {
       toast.error(e?.message ?? "Device blocked");
-      setCamOn(false); setMicOn(false);
+      setCamOn(false);
+      setMicOn(false);
     }
   };
 
-  useEffect(() => () => { stopAll(); recRef.current?.stop(); }, []);
+  useEffect(
+    () => () => {
+      stopAll();
+      recRef.current?.stop();
+    },
+    [],
+  );
 
   // Frame push interval — tighter at lower resolution so viewer sees smoother motion.
   useEffect(() => {
@@ -2108,20 +2601,28 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
   // Audio streaming — slice mic into ~1.2s self-contained webm chunks and pass each
   // one through onShareFrame so the viewer's ACS plays them back continuously.
   useEffect(() => {
-    if (!micOn) { audioChunkRef.current = null; return; }
+    if (!micOn) {
+      audioChunkRef.current = null;
+      return;
+    }
     let stopped = false;
     let active: MediaRecorder | null = null;
 
     const recordOne = () => {
       if (stopped) return;
       const s = streamRef.current;
-      if (!s || s.getAudioTracks().length === 0) { setTimeout(recordOne, 500); return; }
+      if (!s || s.getAudioTracks().length === 0) {
+        setTimeout(recordOne, 500);
+        return;
+      }
       const audioStream = new MediaStream(s.getAudioTracks());
       const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
       try {
         const ar = new MediaRecorder(audioStream, { mimeType: mime, audioBitsPerSecond: 24000 });
         const parts: Blob[] = [];
-        ar.ondataavailable = (e) => { if (e.data.size) parts.push(e.data); };
+        ar.ondataavailable = (e) => {
+          if (e.data.size) parts.push(e.data);
+        };
         ar.onstop = async () => {
           if (stopped) return;
           const blob = new Blob(parts, { type: mime });
@@ -2129,30 +2630,65 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
           const u8 = new Uint8Array(buf);
           let bin = "";
           for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
-          audioChunkRef.current = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, dataUrl: `data:${mime};base64,${btoa(bin)}` };
+          audioChunkRef.current = {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            dataUrl: `data:${mime};base64,${btoa(bin)}`,
+          };
           if (!stopped) recordOne();
         };
         active = ar;
         ar.start();
-        setTimeout(() => { try { ar.stop(); } catch { /* ignore */ } }, 1200);
-      } catch { /* mic busy */ }
+        setTimeout(() => {
+          try {
+            ar.stop();
+          } catch {
+            /* ignore */
+          }
+        }, 1200);
+      } catch {
+        /* mic busy */
+      }
     };
     recordOne();
-    return () => { stopped = true; try { active?.stop(); } catch { /* ignore */ } audioChunkRef.current = null; };
+    return () => {
+      stopped = true;
+      try {
+        active?.stop();
+      } catch {
+        /* ignore */
+      }
+      audioChunkRef.current = null;
+    };
   }, [micOn]);
 
-  const toggleCam = async () => { const v = !camOn; setCamOn(v); await refreshStream(v, micOn); };
-  const toggleMic = async () => { const v = !micOn; setMicOn(v); await refreshStream(camOn, v); };
+  const toggleCam = async () => {
+    const v = !camOn;
+    setCamOn(v);
+    await refreshStream(v, micOn);
+  };
+  const toggleMic = async () => {
+    const v = !micOn;
+    setMicOn(v);
+    await refreshStream(camOn, v);
+  };
 
   const startRec = () => {
-    if (!streamRef.current) { toast.error("Turn on camera or mic first"); return; }
+    if (!streamRef.current) {
+      toast.error("Turn on camera or mic first");
+      return;
+    }
     chunksRef.current = [];
     const mr = new MediaRecorder(streamRef.current, { mimeType: "video/webm" });
-    mr.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+    mr.ondataavailable = (e) => {
+      if (e.data.size) chunksRef.current.push(e.data);
+    };
     mr.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: "video/webm" });
       const dur = Math.round((Date.now() - startedAtRef.current) / 1000);
-      if (!userId) { toast.error("Sign in to save"); return; }
+      if (!userId) {
+        toast.error("Sign in to save");
+        return;
+      }
       setBusy(true);
       try {
         const path = `${userId}/movie-${Date.now()}.webm`;
@@ -2170,14 +2706,19 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
         toast.success("Clip saved to your gallery");
       } catch (e: any) {
         toast.error(e?.message ?? "Save failed");
-      } finally { setBusy(false); }
+      } finally {
+        setBusy(false);
+      }
     };
     recRef.current = mr;
     startedAtRef.current = Date.now();
     mr.start();
     setRecording(true);
   };
-  const stopRec = () => { recRef.current?.stop(); setRecording(false); };
+  const stopRec = () => {
+    recRef.current?.stop();
+    setRecording(false);
+  };
 
   return (
     <div className="mt-3 space-y-3">
@@ -2200,13 +2741,22 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={toggleCam} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${camOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
+        <button
+          onClick={toggleCam}
+          className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${camOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
+        >
           <Eye className="h-3 w-3" /> Camera {camOn ? "on" : "Camera-On"}
         </button>
-        <button onClick={toggleMic} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${micOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
+        <button
+          onClick={toggleMic}
+          className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${micOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
+        >
           <Mic className="h-3 w-3" /> Mic {micOn ? "on · streaming" : "off"}
         </button>
-        <button onClick={() => setSpkOn((v) => !v)} className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${spkOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}>
+        <button
+          onClick={() => setSpkOn((v) => !v)}
+          className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs ${spkOn ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
+        >
           <Radio className="h-3 w-3" /> Speaker {spkOn ? "on" : "muted"}
         </button>
 
@@ -2224,11 +2774,18 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
         </div>
 
         {!recording ? (
-          <button onClick={startRec} disabled={busy} className="inline-flex items-center gap-1 rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20 disabled:opacity-50">
+          <button
+            onClick={startRec}
+            disabled={busy}
+            className="inline-flex items-center gap-1 rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20 disabled:opacity-50"
+          >
             <Circle className="h-3 w-3 fill-current" /> Record
           </button>
         ) : (
-          <button onClick={stopRec} className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-accent">
+          <button
+            onClick={stopRec}
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-accent"
+          >
             <Square className="h-3 w-3" /> Stop & save
           </button>
         )}
@@ -2241,18 +2798,29 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
       <div className="rounded-lg border border-border bg-background/60 p-3 text-[11px] leading-relaxed text-muted-foreground">
         <div className="flex items-center justify-between">
           <div className="font-medium text-foreground">Previewer protection policy</div>
-          <button onClick={() => setShieldRaised((v) => !v)} className="rounded-md border border-border px-2 py-0.5 text-[10px] hover:bg-accent">
+          <button
+            onClick={() => setShieldRaised((v) => !v)}
+            className="rounded-md border border-border px-2 py-0.5 text-[10px] hover:bg-accent"
+          >
             shield: {shieldRaised ? "raised" : "lowered"}
           </button>
         </div>
         <ul className="mt-2 space-y-1">
-          <li>· Lower resolution = faster sync for viewers on slow internet. 240p / 360p / 480p / 720p adjustable any time.</li>
+          <li>
+            · Lower resolution = faster sync for viewers on slow internet. 240p / 360p / 480p / 720p adjustable any
+            time.
+          </li>
           <li>· Mic-on streams compressed 24kbps Opus chunks (~1.2s) directly to the viewer's call space.</li>
-          <li>· Identity vectors and lock-on folders remain audience-shielded; only the boxes you toggle on are visible.</li>
-          <li>· Camera/Mic streams stay local outside an Active Call Space; recordings persist only in your private gallery.</li>
+          <li>
+            · Identity vectors and lock-on folders remain audience-shielded; only the boxes you toggle on are visible.
+          </li>
+          <li>
+            · Camera/Mic streams stay local outside an Active Call Space; recordings persist only in your private
+            gallery.
+          </li>
         </ul>
         <pre className="mt-2 whitespace-pre-wrap font-mono text-[10px] text-foreground/80">
-{`policy = protect(previewer) {
+          {`policy = protect(previewer) {
   resolution = ${resolution}
   audio.stream = ${micOn ? "live" : "off"}
   payload.differentiate({ reason, intent, tact })
@@ -2274,8 +2842,14 @@ function InlineCreateChannel({ userId, onCreated }: { userId: string | null; onC
   const toggleBox = (k: string) => setBoxes((b) => (b.includes(k) ? b.filter((x) => x !== k) : [...b, k]));
 
   const create = async () => {
-    if (!userId) { toast.error("Sign in first"); return; }
-    if (!name.trim()) { toast.error("Channel name required"); return; }
+    if (!userId) {
+      toast.error("Sign in first");
+      return;
+    }
+    if (!name.trim()) {
+      toast.error("Channel name required");
+      return;
+    }
     setBusy(true);
     const { data, error } = await supabase
       .from("live_channels")
@@ -2292,10 +2866,17 @@ function InlineCreateChannel({ userId, onCreated }: { userId: string | null; onC
       .select()
       .single();
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success(`Channel created (${isPublic ? "public" : "private"})`);
     onCreated(data as LiveChannel);
-    setName(""); setDesc(""); setBoxes([]); setMinTokens(MIN_ENTRY_TOKENS_DEFAULT); setIsPublic(true);
+    setName("");
+    setDesc("");
+    setBoxes([]);
+    setMinTokens(MIN_ENTRY_TOKENS_DEFAULT);
+    setIsPublic(true);
   };
 
   return (
@@ -2317,7 +2898,9 @@ function InlineCreateChannel({ userId, onCreated }: { userId: string | null; onC
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
       />
       <div>
-        <div className="mb-1 text-[11px] uppercase tracking-widest text-muted-foreground">Boxes shared at open (optional)</div>
+        <div className="mb-1 text-[11px] uppercase tracking-widest text-muted-foreground">
+          Boxes shared at open (optional)
+        </div>
         <div className="flex flex-wrap gap-2">
           {BOX_OPTIONS.map((b) => (
             <button
@@ -2345,7 +2928,9 @@ function InlineCreateChannel({ userId, onCreated }: { userId: string | null; onC
         <div className="flex items-end justify-between gap-3 rounded-md border border-border bg-background/60 px-3 py-2 text-xs">
           <div>
             <div className="font-medium">{isPublic ? "Public" : "Private"}</div>
-            <div className="text-muted-foreground">{isPublic ? "Listed in Audience tab" : "Hidden — share by link/role later"}</div>
+            <div className="text-muted-foreground">
+              {isPublic ? "Listed in Audience tab" : "Hidden — share by link/role later"}
+            </div>
           </div>
           <Switch checked={isPublic} onCheckedChange={setIsPublic} />
         </div>
