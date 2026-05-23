@@ -771,12 +771,15 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
       camera_on: movieShare.camOn,
       microphone_on: movieShare.micOn,
       image: movieShare.image,
+      audio_chunk: movieShare.audio,
+      resolution: movieShare.resolution,
       recommendations: [...builtinRecs, ...customRecs.map((r) => r.label)],
-      specifications: { map: "console", aspect: "16:9 · 1080p", latency: "best-effort" },
+      specifications: { map: "console", aspect: "16:9", resolution: movieShare.resolution, latency: "best-effort" },
     },
     midi: {
       status: audioOk === true ? "mic tone verified" : audioOk === false ? "tone blocked" : "MIDI-Haptics ready",
       instruction: "MIDI grid, microphone research, and haptics are staged by the previewer.",
+      recordings: midiRecordings,
     },
     lyrics: {
       built_in: lyrics,
