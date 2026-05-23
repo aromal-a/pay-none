@@ -2043,7 +2043,7 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
   useEffect(() => {
     pushFrame(camOn, micOn);
     if (!camOn) return;
-    const t = window.setInterval(() => pushFrame(camOn, micOn), 3000);
+    const t = window.setInterval(() => pushFrame(camOn, micOn), 750);
     return () => window.clearInterval(t);
   }, [camOn, micOn]);
 
