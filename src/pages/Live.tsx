@@ -359,7 +359,8 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   const [shareToAudience, setShareToAudience] = useState(false);
   const [multiWindow, setMultiWindow] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
-  const [movieShare, setMovieShare] = useState<{ camOn: boolean; micOn: boolean; image: string | null }>({ camOn: false, micOn: false, image: null });
+  const [movieShare, setMovieShare] = useState<{ camOn: boolean; micOn: boolean; image: string | null; resolution: string; audio: { id: string; dataUrl: string } | null }>({ camOn: false, micOn: false, image: null, resolution: "480p", audio: null });
+  const [midiRecordings, setMidiRecordings] = useState<{ id: string; name: string; title: string | null; url: string; duration: number | null; mime: string | null }[]>([]);
 
   useEffect(() => {
     if (brainWords >= HOLD_THRESHOLD && !sessionHeld) {
