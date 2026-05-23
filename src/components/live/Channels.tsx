@@ -347,7 +347,7 @@ function ChannelRoom({ channel: initialChannel, isOwner, onBack, onAcsOpen }:
         )}
 
         {isOwner && (
-          <PreviewerBroadcastBar channel={channel} onChange={(c) => setChannel(c)} />
+          <PreviewerBroadcastBar channel={channel} onChange={(c) => setChannel(c)} onDeleted={onBack} />
         )}
 
         {!isOwner && (
