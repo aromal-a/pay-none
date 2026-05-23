@@ -812,7 +812,7 @@ function Previewer({ onLeave, onOpenChannels }: { onLeave: () => void; onOpenCha
   // edits) without the previewer manually toggling anything.
   useEffect(() => {
     if (!shareToAudience || !selectedChannel || sharedBoxes.length === 0) return;
-    const t = window.setInterval(() => { pushShareSettings(true); }, 4000);
+    const t = window.setInterval(() => { pushShareSettings(true); }, 1000);
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shareToAudience, selectedChannel?.id, sharedBoxes.join(","), multiWindow, frame, audioOk, customLyrics.length, customRecs.length, movieShare]);
@@ -2043,7 +2043,7 @@ function MovieCall({ userId, onShareFrame }: { userId: string | null; onShareFra
   useEffect(() => {
     pushFrame(camOn, micOn);
     if (!camOn) return;
-    const t = window.setInterval(() => pushFrame(camOn, micOn), 3000);
+    const t = window.setInterval(() => pushFrame(camOn, micOn), 750);
     return () => window.clearInterval(t);
   }, [camOn, micOn]);
 
