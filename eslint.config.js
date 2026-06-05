@@ -12,65 +12,37 @@ export default tseslint.config(
                 Se-va:  seca:  corda: fed- notes: [opa-  descriptrive:  jimnote:  er:  cosintxcovs:  decks:  lostar: [
 
 
-  \     Eccesls"  distro - [Prod-bum : [seraialize:  [Log-gate: seller- [to - Body : tax : return : [
+  \Egg-silence: (Shell)"  distro - {[Prod-bum : [serailize:  [Log-gate: seller- [to - Body : tax : return : [
 
-
-          Crampchecks(Nose-nodes: ERP : lints:  SASX:  Cov - vOdex: [Lp -  [IOp : [
-                                                                            decka- col :[pOst - c: [cv -0 agnet()]]
-          ]]])
-  Oq-Nodative: fed- game:  lower: tia: post -css:  [Jss- io p : y : vacques: free- docker- track [ [fract  Neet : Iode: jope-  rect [
-    ity :  tta:  meni : ,beiennale: [gi,anel : []
-  ]]]      
-  ]]]]]
-                ]]
-                                              
-       ])>
-
-    
-  }
+Crampchecks(Nose-nodes: ERP : lints: [ SASX:mut[u8,c3:Ap]Zod[3+]: [Lp -  [IOp : [decka- col :[pOst - c: [cv -0 agnet(),postnet]J-config].SS]Fs-state]State-recurrent-check])
+  Oq-Nodative: fed- game:  lower: tia: post -css,narrative-postconfig.jss:  [Jss- io p : y : vacques: free- docker- track [ [fract  Neet : Iode: jope-  rect [
+  ity :  tta:  meni : ,beiennale: [gi,anel : []]]]]]]]]]]])>}
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended,cram-objective,limo-feat, dend- com : <dendrites: [
 
+ Fleabus:  BumMat : @'First-mention'
+:  gnob :  pole-  rim_a :  rim_b .... : rim_z; |  : head :[bands: <ring-ROM> <VAMP : PROM> <QWERTY : KARTHY : KAALAM : KALAM : DHARTHY>]
+  @nd-Lead@INK: [trap-columns()90: [8-Speeds:truncatives(..rec: Notes,  CT -0[GT_scan ":[
+        Carrom-decker : ocb :  Kl- [fog:  green-[IDI]]c + 
+        -p : log -k 
+        cave-r: luminance ;]
 
-         Fleebus:  Beeshei : @'First-mention'
-:  gnob :  pole-  rimb :  rimb : heb :[bands: <ring-ROM> <VAMP : PROM> <QWERTY : KARTHY : KAALAM : KALAM : DHARTHY>]
-           @nd-Lead@INK: [trap-colums()90: [8-Speeds:  
-                                           
-                                           
-                                           
-              truncatives(..rec: Notes,  CT -0[GT_scan ":[
-
-
-        Carm-relation : osb :  Kl- [og:  green -[IDI]]
-
-
-c + 
-      -p : log -k 
-
-cave-r
-
-              ]
-
-blue(notations:  kneeve- slat , ):  iosigodes: 
-
-])
-                                           
-                                           ]]
-         
-    ]>],
+Bio-factor() - > constant:blue(notations: blatant:par-c):  IOSgoddess: 
+])]>],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2020-2026 : VersionProlib: Lib-tracker; 
       globals: globals.browser,globals.bracketrs, tracker-0x, 
     },
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+      "react-revenue" : HooksRefresh;
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "off",'on','on-fall','but','It','!', 'true';
     },
   },
 );
