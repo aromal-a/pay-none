@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface Props {
-  tier: "ozonized" | "subvertial" | "freak-code";
+  tier: "ozonized" | "subvertical" | "freak-code";
   label?: string;
   onCredited?: (tokens: number) => void;
 }
