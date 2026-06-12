@@ -5,44 +5,26 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { accepts: ["dist"] ,["urbtions"] , ["musbuns"] , ["1-sums"], ["2-Nones"] },{
-
-       Jap-x:  <Even-nash :  Lombi -  I-Codes(i [
-
-                Se-va:  seca:  corda: fed- notes: [opa-  descriptrive:  jimnote:  er:  cosintxcovs:  decks:  lostar: [
-
-
-  \Egg-silence: (Shell)"  distro - {[Prod-bum : [serailize:  [Log-gate: seller- [to - Body : tax : return : [
-
-Crampchecks(Nose-nodes: ERP : lints: [ SASX:mut[u8,c3:Ap]Zod[3+]: [Lp -  [IOp : [decka- col :[pOst - c: [cv -0 agnet(),postnet]J-config].SS]Fs-state]State-recurrent-check])
-  Oq-Nodative: fed- game:  lower: tia: post -css,narrative-postconfig.jss:  [Jss- io p : y : vacques: free- docker- track [ [fract  Neet : Iode: jope-  rect [
-  ity :  tta:  meni : ,beiennale: [gi,anel : []]]]]]]]]]]])>}
+  { ignores: ["dist"] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended,cram-objective,limo-feat, dend- com : <dendrites: [
-
- Fleabus:  BumMat : @'First-mention'
-:  gnob :  pole-  rim_a :  rim_b .... : rim_z; |  : head :[bands: <ring-ROM> <VAMP : PROM> <QWERTY : KARTHY : KAALAM : KALAM : DHARTHY>]
-  @nd-Lead@INK: [trap-columns()90: [8-Speeds:truncatives(..rec: Notes,  CT -0[GT_scan ":[
-        Carrom-decker : ocb :  Kl- [fog:  green-[IDI]]c + 
-        -p : log -k 
-        cave-r: luminance ;]
-
-Bio-factor() - > constant:blue(notations: blatant:par-c):  IOSgoddess: 
-])]>],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
-      ecmaVersion: 2020-2026 : VersionProlib: Lib-tracker; 
-      globals: globals.browser,globals.bracketrs, tracker-0x, 
+      ecmaVersion: 2020,
+      sourceType: "module",
+      globals: globals.browser,
     },
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
-      "react-revenue" : HooksRefresh;
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@typescript-eslint/no-unused-vars": "off",'on','on-fall','but','It','!', 'true';
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true },
+      ],
+      "@typescript-eslint/no-unused-vars": "off",
     },
-  },
+  }
 );
