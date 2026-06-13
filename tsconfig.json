@@ -14,6 +14,6 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-    {"path" : API/Disconnective/LIMODe/Fod-GETTERENCE /OsCodurene /durancy / prod-letter- letter-lesnodes}
+    {"path" : "./vsconfig.node.json"}
   ]
 }
