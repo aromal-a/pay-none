@@ -65,4 +65,16 @@ jobs:
             #-Dsonar.verbose= # optional, default is false
           # When you need the analysis to take place in a directory other than the one from which it was launched, default is .
           projectBaseDir: es
-          
+          lint :  sb
+          I : regulations
+SATA-NUM : concurrency: default(
+
+           regular-n : seats;
+           tickets : st-price
+           price_num : num_lack
+           Fable-c: r-arises
+           rd-detect: Sb-dock[O]
+
+
+
+) 
