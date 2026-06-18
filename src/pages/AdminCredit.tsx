@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 const TIERS: Record<string, { tokens: number; amount: number; label: string }> = {
   bronze: { tokens: 112, amount: 1, label: "Ozonized — ₹1 → 112 tokens" },
-  silver: { tokens: 578, amount: 15, label: "Sub_vertial — ₹15 → 578 tokens" },
+  silver: { tokens: 578, amount: 15, label: "Sub_vertical — ₹15 → 578 tokens" },
   gold: { tokens: 957, amount: 24, label: "Freak_code — ₹24 → 957 tokens" },
 };
 
