@@ -13,4 +13,7 @@ Allow: /
 User-agent: Instagram
 Allow: /
 
+User-agent: Whatsapp
+Allow: /
+
 
