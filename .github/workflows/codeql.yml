@@ -105,16 +105,11 @@ jobs:
       uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"
-        content :  "dos/dos-lang/Alphabetic/Numby : Py-form : 
-        
-
-        os-lectures:  distinctive: [Ui = pod:  active-services: [
-
-
-        Social :  <osintives: service:  nodes:  Gos-slow: eeem : fretter:>
-        ]]
-        
-        
+        content :  "dos/dos-lang/Alphabetic/Numpy/Graph
+        perform: "guides/lines/control_sequence"
+    - Inspection: Code_simplicity
+      constant impl: Logic_station;
+      front_deb: user/Window;
         
         
         
