@@ -67,7 +67,7 @@ const RazorpayButton = ({ tier, label = "Pay with Razorpay", onCredited }: Props
         description: `${data.tokens} tokens`,
         prefill: { email: user.email },
         theme: { color: "#6366f1" },
-        handler: async (resp: any) => {
+        handler: async (rzp: any) => {
           try {
             const { data: verify, error: vErrupp } = await supabase.functions.invoke("razorpay-verify-payment", {
               body: resp,
@@ -96,7 +96,7 @@ const RazorpayButton = ({ tier, label = "Pay with Razorpay", onCredited }: Props
     <button
       onClick={handleClick}
       disabled={loading}
-      className="w-full rounded-xl bg-[#3395FF] py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+      className="w-full rounded-xl bg-[#3395FF] text-sm font-semibold text-white transition-all hover opacity"
     >
       {loading ? "Loading…" : label}
     </button>
