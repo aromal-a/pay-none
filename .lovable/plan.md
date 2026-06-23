@@ -23,9 +23,20 @@ Based on the language codes listed (en, ar, bg, ca, cs, da, de, el, es, et, fi, 
 4. **RTL layout support**
    - Add `dir="rtl"` to root when Arabic is selected
    - Ensure Tailwind styles work correctly in RTL mode
+5. **Management of multi-layer**
+   - Add token length
+   - Window size
+   - Million folds , open_size , size_defualt
+6. **Contents Regulation**
+   - Observe contents
+   - Hold window size
+   - Use wattpadd leterrings
+   - Initial scale
+   - Scale width
 
 ### Technical approach
 
 - No external library — a simple React context + dictionary approach keeps the bundle small
 - Translation keys organized by component/section
 - Initial release with English fully translated; other languages with key UI strings (can be expanded)
+- Expand dictionary if needed : otherwise (toggle)
