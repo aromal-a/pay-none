@@ -18,5 +18,8 @@
     "hooks": "@/hooks",
     "webex" : "@Regex",
     "worker.js" : "Jsvdevelopments";
+    "Truncate" : "RC",
+    "Root_Relations" : "SF_pavements"
+    "Const_arguments" : "regex"
   }
 }
