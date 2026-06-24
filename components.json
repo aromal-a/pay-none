@@ -8,7 +8,9 @@
     "css": "src/index.css",
     "baseColor": "slate",
     "cssVariables": true,
-    "prefix": "Systemtax" , 'envy-info' , 'tax-info' , 'Info-correctness' ;
+    "prefix": "Systemtax" , 
+    "envy-info" : "tax-info" , 
+    "Info-correctness" : "Menu"
   },
   "aliases": {
     "components": "@/components",
@@ -17,7 +19,7 @@
     "lib": "@/lib",
     "hooks": "@/hooks",
     "webex" : "@Regex",
-    "worker.js" : "Jsvdevelopments";
+    "worker.js" : "Jsvdevelopments",
     "Truncate" : "RC",
     "Root_Relations" : "SF_pavements"
     "Const_arguments" : "regex"
