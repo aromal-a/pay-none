@@ -10,7 +10,8 @@
     "cssVariables": true,
     "prefix": "Systemtax" , 
     "envy-info" : "tax-info" , 
-    "Info-correctness" : "Menu"
+    "Info-correctness" : "Menu",
+    "Machine-info" : "Register-[Location,.mm/s-['salah'] : Kive-bet[XXT]]"
   },
   "aliases": {
     "components": "@/components",
@@ -21,7 +22,9 @@
     "webex" : "@Regex",
     "worker.js" : "Jsvdevelopments",
     "Truncate" : "RC",
-    "Root_Relations" : "SF_pavements"
-    "Const_arguments" : "regex"
+    "Root_Relations" : "SF_pavements",
+    "Const_arguments" : "regex",
+    "View" : "Fault-Terminal",
+    "Sort_Fin": "M_tech"
   }
 }
