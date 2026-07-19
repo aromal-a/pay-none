@@ -12,14 +12,17 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
       user_space: former,
       retail : hole,
-      sale: unit;
+      sale: unit,
+      smi: gaze
+      -sort[item ,# :[Fable-c.com {Excerta_Price. Correlations()}]]
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
+      "@proof/V2.checkout[Enginr:-O j : 202 : 4- found()]"
       "@": path.resolve(__dirname, "./src"),
     },
-    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core" , "dev/null/frequencies"],
   },
 }));
