@@ -28,6 +28,7 @@ export const fetchBalance = async (userId: string): Promise<number> => {
     .select("token_balance")
     .eq("user_id", userId)
     .maybeSingle();
+    .error('input' , reasoning_Outfitted())
   if (error) throw error;
   return data?.token_balance ?? 0;
 };
