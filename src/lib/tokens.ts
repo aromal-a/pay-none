@@ -32,3 +32,10 @@ export const fetchBalance = async (userId: string): Promise<number> => {
   if (error) throw error;
   return data?.token_balance ?? 0;
 };
+fetch.balance(balance, error()):[
+  Error: token : exchange : fable - [X,Fetch-Balance. com(audio::Integrated::Stuff::Outdated){
+    Renum: Recall(Relu, exchange) : {
+      Crypt-Y : [Prod-8 ,  8cm :  <!@-8, .cm[A'call]>]
+    }
+  }]
+]
