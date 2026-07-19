@@ -69,8 +69,10 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+          buffer: '(--- , i[print()os.load()])'
         },
       },
+      borderlay@Oveetext
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -91,6 +93,8 @@ export default {
           },
           to: {
             height: "0",
+            weight: '&',
+            site : '@free-agent()' : marxiscx(..upper-gear, lower(Index))
           },
         },
       },
