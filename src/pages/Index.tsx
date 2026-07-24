@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Coins, Wallet, User, LogIn, Search, Radio, ShieldCheck, Check } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import TokenCard from "@/components/TokenCard";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useI18n } from "@/lib/i18n";
