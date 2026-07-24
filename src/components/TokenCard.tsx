@@ -37,24 +37,13 @@ const tierEasterEgg: Record<string, { code: string; lane: string; lecture: strin
   },
 };
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
-
-const RZP_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
-
-const loadRazorpay = () =>
-  new Promise<boolean>((resolve) => {
-    if (typeof window === "undefined") return resolve(false);
-    if (window.Razorpay) return resolve(true);
-    const s = document.createElement("script");
-    s.src = RZP_SCRIPT;
-    s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
-    document.body.appendChild(s);
-  });
+// Hosted Razorpay Payment Links per tier.
+// The webhook (razorpay-webhook edge function) credits tokens after payment_link.paid.
+const PAYMENT_LINKS: Record<string, string> = {
+  bronze: "https://rzp.io/rzp/fARC70to",   // OZONIZED
+  silver: "https://rzp.io/rzp/GQHvuFq6",   // SUB_VERTICAL
+  gold:   "https://rzp.io/rzp/vr6MGW8",    // FREAK_CODE
+};
 
 
 interface TokenCardProps {
