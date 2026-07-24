@@ -10,4 +10,9 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.razorpay-verify-payment]
+[functions.razorpay-verify-payment]
 verify_jwt = true
+
+[functions.mcp]
+verify_jwt = false
+

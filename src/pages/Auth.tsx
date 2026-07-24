@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Coins } from "lucide-react";
 import LanguageSelector from "@/components/LanguageSelector";
+
+// Only accept same-origin relative paths as post-login redirects.
+function safeNext(raw: string | null): string {
+  if (!raw) return "/";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/";
+  return raw;
+}
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -13,9 +20,12 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const next = safeNext(params.get("next"));
   const { user } = useAuth();
 
-  useEffect(() => { if (user) navigate("/", { replace: true }); }, [user, navigate]);
+  useEffect(() => { if (user) navigate(next, { replace: true }); }, [user, navigate, next]);
+
 
   const handleEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +39,7 @@ export default function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email, password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}${next}`,
             data: { phone: cleanPhone },
           },
         });
@@ -38,8 +48,9 @@ export default function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate("/", { replace: true });
+        navigate(next, { replace: true });
       }
+
     } catch (err: any) {
       toast.error(err.message);
     } finally {

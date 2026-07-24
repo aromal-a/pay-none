@@ -15,6 +15,7 @@ import Live from "./pages/Live.tsx";
 import CheckoutReturn from "./pages/CheckoutReturn.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import OAuthConsent from "./pages/OAuthConsent.tsx";
 
 const queryClient = new QueryClient();
 
@@ -36,7 +37,9 @@ const App = () => (
               <Route path="/live" element={<Live />} />
               <Route path="/checkout/return" element={<CheckoutReturn />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
               <Route path="*" element={<NotFound />} />
+
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
