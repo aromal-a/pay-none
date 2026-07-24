@@ -37,24 +37,13 @@ const tierEasterEgg: Record<string, { code: string; lane: string; lecture: strin
   },
 };
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
-
-const RZP_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
-
-const loadRazorpay = () =>
-  new Promise<boolean>((resolve) => {
-    if (typeof window === "undefined") return resolve(false);
-    if (window.Razorpay) return resolve(true);
-    const s = document.createElement("script");
-    s.src = RZP_SCRIPT;
-    s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
-    document.body.appendChild(s);
-  });
+// Hosted Razorpay Payment Links per tier.
+// The webhook (razorpay-webhook edge function) credits tokens after payment_link.paid.
+const PAYMENT_LINKS: Record<string, string> = {
+  bronze: "https://rzp.io/rzp/fARC70to",   // OZONIZED
+  silver: "https://rzp.io/rzp/GQHvuFq6",   // SUB_VERTICAL
+  gold:   "https://rzp.io/rzp/vr6MGW8",    // FREAK_CODE
+};
 
 
 interface TokenCardProps {
@@ -128,10 +117,6 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
   const [eggOpen, setEggOpen] = useState(false);
   const egg = tierEasterEgg[tier];
 
-  useEffect(() => {
-    loadRazorpay();
-  }, []);
-
   const totalTokens = tokens * quantity;
   const totalPrice = price * quantity;
 
@@ -140,50 +125,34 @@ const TokenCard = ({ tier, tokens, price, bonus, isAuthenticated, onRequireAuth 
       onRequireAuth();
       return;
     }
+    const base = PAYMENT_LINKS[tier];
+    if (!base) {
+      toast.error("Payment link not configured for this tier");
+      return;
+    }
     setPaying(true);
     try {
-      const ok = await loadRazorpay();
-      if (!ok) throw new Error("Failed to load Razorpay");
-
       const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      if (!accessToken) throw new Error("Please sign in");
+      const email = sessionData?.session?.user?.email ?? "";
+      const userId = sessionData?.session?.user?.id ?? "";
 
-      const { data, error } = await supabase.functions.invoke("razorpay-create-order", {
-        body: { tier, quantity },
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (error || !data?.orderId) throw new Error(error?.message || "Order failed");
+      // Redirect target after payment: back to /?paid=<tier>&q=<quantity>
+      const callback = `${window.location.origin}/?paid=${encodeURIComponent(tier)}&q=${quantity}`;
 
-      const rzp = new window.Razorpay({
-        key: data.keyId,
-        amount: data.amount,
-        currency: data.currency,
-        order_id: data.orderId,
-        name: "QueenToken",
-        description: `${data.tokens} tokens (${quantity} × ${tier})`,
-        theme: { color: "#6366f1" },
-        handler: async (resp: any) => {
-          try {
-            const { data: verify, error: vErr } = await supabase.functions.invoke("razorpay-verify-payment", {
-              body: resp,
-              headers: { Authorization: `Bearer ${accessToken}` },
-            });
-            if (vErr || !verify?.ok) throw new Error(vErr?.message || "Verification failed");
-            toast.success(`${verify.tokens} tokens added to your wallet!`);
-            setQuantity(1);
-            setPromptOpen(true);
-          } catch (err: any) {
-            toast.error(err.message || "Payment verification failed");
-          } finally {
-            setPaying(false);
-          }
-        },
-        modal: { ondismiss: () => setPaying(false) },
-      });
-      rzp.open();
+      // Prefill + notes travel with the hosted link so the webhook can identify the buyer.
+      const params = new URLSearchParams();
+      if (email) params.set("prefill[email]", email);
+      params.set("notes[user_id]", userId);
+      params.set("notes[tier]", tier);
+      params.set("notes[quantity]", String(quantity));
+      params.set("notes[unit_price]", String(price));
+      params.set("callback_url", callback);
+      params.set("callback_method", "get");
+
+      const url = `${base}?${params.toString()}`;
+      window.location.href = url;
     } catch (err: any) {
-      toast.error(err.message || "Payment failed");
+      toast.error(err.message || "Could not open payment page");
       setPaying(false);
     }
   };

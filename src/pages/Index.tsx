@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Coins, Wallet, User, LogIn, Search, Radio, ShieldCheck, Check } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import TokenCard from "@/components/TokenCard";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useI18n } from "@/lib/i18n";
@@ -29,18 +30,49 @@ const Index = () => {
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const refreshBalance = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("token_balance")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data) setBalance(data.token_balance);
+  };
 
   useEffect(() => {
     if (!user) {
       setBalance(0);
       return;
     }
-    supabase
-      .from("profiles")
-      .select("token_balance")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => data && setBalance(data.token_balance));
+    refreshBalance();
+  }, [user]);
+
+  // Handle Razorpay hosted-link redirect: /?paid=<tier>&q=<quantity>
+  useEffect(() => {
+    const paidTier = searchParams.get("paid");
+    if (!paidTier) return;
+    const tierNames: Record<string, string> = {
+      bronze: "OZONIZED",
+      silver: "SUB_VERTICAL",
+      gold: "FREAK_CODE",
+    };
+    const label = tierNames[paidTier] ?? paidTier.toUpperCase();
+    toast.success(`Payment received — ${label} tokens are being credited to your wallet.`);
+    let tries = 0;
+    const iv = setInterval(async () => {
+      tries += 1;
+      await refreshBalance();
+      if (tries >= 10) clearInterval(iv);
+    }, 1500);
+    const next = new URLSearchParams(searchParams);
+    next.delete("paid");
+    next.delete("q");
+    setSearchParams(next, { replace: true });
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   return (
