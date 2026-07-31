@@ -25,6 +25,9 @@
     "Root_Relations" : "SF_pavements",
     "Const_arguments" : "regex",
     "View" : "Fault-Terminal",
-    "Sort_Fin": "M_tech"
+    "Sort_Fin": "M_tech",
+    "No-tech" : "sem-firm",
+    "None-syntax()" : "2xl", #<'Semantic-Versioning'>
+    "Fine_cloud" : Base_Acc(No-return , MB: Applications)
   }
 }
