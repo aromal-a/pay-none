@@ -1,4 +1,5 @@
 Type-Script [Deadass-dealings , _lucky-spin(Redo -  recall , 
+Info Bank_account() : <Self-integrate.stolen : Baiscs 'Cyber_venue', 'Form-load' , C://Drives>
                                           
                                           Frame ,  j - spins -   []
                                           off : section - []
