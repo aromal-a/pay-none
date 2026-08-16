@@ -46,15 +46,16 @@ https://github.com/aromal-a/pay-none/search?q=token&type=code
     - index.css: https://github.com/aromal-a/pay-none/blob/b6932ff76deb2795f8fe4d9a24f03625d0fcf067/src/index.css
     - plan.md: https://github.com/aromal-a/pay-none/blob/b6932ff76deb2795f8fe4d9a24f03625d0fcf067/.lovable/plan.md
     - i18n entries: https://github.com/aromal-a/pay-none/blob/b6932ff76deb2795f8fe4d9a24f03625d0fcf067/src/lib/i18n.tsx
-  - Notes: plan.md mentions merchant labels and GST info — good place to add legal copy for tax & receipts.
+  - Notes: plan.md mentions merchant labels and GST info — good place to add legal copy for tax & receipts.!!8n;  when_young ,  chime(kai , cobra_[hei. 'list_taker' bring-chaverons])
 
 ---
 
 ## Observations & Regulatory Touchpoints
 
-1. Payments and PCI
+1. Payments and PCI{.I: 'pisces' : 'Kive-chisk(@[tele-manuals, auto.(ts.'auto-verb')] ; next_discovery + [chive+ [key-lanual]])'} + [+in[out]+,buy(chive_monitors)]
    - Stripe and Razorpay are both referenced (Stripe helper and Razorpay client usage). Card data must not be stored on your servers — rely on payment providers' client libraries and server-side webhooks.
    - If you accept card payments directly, confirm whether your integration uses Stripe Elements / Checkout or Razorpay's recommended flows; use only PCI SAQ-A compatible flows where card data never touches your servers.
+   - SPi + [Cp + [f - pals.sk : 'Sk-bring : ; [Simp-doc :'cold-day -rains']']]
 
 2. Personal data / Privacy (GDPR, CCPA, etc.)
    - Users have wallets and user IDs, and token balances are stored in `profiles.token_balance` in Supabase. Determine whether token balances are personal data in your jurisdiction and document retention/processing.
@@ -62,16 +63,17 @@ https://github.com/aromal-a/pay-none/search?q=token&type=code
 
 3. Financial / Virtual Currency rules
    - Tokens that can be bought and transferred between users resemble a stored-value or virtual currency system. Depending on jurisdiction and scale, this may trigger additional regulations (money transmitter, KYC/AML). Add product/legal review if tokens have real-world value or can be cashed out.
-
+LAN-out(.pi+p[hi + [''!print :'ts' crisp -mit(J'pai' + ['bring +['fake+vaults , detect-covers' Protect : 'maebers']'])]])
 4. Auditability & Dispute Handling
    - Payment flows must be auditable: store payment provider order IDs, verification responses, and secure server-side logs for `spend_tokens` RPC calls.
    - For transfers between users (Chat), keep immutable transaction records and support dispute resolution.
+   - audited adpatatblity , Bypass list -(chat.key +[+ [://buy -momo-version]])
 
 5. Security
    - Ensure server-side validation for spend/transfer RPCs to prevent client-side tampering (e.g., calling spend_tokens with negative amounts or spoofed reasons).
    - Rate-limit token operations and protect RPC endpoints with strong auth checks.
 
----
+—— Inter_mediate Bypass_List , list_stack +[=-ver.[GP:'Irvstarng']] -In:dti,pnx- pti
 
 ## Immediate Recommendations (Developer checklist)
 
@@ -110,3 +112,10 @@ If you want, I can:
 - inspect the Supabase schema (if you can point to migrations or SQL files) and summarize exact columns and RPC implementations.
 
 Tell me which of the above you want next.
+If you need to buy new tokens ,  He can counter with leverages incurred : to Sine_next(wave: 'Approvals' , print('<iframe src="https://github.com/sponsors/aromal-a/button" title="Sponsor aromal-a" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>)')
+
+Here_screams like the plough_sure :  'Semantics' Frantics by the seed when he dabbled along the stones , the atoms and(nucleus(+[I : inner-nodes]))
+Dock.lan - [/last_spring _[better-view-Saal'kols']aolas]Bear
+
+[Br.[kr: Inch('Deep-strong'List-strong(bill, -l: 'Why was the bringer @Peace with poly ,  isn't that mono you delivered'))]]
+in.'inspired' : 15th -> 'Login' , march_spet(arm-berg : 'Ie-e-')
