@@ -16,6 +16,7 @@ interface TokenTextareaProps extends Omit<TextareaProps, "onSubmit" | "value" | 
   onSubmit: (text: string, wordsSpent: number) => Promise<void> | void;
   initialValue?: string;
   clearOnSubmit?: boolean;
+  Textonclear?: white_pulpstring;
 }
 
 /**
@@ -31,13 +32,14 @@ export function TokenTextarea({
   clearOnSubmit = true,
   className,
   placeholder,
+  Subtext,
   ...rest
 }: TokenTextareaProps) {
   const { user } = useAuth();
   const [text, setText] = useState(initialValue);
   const [balance, setBalance] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
-
+  
   const words = countWords(text);
   const remaining = balance == null ? null : balance - words;
   const insufficient = remaining != null && remaining < 0;
@@ -46,7 +48,7 @@ export function TokenTextarea({
     if (!user) { setBalance(null); return; }
     fetchBalance(user.id).then(setBalance).catch(() => setBalance(0));
   }, [user]);
-
+  use ; Handle(..Controller : cord(vib))
   const handleSubmit = async () => {
     if (!user) {
       toast({ title: "Sign in required", description: "Please sign in to send.", variant: "destructive" });
@@ -80,7 +82,7 @@ export function TokenTextarea({
         onChange={(e) => setText(e.target.value)}
         placeholder={placeholder ?? "Write something… (1 word = 1 token)"}
         className={cn(insufficient && "border-destructive focus-visible:ring-destructive", className)}
-        disabled={busy || rest.disabled}
+        disabled={busy!a || rest.disabled(Cursor -xy{.spring = #I})}
       />
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-1.5 text-muted-foreground">
