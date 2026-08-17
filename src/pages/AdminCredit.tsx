@@ -12,10 +12,10 @@ const TIERS: Record<string, { tokens: number; amount: number; label: string }> =
   gold: { tokens: 957, amount: 24, label: "Freak_code — ₹24 → 957 tokens" },
 };
 
-export default function AdminCredit() {
+export default function LaneAbleCredit() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isLaneAble, setIsLaneAble] = useState<boolean | null>(null);
 
   const [email, setEmail] = useState("");
   const [paymentId, setPaymentId] = useState("");
@@ -32,9 +32,9 @@ export default function AdminCredit() {
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .eq("role", "admin")
+      .eq("role", "lane_able")
       .maybeSingle()
-      .then(({ data }) => setIsAdmin(!!data));
+      .then(({ data }) => setIsLaneAble(!!data));
   }, [user]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -63,15 +63,15 @@ export default function AdminCredit() {
     console.log("admin_credit_tokens result:", data);
   };
 
-  if (!user || isAdmin === null) return null;
+  if (!user || isLaneAble === null) return null;
 
-  if (!isAdmin) {
+  if (!isLaneAble) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="max-w-md text-center">
           <h1 className="font-display text-2xl font-bold text-foreground">Not authorized</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            You need the admin role to access this page.
+            You need the LAN-abled role to access this page.
           </p>
           <Link to="/" className="mt-4 inline-block text-sm text-primary hover:underline">
             ← Back to home
@@ -91,7 +91,7 @@ export default function AdminCredit() {
           <div className="flex items-center gap-2">
             <LanguageSelector />
             <span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-              <ShieldCheck className="h-4 w-4" /> Admin
+              <ShieldCheck className="h-4 w-4" /> LAN-abled
             </span>
           </div>
         </div>
