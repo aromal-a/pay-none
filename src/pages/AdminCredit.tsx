@@ -12,6 +12,15 @@ const TIERS: Record<string, { tokens: number; amount: number; label: string }> =
   gold: { tokens: 957, amount: 24, label: "Freak_code — ₹24 → 957 tokens" },
 };
 
+// Saved mode structure requested by user
+const SAVE_MODE = {
+  LL: {
+    chain: "langing-chain",
+    parts: [":&pt", "&gt.packge", "C&t .pack.vs"],
+    raw: "langing-chain(:&pt , &gt.packge , C&t .pack.vs)",
+  },
+};
+
 export default function LaneAbleCredit() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -21,6 +30,11 @@ export default function LaneAbleCredit() {
   const [paymentId, setPaymentId] = useState("");
   const [tier, setTier] = useState<keyof typeof TIERS>("bronze");
   const [submitting, setSubmitting] = useState(false);
+
+  // Auto-haiku / Claude variant state
+  const [autoHaikuEnabled, setAutoHaikuEnabled] = useState(false);
+  const [mode, setMode] = useState(SAVE_MODE);
+  const [savingMode, setSavingMode] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth", { replace: true });
@@ -35,7 +49,48 @@ export default function LaneAbleCredit() {
       .eq("role", "lane_able")
       .maybeSingle()
       .then(({ data }) => setIsLaneAble(!!data));
+
+    // Try to load saved mode for this user (best-effort; table may not exist)
+    (async () => {
+      try {
+        const { data } = await supabase.from("user_settings").select("value").eq("user_id", user?.id).eq("key", "ll_mode").maybeSingle();
+        if (data && data.value) {
+          try {
+            const parsed = JSON.parse(data.value);
+            setMode(parsed);
+          } catch (e) {
+            // ignore parse errors
+          }
+        }
+        const { data: haikuData } = await supabase.from("user_settings").select("value").eq("user_id", user?.id).eq("key", "auto_haiku_enabled").maybeSingle();
+        if (haikuData && typeof haikuData.value === "string") {
+          setAutoHaikuEnabled(haikuData.value === "true");
+        }
+      } catch (e) {
+        // ignore DB errors — this is best-effort only
+      }
+    })();
   }, [user]);
+
+  const saveModeToDB = async () => {
+    if (!user) {
+      toast.error("Sign in to save mode");
+      return;
+    }
+    setSavingMode(true);
+    try {
+      // Upsert a user_settings row with key 'll_mode'
+      const payload = { user_id: user.id, key: "ll_mode", value: JSON.stringify(mode) };
+      await supabase.from("user_settings").upsert(payload);
+      // Also save auto_haiku flag
+      await supabase.from("user_settings").upsert({ user_id: user.id, key: "auto_haiku_enabled", value: String(autoHaikuEnabled) });
+      toast.success("Saved mode");
+    } catch (err: any) {
+      toast.error("Failed to save mode");
+    } finally {
+      setSavingMode(false);
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,6 +208,35 @@ export default function LaneAbleCredit() {
             <p className="font-semibold text-foreground">
               +{TIERS[tier].tokens} tokens · ₹{TIERS[tier].amount}
             </p>
+          </div>
+
+          {/* Auto-haiku / Claude variant controls */}
+          <div className="rounded-lg bg-muted/50 p-3 text-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-muted-foreground">Auto-haiku (Claude variant)</p>
+                <p className="text-xs text-muted-foreground">Provider: claude · variant: providing internal [in &gt, A&pt]</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={autoHaikuEnabled}
+                    onChange={(e) => setAutoHaikuEnabled(e.target.checked)}
+                  />
+                  Enable
+                </label>
+                <button
+                  type="button"
+                  onClick={saveModeToDB}
+                  disabled={savingMode}
+                  className="rounded-md bg-secondary px-3 py-1 text-sm text-secondary-foreground disabled:opacity-50"
+                >
+                  {savingMode ? "Saving…" : "Save mode"}
+                </button>
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">Mode: {mode.LL.raw}</p>
           </div>
 
           <button
