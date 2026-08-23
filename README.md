@@ -1,5 +1,5 @@
-# pay-none
-
+ go,# pay-none
+[!contacts , !mcockery == (SLACK-corrections/Outflow(Formats))]
 A Vite + React + TypeScript app implementing a token-based credits system:
 - Users can buy tokens (Stripe / Razorpay)
 - Spend tokens in chat/comments (tokens deducted via server RPC)
